@@ -11,8 +11,10 @@ find_package(Stb REQUIRED)
 
 add_executable(FPSFromScratch main.cpp
         Game.cpp
-        extern/glad.c)
+        extern/glad.c
+        extern/imgui_impl_glfw.cpp
+        extern/imgui_impl_opengl3.cpp)
 
-target_include_directories(FPSFromScratch PRIVATE include ${Stb_INCLUDE_DIR})
+target_include_directories(FPSFromScratch PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/imgui ${Stb_INCLUDE_DIR})
 
 target_link_libraries(FPSFromScratch PRIVATE asio::asio glfw imgui::imgui glm::glm)
