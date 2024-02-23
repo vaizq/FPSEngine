@@ -27,11 +27,11 @@ public:
     };
 
     explicit Game(const Config& cfg = Config{640, 480, "Game"});
-    ~Game();
+    virtual ~Game();
 
     void run();
 
-    virtual void handleEvent() {}
+    virtual void handleInput() {}
     virtual void update(Duration dt) {}
     virtual void render() {}
 

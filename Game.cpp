@@ -9,6 +9,11 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_glfw.h"
 
+void framebufferSizeCallback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
+
 Game::Game(const Config& cfg)
 {
     // glfw: initialize and configure
@@ -35,6 +40,8 @@ Game::Game(const Config& cfg)
     ImGui_ImplOpenGL3_Init("#version 150");
 
     glEnable(GL_DEPTH_TEST);
+
+    glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
 }
 
 Game::~Game()
@@ -50,16 +57,15 @@ void Game::run()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        handleEvent();
+        handleInput();
 
         update(mTimer.tick());
 
         ImGui::ShowDemoWindow();
 
         ImGui::Render();
-        glClearColor(1.00f, 0.05f, 0.05f, 1.0f);
+        glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         render();
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

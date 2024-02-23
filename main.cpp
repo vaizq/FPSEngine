@@ -1,10 +1,9 @@
 #include <iostream>
-#include "Game.h"
-
+#include "FPSGame.h"
 
 int main()
 {
-    Game g;
-    g.run();
+    FPSGame game;
+    game.run();
     return 0;
 }
