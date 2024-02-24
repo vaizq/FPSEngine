@@ -3,7 +3,7 @@
 
 int main()
 {
-    FPSGame game;
+    FPSGame& game = FPSGame::instance();
     game.run();
     return 0;
 }

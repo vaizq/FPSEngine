@@ -4,8 +4,7 @@
 
 #include "Mesh.h"
 #include "glad/glad.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
 : mVertices(std::move(vertices)), mIndices(std::move(indices)), mTextures(std::move(textures))
@@ -32,13 +31,22 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
     glEnableVertexAttribArray(2);
 }
 
+Mesh::~Mesh()
+{
+    /*
+    glDeleteBuffers(1, &mEBO);
+    glDeleteBuffers(1, &mVBO);
+    glDeleteVertexArrays(1, &mVAO);
+     */
+}
+
 
 /*
- * uniform TextureID diffuse0;
- * uniform TextureID diffuse1;
- * uniform TextureID specular0;
+ * uniform sampler2D diffuse0;
+ * uniform sampler2D diffuse1;
+ * uniform sampler2D specular0;
  */
-void Mesh::draw(Shader &shader)
+void Mesh::draw(Shader &shader, GLenum mode)
 {
     shader.use();
 
@@ -52,10 +60,10 @@ void Mesh::draw(Shader &shader)
         const Texture& tex = mTextures[i];
         switch (tex.type) {
             case Texture::Type::Diffuse:
-                shader.setUInt("Diffuse" + std::to_string(diffuseID++), i);
+                shader.setInt("Diffuse" + std::to_string(diffuseID++), i);
                 break;
             case Texture::Type::Specular:
-                shader.setUInt("Specular" + std::to_string(specularID++), i);
+                shader.setInt("Specular" + std::to_string(specularID++), i);
                 break;
         }
 
@@ -63,67 +71,8 @@ void Mesh::draw(Shader &shader)
     }
 
     glBindVertexArray(mVAO);
-    glDrawElements(GL_TRIANGLES, mIndices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(mode, mIndices.size(), GL_UNSIGNED_INT, 0);
 }
-
-Texture Texture::loadTexture(std::string path, Texture::Type type)
-{
-    Texture tex;
-    tex.type = type;
-    int x, y, n;
-    unsigned char* data = stbi_load(path.c_str(), &x, &y, &n, 0);
-
-    if (data) {
-        GLenum format = [n](){
-            switch (n) {
-                case 1:
-                    return GL_RED;
-                case 3:
-                    return GL_RGB;
-                case 4:
-                    return GL_RGBA;
-                default:
-                    return GL_RGB;
-            }
-        }();
-
-        glGenTextures(1, &tex.id);
-        glBindTexture(GL_TEXTURE_2D, tex.id);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, x, y, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        stbi_image_free(data);
-    }
-    else {
-        stbi_image_free(data);
-        throw std::runtime_error("Unable to load texture from " + path);
-    }
-
-    tex.path = std::move(path);
-    return tex;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

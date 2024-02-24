@@ -9,6 +9,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <vector>
+#include "Texture.h"
 
 
 struct Vertex
@@ -18,26 +19,14 @@ struct Vertex
     glm::vec2 textureCoordinate;
 };
 
-struct Texture
-{
-    enum class Type
-    {
-        Diffuse,
-        Specular
-    };
 
-    static Texture loadTexture(std::string path, Texture::Type type = Texture::Type::Diffuse);
-
-    unsigned id{};
-    Type type{};
-    std::string path;
-};
 
 class Mesh
 {
 public:
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::vector<Texture> textures);
-    void draw(Shader& shader);
+    ~Mesh();
+    void draw(Shader& shader, GLenum mode = GL_TRIANGLES);
 private:
     std::vector<Vertex> mVertices;
     std::vector<unsigned> mIndices;

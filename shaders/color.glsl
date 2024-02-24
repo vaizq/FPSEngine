@@ -6,5 +6,5 @@ out vec4 fragColor; // Output variable for fragment shader
 
 void main()
 {
-    fragColor = texture(Diffuse0, texCoord);
+    fragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 }

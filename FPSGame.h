@@ -11,24 +11,45 @@
 #include "Shader.h"
 #include "Mesh.h"
 #include <memory>
+#include <functional>
+#include <map>
+#include "Camera.h"
 
 
 class FPSGame : public Game
 {
 public:
-    FPSGame();
+    static FPSGame& instance() {
+        static FPSGame* self;
+        if (self == nullptr) {
+            self = new FPSGame;
+        }
+        return *self;
+    }
 
-    void handleInput() override;
 
     void update(Duration dt) override;
 
     void render() override;
 
 private:
+    FPSGame();
+    static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void cursorCallback(GLFWwindow* window, double xPos, double yPos);
+
     Shader mShader;
     std::unique_ptr<Mesh> mMesh;
-    glm::vec3 mPos{};
-    glm::vec3 mVelocity{};
+    Mesh mSphere;
+    glm::vec3 mVelo;
+    glm::vec3 mPos;
+    std::map<int, std::function<void()>> mPressHandlers;
+    std::map<int, std::function<void()>> mReleaseHandlers;
+    GLenum mDrawMode = GL_TRIANGLES;
+    float angle = 0.0f;
+    bool mRotate{false};
+    int mNVertices{100};
+    Camera mCamera;
 };
 
 

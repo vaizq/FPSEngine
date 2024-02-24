@@ -9,10 +9,7 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_glfw.h"
 
-void framebufferSizeCallback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
+
 
 Game::Game(const Config& cfg)
 {
@@ -24,6 +21,8 @@ Game::Game(const Config& cfg)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     mWindow = glfwCreateWindow(cfg.windowWidth, cfg.windowHeight, cfg.windowName.c_str(), nullptr, nullptr);
+    mWidth = cfg.windowWidth;
+    mHeight = cfg.windowHeight;
     if (!mWindow) {
         throw std::runtime_error("Failed to create window");
     }
@@ -40,8 +39,6 @@ Game::Game(const Config& cfg)
     ImGui_ImplOpenGL3_Init("#version 150");
 
     glEnable(GL_DEPTH_TEST);
-
-    glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
 }
 
 Game::~Game()

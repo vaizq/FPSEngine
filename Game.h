@@ -36,6 +36,8 @@ public:
     virtual void render() {}
 
 protected:
+    int mWidth;
+    int mHeight;
     GLFWwindow* mWindow;
 
 private:
