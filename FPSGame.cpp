@@ -7,6 +7,9 @@
 #include "Util.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "Geometry.h"
+#include <imgui.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_glfw.h>
 
 
 void FPSGame::framebufferSizeCallback(GLFWwindow* window, int width, int height)
@@ -34,15 +37,26 @@ static std::vector<unsigned int> indices = {  // note that we start from 0!
         1, 2, 3   // second Triangle
 };
 
-FPSGame::FPSGame()
-:   mShader{Util::getShaderPath("model.glsl").c_str(), Util::getShaderPath("color.glsl").c_str()},
+FPSGame& FPSGame::instance() {
+    static std::unique_ptr<FPSGame> self;
+    if (self == nullptr) {
+        auto window = Util::initGraphics(800, 600, "FPS Game");
+        self = std::unique_ptr<FPSGame>(new FPSGame(window));
+    }
+    return *self;
+}
+
+FPSGame::FPSGame(GLFWwindow* window)
+:   mWindow(window),
+    mShader{Util::getShaderPath("model.glsl").c_str(), Util::getShaderPath("color.glsl").c_str()},
     mSphere(Geomery::createSphere2(100))
 {
-    mMesh = std::make_unique<Mesh>(vertices, indices, std::vector<Texture>{Texture::loadFromFile(Util::getAssetPath("bathroom-tiling.jpg"))});
-
+    glfwGetWindowSize(mWindow, &mWidth, &mHeight);
     glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
     glfwSetKeyCallback(mWindow, keyCallback);
     glfwSetCursorPosCallback(mWindow, cursorCallback);
+
+    Util::initImgui(mWindow); // Initialize ImGui after my callbacks are installed
 
     // Switch drawing mode when R is pressed
     mPressHandlers[GLFW_KEY_M] = [this]() {
@@ -115,6 +129,11 @@ FPSGame::FPSGame()
     };
 }
 
+FPSGame::~FPSGame()
+{
+    Util::shutdownGraphics();
+}
+
 void FPSGame::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
     FPSGame& self = FPSGame::instance();
@@ -131,13 +150,15 @@ void FPSGame::keyCallback(GLFWwindow *window, int key, int scancode, int action,
                 self.mReleaseHandlers[key]();
             }
             break;
+        default:
+            break;
     }
 }
 
-void FPSGame::update(Game::Duration dt)
+void FPSGame::update(Duration dt)
 {
     if (mRotate)
-        angle += glm::radians(45.0f) * dt.count();
+        mAngle += glm::radians(45.0f) * dt.count();
     mCamera.translate(-mVelo.z * dt.count(), mVelo.x * dt.count());
 }
 
@@ -147,7 +168,7 @@ void FPSGame::render()
 
     glm::mat4 model(1);
     glm::mat4 projection(1);
-    model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, mAngle, glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 view = mCamera.getViewMatrix();
     projection = glm::perspective(glm::radians(45.0f), (float)mWidth / (float)mHeight, 0.1f, 100.0f);
 
@@ -175,3 +196,29 @@ void FPSGame::cursorCallback(GLFWwindow *window, double xPos, double yPos)
     prevX = static_cast<float> (xPos);
     prevY = static_cast<float> (yPos);
 }
+
+void FPSGame::run()
+{
+    while (!glfwWindowShouldClose(mWindow))
+    {
+        glfwPollEvents();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        update(mTimer.tick());
+
+        ImGui::ShowDemoWindow();
+
+        ImGui::Render();
+        glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        render();
+
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        glfwSwapBuffers(mWindow);
+    }
+}
+
+

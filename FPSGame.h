@@ -6,7 +6,8 @@
 #define FPSFROMSCRATCH_FPSGAME_H
 
 
-#include "Game.h"
+#include "include/glad/glad.h"
+#include <GLFW/glfw3.h>
 #include <glm/vec3.hpp>
 #include "Shader.h"
 #include "Mesh.h"
@@ -14,39 +15,42 @@
 #include <functional>
 #include <map>
 #include "Camera.h"
+#include <chrono>
+#include "DeltaTimer.hpp"
+#include "Util.h"
 
 
-class FPSGame : public Game
+class FPSGame
 {
 public:
-    static FPSGame& instance() {
-        static FPSGame* self;
-        if (self == nullptr) {
-            self = new FPSGame;
-        }
-        return *self;
-    }
+    using Clock = std::chrono::steady_clock;
+    using Duration = std::chrono::duration<float>;
 
+    static FPSGame& instance();
+    ~FPSGame();
 
-    void update(Duration dt) override;
-
-    void render() override;
+    void update(Duration dt);
+    void render();
+    void run();
 
 private:
-    FPSGame();
+    FPSGame(GLFWwindow* window);
     static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
     static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
     static void cursorCallback(GLFWwindow* window, double xPos, double yPos);
 
+    GLFWwindow* mWindow;
+    int mWidth{};
+    int mHeight{};
+    DeltaTimer<Clock> mTimer;
     Shader mShader;
-    std::unique_ptr<Mesh> mMesh;
     Mesh mSphere;
     glm::vec3 mVelo;
     glm::vec3 mPos;
     std::map<int, std::function<void()>> mPressHandlers;
     std::map<int, std::function<void()>> mReleaseHandlers;
     GLenum mDrawMode = GL_TRIANGLES;
-    float angle = 0.0f;
+    float mAngle = 0.0f;
     bool mRotate{false};
     int mNVertices{100};
     Camera mCamera;

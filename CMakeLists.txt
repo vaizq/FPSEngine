@@ -13,7 +13,6 @@ find_package(glm CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 find_package(assimp CONFIG REQUIRED)
 add_executable(FPSFromScratch main.cpp
-        Game.cpp
         extern/glad.c
         extern/imgui_impl_glfw.cpp
         extern/imgui_impl_opengl3.cpp
@@ -23,7 +22,8 @@ add_executable(FPSFromScratch main.cpp
         Model.cpp
         Util.h
         Texture.cpp
-        Camera.cpp)
+        Camera.cpp
+        Util.cpp)
 
 target_include_directories(FPSFromScratch PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/imgui ${Stb_INCLUDE_DIR})
 

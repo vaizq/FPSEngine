@@ -7,24 +7,18 @@
 
 
 #include <string>
+#include "glad/glad.h"
+#include <GLFW/glfw3.h>
 
 namespace Util
 {
+    std::string getShaderPath(const std::string& shaderName);
+    std::string getAssetPath(const std::string& assetName);
 
-#ifndef SRC_DIR
-#define SRC_DIR "."
-#endif
 
-    static constexpr std::string_view assetsDir = SRC_DIR "/assets";
-    static constexpr std::string_view shadersDir = SRC_DIR "/shaders";
-
-    static std::string getShaderPath(const std::string& shaderName) {
-        return std::string(shadersDir) + '/' + shaderName;
-    }
-
-    static std::string getAssetPath(const std::string& assetName) {
-        return std::string(assetsDir) + '/' + assetName;
-    }
+    GLFWwindow* initGraphics(int windowWidth = 640, int windowHeight = 480, const std::string& windowName = "GLFW Window");
+    void shutdownGraphics();
+    void initImgui(GLFWwindow* window);
 }
 
 #endif //FPSFROMSCRATCH_UTIL_H
