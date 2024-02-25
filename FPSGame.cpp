@@ -10,6 +10,11 @@
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
+#include <algorithm>
+#include <numeric>
+
+
+using namespace std::chrono_literals;
 
 
 void FPSGame::framebufferSizeCallback(GLFWwindow* window, int width, int height)
@@ -155,11 +160,29 @@ void FPSGame::keyCallback(GLFWwindow *window, int key, int scancode, int action,
     }
 }
 
+static void displayFPS(FPSGame::Duration dt)
+{
+    static std::vector<float> fpsMeasurements{};
+    fpsMeasurements.push_back(1.0f / dt.count());
+    static float fps{1.0f / dt.count()};
+    if (fpsMeasurements.size() > 10) {
+        float total = std::accumulate(fpsMeasurements.begin(), fpsMeasurements.end(), 0.0f);
+        fps = total / fpsMeasurements.size();
+        fpsMeasurements.clear();
+        assert(fpsMeasurements.size() == 0);
+    }
+    ImGui::Begin("Status");
+    ImGui::Text("FPS %.0f", fps);
+    ImGui::End();
+}
+
 void FPSGame::update(Duration dt)
 {
     if (mRotate)
         mAngle += glm::radians(45.0f) * dt.count();
     mCamera.translate(-mVelo.z * dt.count(), mVelo.x * dt.count());
+
+    displayFPS(dt);
 }
 
 void FPSGame::render()
@@ -207,8 +230,6 @@ void FPSGame::run()
         ImGui::NewFrame();
 
         update(mTimer.tick());
-
-        ImGui::ShowDemoWindow();
 
         ImGui::Render();
         glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
