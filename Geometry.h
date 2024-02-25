@@ -8,34 +8,9 @@
 #include "Mesh.h"
 #include <glm/glm.hpp>
 
-namespace Geomery
+namespace Geometry
 {
-    static Mesh createSphere()
-    {
-        std::vector<Vertex> vertices;
-        std::vector<unsigned int> indices;
-
-        constexpr float R = 1.0f;
-        constexpr float delta = R / 100;
-        constexpr float deltaAngle = glm::radians(360.0f) / 100;
-
-        unsigned int i = 0;
-        for (float y = -R; y <= R; y += delta) {
-            const float r = std::sqrt(R * R - y * y);
-            for (float a = 0.0f; a < glm::radians(360.0f); a += deltaAngle) {
-                float x = r * std::cos(a);
-                float z = r * std::sin(a);
-                vertices.push_back(Vertex{{x, y, z},
-                                          {},
-                                          {}});
-                indices.push_back(i++);
-            }
-        }
-
-        return Mesh{vertices, indices, {}};
-    }
-
-    static Mesh createSphere2(int nVertices)
+    Mesh makeSphere(int nVertices = 10)
     {
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
@@ -54,8 +29,8 @@ namespace Geomery
                 float angle = ai * deltaAngle;
                 float x = r * std::cos(angle);
                 float z = r * std::sin(angle);
-
-                vertices.push_back(Vertex{{x, y, z},{},{}});
+                glm::vec3 pos{x, y, z};
+                vertices.emplace_back(pos, glm::normalize(pos),glm::vec2{});
             }
         }
 
@@ -73,7 +48,6 @@ namespace Geomery
 
         // Create rectangles
         const int topIndex = vertices.size() - 1;
-
         for (int i = 1; i < topIndex; ++i) {
             int upper = i + nRim;
             int right = i + 1;
@@ -103,6 +77,103 @@ namespace Geomery
 
         return Mesh{vertices, indices, {}};
     }
+
+    Mesh makeBox(const glm::vec3& size = glm::vec3{1.0f, 1.0f, 1.0f})
+    {
+        const float dx = size.x / 2.0f;
+        const float dy = size.y / 2.0f;
+        const float dz = size.z / 2.0f;
+
+        std::vector<Vertex> vertices;
+        std::vector<unsigned> indices;
+
+
+
+        auto makeVertex = [&vertices](const glm::vec3& pos){
+            vertices.emplace_back(pos, glm::normalize(pos), glm::vec2{});
+        };
+
+        /*
+                    6----------7
+                   /|         /|
+                  / |        / |
+                 2----------3  |
+                 |  |       |  |
+                 |  |       |  |
+                 |  4-------|--5
+                 | /        | /
+                 |/         |/
+                 0----------1
+        */
+
+        makeVertex({-dx, -dy, dz});
+        makeVertex({dx, -dy, dz});
+        makeVertex({-dx, dy, dz});
+        makeVertex({dx, dy, dz});
+        makeVertex({-dx, -dy, -dz});
+        makeVertex({dx, -dy, -dz});
+        makeVertex({-dx, dy, -dz});
+        makeVertex({dx, dy, -dz});
+
+        // front
+        indices.push_back(0);
+        indices.push_back(2);
+        indices.push_back(1);
+        indices.push_back(1);
+        indices.push_back(2);
+        indices.push_back(3);
+
+        // right
+        indices.push_back(5);
+        indices.push_back(1);
+        indices.push_back(3);
+        indices.push_back(5);
+        indices.push_back(3);
+        indices.push_back(7);
+
+        // top
+        indices.push_back(3);
+        indices.push_back(2);
+        indices.push_back(6);
+        indices.push_back(3);
+        indices.push_back(6);
+        indices.push_back(7);
+
+        // bottom
+        indices.push_back(5);
+        indices.push_back(4);
+        indices.push_back(0);
+        indices.push_back(5);
+        indices.push_back(0);
+        indices.push_back(1);
+
+        // left
+        indices.push_back(0);
+        indices.push_back(4);
+        indices.push_back(6);
+        indices.push_back(0);
+        indices.push_back(6);
+        indices.push_back(2);
+
+        // back
+        indices.push_back(4);
+        indices.push_back(5);
+        indices.push_back(7);
+        indices.push_back(4);
+        indices.push_back(7);
+        indices.push_back(6);
+
+
+        return Mesh{std::move(vertices), std::move(indices), {}};
+    }
 }
 
 #endif //FPSFROMSCRATCH_GEOMETRY_H
+
+
+
+
+
+
+
+

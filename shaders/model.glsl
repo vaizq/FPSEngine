@@ -9,9 +9,15 @@ uniform mat4 view;
 uniform mat4 projection;
 
 out vec2 texCoord;
+out float lightIntensity;
 
 void main()
 {
+    vec3 lightPosition = vec3(0.0f, 10.0f, 0.0f);
+    vec3 worldPos = (model * vec4(inPosition, 1.0)).xyz;
+    vec3 lightDirection = worldPos - lightPosition;
+
     gl_Position = projection * view * model * vec4(inPosition, 1.0);
     texCoord = inTexCoord;
+    lightIntensity = 0.1 + min(0.9, (1.0 + dot(normalize(inNormal), normalize(lightDirection))) / 2.0);
 }

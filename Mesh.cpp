@@ -29,7 +29,9 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
     // textureCoordinate
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, textureCoordinate));
     glEnableVertexAttribArray(2);
-    std::cout << "Initialized" << std::endl;
+
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, color));
+    glEnableVertexAttribArray(3);
 }
 
 Mesh::~Mesh()

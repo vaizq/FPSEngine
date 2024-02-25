@@ -45,6 +45,7 @@ private:
     DeltaTimer<Clock> mTimer;
     Shader mShader;
     Mesh mSphere;
+    Mesh mBox;
     glm::vec3 mVelo;
     glm::vec3 mPos;
     std::map<int, std::function<void()>> mPressHandlers;

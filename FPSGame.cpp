@@ -52,9 +52,10 @@ FPSGame& FPSGame::instance() {
 }
 
 FPSGame::FPSGame(GLFWwindow* window)
-:   mWindow(window),
+:   mWindow{window},
     mShader{Util::getShaderPath("model.glsl").c_str(), Util::getShaderPath("color.glsl").c_str()},
-    mSphere(Geomery::createSphere2(100))
+    mSphere{Geometry::makeSphere()},
+    mBox{Geometry::makeBox()}
 {
     glfwGetWindowSize(mWindow, &mWidth, &mHeight);
     glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
@@ -100,24 +101,24 @@ FPSGame::FPSGame(GLFWwindow* window)
 
     mPressHandlers[GLFW_KEY_UP] = [this]() {
         mNVertices *= 2;
-        mSphere = Geomery::createSphere2(mNVertices);
+        mSphere = Geometry::makeSphere(mNVertices);
     };
     mReleaseHandlers[GLFW_KEY_DOWN] = [this]() {
         mNVertices /= 2;
-        mSphere = Geomery::createSphere2(mNVertices);
+        mSphere = Geometry::makeSphere(mNVertices);
     };
 
     mPressHandlers[GLFW_KEY_W] = [this]() {
-        mVelo.z = -1.f;
+        mVelo.z = -5.f;
     };
     mPressHandlers[GLFW_KEY_D] = [this]() {
-        mVelo.x = 1.f;
+        mVelo.x = 5.f;
     };
     mPressHandlers[GLFW_KEY_S] = [this]() {
-        mVelo.z = 1.f;
+        mVelo.z = 5.f;
     };
     mPressHandlers[GLFW_KEY_A] = [this]() {
-        mVelo.x = -1.f;
+        mVelo.x = -5.f;
     };
 
     mReleaseHandlers[GLFW_KEY_W] = [this]() {
@@ -199,6 +200,10 @@ void FPSGame::render()
     mShader.setMat4("projection", projection);
 
     mSphere.draw(mShader, mDrawMode);
+
+    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+    mShader.setMat4("model", model);
+    mBox.draw(mShader, mDrawMode);
 }
 
 void FPSGame::cursorCallback(GLFWwindow *window, double xPos, double yPos)
