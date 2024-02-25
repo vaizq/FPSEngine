@@ -19,15 +19,21 @@ struct Vertex
     glm::vec2 textureCoordinate;
 };
 
-
-
+// Disable copying
+//
 class Mesh
 {
 public:
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::vector<Texture> textures);
     ~Mesh();
+    Mesh(Mesh&& other) noexcept;
+    Mesh& operator=(Mesh&& other) noexcept;
+    Mesh(const Mesh&) = delete;
+    Mesh& operator=(const Mesh&) = delete;
+
     void draw(Shader& shader, GLenum mode = GL_TRIANGLES);
 private:
+    void deleteBuffers();
     std::vector<Vertex> mVertices;
     std::vector<unsigned> mIndices;
     std::vector<Texture> mTextures;

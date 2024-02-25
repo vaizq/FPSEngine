@@ -74,10 +74,6 @@ namespace Geomery
         // Create rectangles
         const int topIndex = vertices.size() - 1;
 
-        auto rim = [&](int index) {
-
-        };
-
         for (int i = 1; i < topIndex; ++i) {
             int upper = i + nRim;
             int right = i + 1;

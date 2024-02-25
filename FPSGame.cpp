@@ -169,7 +169,6 @@ static void displayFPS(FPSGame::Duration dt)
         float total = std::accumulate(fpsMeasurements.begin(), fpsMeasurements.end(), 0.0f);
         fps = total / fpsMeasurements.size();
         fpsMeasurements.clear();
-        assert(fpsMeasurements.size() == 0);
     }
     ImGui::Begin("Status");
     ImGui::Text("FPS %.0f", fps);

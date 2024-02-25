@@ -29,15 +29,12 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
     // textureCoordinate
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, textureCoordinate));
     glEnableVertexAttribArray(2);
+    std::cout << "Initialized" << std::endl;
 }
 
 Mesh::~Mesh()
 {
-    /*
-    glDeleteBuffers(1, &mEBO);
-    glDeleteBuffers(1, &mVBO);
-    glDeleteVertexArrays(1, &mVAO);
-     */
+    deleteBuffers();
 }
 
 
@@ -74,5 +71,34 @@ void Mesh::draw(Shader &shader, GLenum mode)
     glDrawElements(mode, mIndices.size(), GL_UNSIGNED_INT, 0);
 }
 
+Mesh::Mesh(Mesh &&other) noexcept
+{
+    *this = std::move(other);
+}
 
+Mesh &Mesh::operator=(Mesh &&other) noexcept
+{
+    if (this != &other) {
+        deleteBuffers();
+        mVertices = std::move(other.mVertices);
+        mIndices = std::move(other.mIndices);
+        mTextures = std::move(other.mTextures);
+        mVAO = other.mVAO;
+        mVBO = other.mVBO;
+        mEBO = other.mEBO;
 
+        other.mVAO = 0;
+        other.mVBO = 0;
+        other.mEBO = 0;
+    }
+
+    return *this;
+}
+
+void Mesh::deleteBuffers()
+{
+    glDeleteBuffers(1, &mEBO);
+    glDeleteBuffers(1, &mVBO);
+    glDeleteVertexArrays(1, &mVAO);
+    std::cout << "Buffers are deleted" << std::endl;
+}

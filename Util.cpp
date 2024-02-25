@@ -35,6 +35,7 @@ GLFWwindow *Util::initGraphics(int windowWidth, int windowHeight, const std::str
         throw std::runtime_error("Failed to create window");
     }
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(0); // Unlimited FPS
 
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         throw std::runtime_error("Failed to initialize glad");
