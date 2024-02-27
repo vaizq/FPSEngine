@@ -27,16 +27,19 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal));
     glEnableVertexAttribArray(1);
     // textureCoordinate
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, textureCoordinate));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoord));
     glEnableVertexAttribArray(2);
 
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, color));
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, tangent));
     glEnableVertexAttribArray(3);
+
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, bitangent));
+    glEnableVertexAttribArray(4);
 }
 
 Mesh::~Mesh()
 {
-    deleteBuffers();
+    // deleteBuffers();
 }
 
 
@@ -57,13 +60,11 @@ void Mesh::draw(Shader &shader, GLenum mode)
         glActiveTexture(GL_TEXTURE0 + i);
 
         const Texture& tex = mTextures[i];
-        switch (tex.type) {
-            case Texture::Type::Diffuse:
-                shader.setInt("Diffuse" + std::to_string(diffuseID++), i);
-                break;
-            case Texture::Type::Specular:
-                shader.setInt("Specular" + std::to_string(specularID++), i);
-                break;
+        if (tex.type == "texture_diffuse") {
+            shader.setInt("texture_diffuse" + std::to_string(diffuseID++), i);
+        }
+        else if (tex.type == "texture_specular") {
+            shader.setInt("texture_specular" + std::to_string(specularID++), i);
         }
 
         glBindTexture(GL_TEXTURE_2D, tex.id);

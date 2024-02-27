@@ -35,8 +35,10 @@ public:
     bool gammaCorrection;
 
     // constructor, expects a filepath to a 3D model.
-    explicit Model(string const &path, bool gamma = false) : gammaCorrection(gamma)
+    explicit Model(string const &path, bool gamma = false, bool flipVertically = true)
+    : gammaCorrection(gamma)
     {
+        stbi_set_flip_vertically_on_load(flipVertically);
         loadModel(path);
     }
 

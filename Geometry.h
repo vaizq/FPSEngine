@@ -255,6 +255,42 @@ namespace Geometry
 
         return Mesh{std::move(vertices), std::move(indices), {}};
     }
+
+    Mesh makePlane(float width, float height, std::vector<Texture> textures = {}) {
+        std::vector<Vertex> vertices;
+        std::vector<unsigned> indices;
+
+        constexpr glm::vec3 up{0.0f, 1.0f, 0.0f};
+        const float dx = width / 2.0f;
+        const float dz = height / 2.0f;
+
+
+        vertices.emplace_back(glm::vec3{-dx, 0.f, dz},
+                              glm::normalize(up),
+                              glm::vec2{0.0f, 0.0f});
+
+        vertices.emplace_back(glm::vec3{-dx, 0.f, -dz},
+                              glm::normalize(up),
+                              glm::vec2{0.0f, 1.0f});
+
+        vertices.emplace_back(glm::vec3{dx, 0.f, -dz},
+                              glm::normalize(up),
+                              glm::vec2{1.0f, 1.0f});
+
+        vertices.emplace_back(glm::vec3{dx, 0.f, dz},
+                              glm::normalize(up),
+                              glm::vec2{1.0f, 0.0f});
+
+        indices.push_back(0);
+        indices.push_back(1);
+        indices.push_back(2);
+        indices.push_back(0);
+        indices.push_back(2);
+        indices.push_back(3);
+
+        return Mesh{std::move(vertices), std::move(indices), std::move(textures)};
+    }
+
 }
 
 #endif //FPSFROMSCRATCH_GEOMETRY_H

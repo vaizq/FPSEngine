@@ -18,6 +18,8 @@
 #include <chrono>
 #include "DeltaTimer.hpp"
 #include "Util.h"
+#include "Model.h"
+#include "Player.h"
 
 
 class FPSGame
@@ -43,7 +45,8 @@ private:
     int mWidth{};
     int mHeight{};
     DeltaTimer<Clock> mTimer;
-    Shader mShader;
+    Shader mTextureShader;
+    Shader mColorShader;
     Mesh mSphere;
     Mesh mBox;
     Mesh mBoxWFrame;
@@ -57,6 +60,11 @@ private:
     int mNVertices{100};
     Camera mCamera;
     bool mUseCamera{false};
+    Model mAk47Model;
+    Model mBackPackModel;
+    bool mUseColorShader{true};
+    Player mPlayer;
+    Mesh mGroundPlane;
 };
 
 

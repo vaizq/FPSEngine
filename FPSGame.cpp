@@ -53,15 +53,20 @@ FPSGame& FPSGame::instance() {
 
 FPSGame::FPSGame(GLFWwindow* window)
 :   mWindow{window},
-    mShader{Util::getShaderPath("model.glsl").c_str(), Util::getShaderPath("color.glsl").c_str()},
+    mTextureShader{Util::getShaderPath("model.vert").c_str(), Util::getShaderPath("model.frag").c_str()},
+    mColorShader{Util::getShaderPath("model.vert").c_str(), Util::getShaderPath("color.frag").c_str()},
     mSphere{Geometry::makeSphere()},
     mBox{Geometry::makeBox()},
-    mBoxWFrame{Geometry::makeBoxWireframe()}
+    mBoxWFrame{Geometry::makeBoxWireframe()},
+    mBackPackModel{Util::getAssetPath("Backpack/backpack.obj"), true, true},
+    mAk47Model{Util::getAssetPath("ak47/ak47.obj"), true, false},
+    mGroundPlane{Geometry::makePlane(100.0f, 100.0f, {Texture::loadFromFile(Util::getAssetPath("bathroom-tiling.jpg"))})}
 {
     glfwGetWindowSize(mWindow, &mWidth, &mHeight);
     glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
     glfwSetKeyCallback(mWindow, keyCallback);
     glfwSetCursorPosCallback(mWindow, cursorCallback);
+
 
     Util::initImgui(mWindow); // Initialize ImGui after my callbacks are installed
 
@@ -210,17 +215,28 @@ void FPSGame::update(Duration dt)
     displayFPS(dt);
 
 
-    ImGui::Begin("Box");
-    static glm::vec3 size{1.f, 1.f, 1.f};
-    if (ImGui::SliderFloat3("BoxDimensions", &size[0], 0.f, 100.f)) {
-        mBoxWFrame = Geometry::makeBoxWireframe(size);
+    ImGui::Begin("Settings");
+    {
+        static glm::vec3 size{1.f, 1.f, 1.f};
+        if (ImGui::SliderFloat3("BoxDimensions", &size[0], 0.f, 100.f)) {
+            mBoxWFrame = Geometry::makeBoxWireframe(size);
+        }
+    }
+    {
+        if (ImGui::Button(mUseColorShader ? "Use Texture shader" : "Use Color shader")) {
+            mUseColorShader = !mUseColorShader;
+        }
     }
     ImGui::End();
+
+    mPlayer.onGui();
 }
 
 void FPSGame::render()
 {
-    mShader.use();
+    Shader& shader = mUseColorShader ? mColorShader : mTextureShader;
+
+    shader.use();
 
     glm::mat4 model(1);
     glm::mat4 projection(1);
@@ -228,19 +244,33 @@ void FPSGame::render()
     glm::mat4 view = mCamera.getViewMatrix();
     projection = glm::perspective(glm::radians(45.0f), (float)mWidth / (float)mHeight, 0.1f, 100.0f);
 
-    mShader.setMat4("model", model);
-    mShader.setMat4("view", view);
-    mShader.setMat4("projection", projection);
+    shader.setMat4("model", model);
+    shader.setMat4("view", view);
+    shader.setMat4("projection", projection);
 
-    mSphere.draw(mShader, mDrawMode);
+    mSphere.draw(shader, mDrawMode);
 
     model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-    mShader.setMat4("model", model);
-    mBox.draw(mShader, mDrawMode);
+    shader.setMat4("model", model);
+    mBox.draw(shader, mDrawMode);
 
-    model = glm::translate(model, glm::vec3(4.0f, 0.0f, 0.0f));
-    mShader.setMat4("model", model);
-    mBoxWFrame.draw(mShader, mDrawMode);
+    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+    shader.setMat4("model", model);
+    mBoxWFrame.draw(shader, mDrawMode);
+
+    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+    shader.setMat4("model", model);
+    mBackPackModel.draw(shader);
+
+    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+    shader.setMat4("model", model);
+    mAk47Model.draw(shader);
+
+    model = glm::translate(model, glm::vec3(0.0f, -4.0f, 0.0f));
+    shader.setMat4("model", model);
+    mGroundPlane.draw(shader);
+
+    mPlayer.draw(shader);
 }
 
 
