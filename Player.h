@@ -17,7 +17,7 @@ class Player
 public:
     Player()
     :   mCamera{},
-        mGun{Util::getAssetPath("ak47/ak47.obj"), true, false}
+        mGun{Util::getAssetPath("models/ak47/ak47.obj"), true, false}
     {}
 
     void onGui()

@@ -23,7 +23,8 @@ add_executable(FPSFromScratch main.cpp
         Util.h
         Texture.cpp
         Camera.cpp
-        Util.cpp)
+        Util.cpp
+        ResourceManager.cpp)
 
 target_include_directories(FPSFromScratch PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/imgui ${Stb_INCLUDE_DIR})
 

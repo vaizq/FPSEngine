@@ -58,9 +58,9 @@ FPSGame::FPSGame(GLFWwindow* window)
     mSphere{Geometry::makeSphere()},
     mBox{Geometry::makeBox()},
     mBoxWFrame{Geometry::makeBoxWireframe()},
-    mBackPackModel{Util::getAssetPath("Backpack/backpack.obj"), true, true},
-    mAk47Model{Util::getAssetPath("ak47/ak47.obj"), true, false},
-    mGroundPlane{Geometry::makePlane(100.0f, 100.0f, {Texture::loadFromFile(Util::getAssetPath("bathroom-tiling.jpg"))})}
+    mBackPackModel{Util::getAssetPath("models/Backpack/backpack.obj"), true, true},
+    mAk47Model{Util::getAssetPath("models/ak47/ak47.obj"), true, false},
+    mGroundPlane{Geometry::makePlane(100.0f, 100.0f, {Texture::loadFromFile(Util::getAssetPath("textures/bathroom-tiling.jpg"))})}
 {
     glfwGetWindowSize(mWindow, &mWidth, &mHeight);
     glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);

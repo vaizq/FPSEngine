@@ -6,6 +6,7 @@
 #define FPSFROMSCRATCH_TEXTURE_H
 
 #include <string>
+#include <memory>
 
 struct Texture
 {
@@ -15,6 +16,9 @@ struct Texture
     std::string type;
     std::string path;
 };
+
+
+
 
 
 #endif //FPSFROMSCRATCH_TEXTURE_H
