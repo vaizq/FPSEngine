@@ -9,16 +9,15 @@
 #include <stdexcept>
 
 
-Texture Texture::loadFromFile(std::string path, Texture::Type type)
+Texture Texture::loadFromFile(std::string path, bool gamma)
 {
     Texture tex;
-    tex.type = type;
-    int x, y, n;
-    unsigned char* data = stbi_load(path.c_str(), &x, &y, &n, 0);
+    int width, height, numComponents;
+    unsigned char* data = stbi_load(path.c_str(), &width, &height, &numComponents, 0);
 
     if (data) {
-        GLenum format = [n](){
-            switch (n) {
+        GLenum format = [numComponents](){
+            switch (numComponents) {
                 case 1:
                     return GL_RED;
                 case 3:
@@ -32,7 +31,7 @@ Texture Texture::loadFromFile(std::string path, Texture::Type type)
 
         glGenTextures(1, &tex.id);
         glBindTexture(GL_TEXTURE_2D, tex.id);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, x, y, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

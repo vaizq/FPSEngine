@@ -55,7 +55,8 @@ FPSGame::FPSGame(GLFWwindow* window)
 :   mWindow{window},
     mShader{Util::getShaderPath("model.glsl").c_str(), Util::getShaderPath("color.glsl").c_str()},
     mSphere{Geometry::makeSphere()},
-    mBox{Geometry::makeBox()}
+    mBox{Geometry::makeBox()},
+    mBoxWFrame{Geometry::makeBoxWireframe()}
 {
     glfwGetWindowSize(mWindow, &mWidth, &mHeight);
     glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
@@ -89,9 +90,11 @@ FPSGame::FPSGame(GLFWwindow* window)
         int curMode = glfwGetInputMode(mWindow, GLFW_CURSOR);
         if (curMode == GLFW_CURSOR_NORMAL) {
             glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            mUseCamera = true;
         }
         else {
             glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            mUseCamera = false;
         }
     };
 
@@ -161,6 +164,28 @@ void FPSGame::keyCallback(GLFWwindow *window, int key, int scancode, int action,
     }
 }
 
+void FPSGame::cursorCallback(GLFWwindow *window, double xPos, double yPos)
+{
+
+    static float prevX{static_cast<float>(xPos)};
+    static float prevY{static_cast<float>(yPos)};
+
+    FPSGame& self = FPSGame::instance();
+    auto dx = (float) (xPos - prevX);
+    auto dy = (float) (yPos - prevY);
+
+    float sensitivity = 0.001f;
+
+    if (self.mUseCamera)
+    {
+        self.mCamera.rotateYaw(sensitivity * dx);
+        self.mCamera.rotatePitch(-sensitivity * dy);
+    }
+
+    prevX = static_cast<float> (xPos);
+    prevY = static_cast<float> (yPos);
+}
+
 static void displayFPS(FPSGame::Duration dt)
 {
     static std::vector<float> fpsMeasurements{};
@@ -183,6 +208,14 @@ void FPSGame::update(Duration dt)
     mCamera.translate(-mVelo.z * dt.count(), mVelo.x * dt.count());
 
     displayFPS(dt);
+
+
+    ImGui::Begin("Box");
+    static glm::vec3 size{1.f, 1.f, 1.f};
+    if (ImGui::SliderFloat3("BoxDimensions", &size[0], 0.f, 100.f)) {
+        mBoxWFrame = Geometry::makeBoxWireframe(size);
+    }
+    ImGui::End();
 }
 
 void FPSGame::render()
@@ -204,25 +237,13 @@ void FPSGame::render()
     model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
     mShader.setMat4("model", model);
     mBox.draw(mShader, mDrawMode);
+
+    model = glm::translate(model, glm::vec3(4.0f, 0.0f, 0.0f));
+    mShader.setMat4("model", model);
+    mBoxWFrame.draw(mShader, mDrawMode);
 }
 
-void FPSGame::cursorCallback(GLFWwindow *window, double xPos, double yPos)
-{
-    static float prevX{static_cast<float>(xPos)};
-    static float prevY{static_cast<float>(yPos)};
 
-    FPSGame& self = FPSGame::instance();
-    auto dx = (float) (xPos - prevX);
-    auto dy = (float) (yPos - prevY);
-
-    float sensitivity = 0.001f;
-
-    self.mCamera.rotateYaw(sensitivity * dx);
-    self.mCamera.rotatePitch(-sensitivity * dy);
-
-    prevX = static_cast<float> (xPos);
-    prevY = static_cast<float> (yPos);
-}
 
 void FPSGame::run()
 {

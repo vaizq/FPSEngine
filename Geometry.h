@@ -166,6 +166,95 @@ namespace Geometry
 
         return Mesh{std::move(vertices), std::move(indices), {}};
     }
+
+    Mesh makeBoxWireframe(const glm::vec3& size = glm::vec3{1.0f, 1.0f, 1.0f})
+    {
+        const float dx = size.x / 2.0f;
+        const float dy = size.y / 2.0f;
+        const float dz = size.z / 2.0f;
+
+        std::vector<Vertex> vertices;
+        std::vector<unsigned> indices;
+
+        auto makeVertex = [&vertices](const glm::vec3& pos){
+            vertices.emplace_back(pos, glm::normalize(pos), glm::vec2{});
+        };
+
+        /*
+                    6----------7
+                   /|         /|
+                  / |        / |
+                 2----------3  |
+                 |  |       |  |
+                 |  |       |  |
+                 |  4-------|--5
+                 | /        | /
+                 |/         |/
+                 0----------1
+        */
+
+        makeVertex({-dx, -dy, dz});
+        makeVertex({dx, -dy, dz});
+        makeVertex({-dx, dy, dz});
+        makeVertex({dx, dy, dz});
+        makeVertex({-dx, -dy, -dz});
+        makeVertex({dx, -dy, -dz});
+        makeVertex({-dx, dy, -dz});
+        makeVertex({dx, dy, -dz});
+
+        // front
+        indices.push_back(0);
+        indices.push_back(1);
+        indices.push_back(1);
+        indices.push_back(3);
+        indices.push_back(3);
+        indices.push_back(2);
+        indices.push_back(2);
+        indices.push_back(0);
+
+        // right
+        indices.push_back(1);
+        indices.push_back(5);
+        indices.push_back(1);
+        indices.push_back(3);
+        indices.push_back(3);
+        indices.push_back(7);
+        indices.push_back(5);
+        indices.push_back(7);
+
+        // bottom
+        indices.push_back(0);
+        indices.push_back(1);
+        indices.push_back(1);
+        indices.push_back(5);
+        indices.push_back(5);
+        indices.push_back(4);
+        indices.push_back(0);
+        indices.push_back(4);
+
+        // left
+        indices.push_back(0);
+        indices.push_back(4);
+        indices.push_back(0);
+        indices.push_back(2);
+        indices.push_back(2);
+        indices.push_back(6);
+        indices.push_back(4);
+        indices.push_back(6);
+
+        // back
+        indices.push_back(4);
+        indices.push_back(5);
+        indices.push_back(5);
+        indices.push_back(7);
+        indices.push_back(6);
+        indices.push_back(7);
+        indices.push_back(4);
+        indices.push_back(6);
+
+
+        return Mesh{std::move(vertices), std::move(indices), {}};
+    }
 }
 
 #endif //FPSFROMSCRATCH_GEOMETRY_H

@@ -46,6 +46,7 @@ private:
     Shader mShader;
     Mesh mSphere;
     Mesh mBox;
+    Mesh mBoxWFrame;
     glm::vec3 mVelo;
     glm::vec3 mPos;
     std::map<int, std::function<void()>> mPressHandlers;
@@ -55,6 +56,7 @@ private:
     bool mRotate{false};
     int mNVertices{100};
     Camera mCamera;
+    bool mUseCamera{false};
 };
 
 

@@ -9,16 +9,10 @@
 
 struct Texture
 {
-    enum class Type
-    {
-        Diffuse,
-        Specular
-    };
-
-    static Texture loadFromFile(std::string path, Texture::Type type = Texture::Type::Diffuse);
+    static Texture loadFromFile(std::string path, bool gamma = false);
 
     unsigned id{};
-    Type type{};
+    std::string type;
     std::string path;
 };
 
