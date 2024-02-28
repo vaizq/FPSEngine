@@ -12,35 +12,14 @@
 #include <imgui_impl_glfw.h>
 #include <algorithm>
 #include <numeric>
+#include <thread>
 
 
 using namespace std::chrono_literals;
 
 
-void FPSGame::framebufferSizeCallback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-    FPSGame& self = FPSGame::instance();
-    self.mWidth = width;
-    self.mHeight = height;
-}
+static float speed = 10.0f;
 
-static std::vector<Vertex> squareMesh()
-{
-    return {
-        Vertex{glm::vec3{0.5f, 0.5f, 0.0f}, glm::vec3{}, glm::vec2{0.5f, 0.5f}},
-        Vertex{glm::vec3{0.5f, -0.5f, 0.0f}, glm::vec3{}, glm::vec2{0.5f, -0.5f}},
-        Vertex{glm::vec3{-0.5f, -0.5f, 0.0f}, glm::vec3{}, glm::vec2{-0.5f, -0.5f}},
-        Vertex{glm::vec3{-0.5f, 0.5f, 0.0f}, glm::vec3{}, glm::vec2{-0.5f, 0.5f}}
-    };
-}
-
-static std::vector<Vertex> vertices = squareMesh();
-
-static std::vector<unsigned int> indices = {  // note that we start from 0!
-        0, 1, 3,  // first Triangle
-        1, 2, 3   // second Triangle
-};
 
 FPSGame& FPSGame::instance() {
     static std::unique_ptr<FPSGame> self;
@@ -51,6 +30,7 @@ FPSGame& FPSGame::instance() {
     return *self;
 }
 
+
 FPSGame::FPSGame(GLFWwindow* window)
 :   mWindow{window},
     mTextureShader{Util::getShaderPath("model.vert").c_str(), Util::getShaderPath("model.frag").c_str()},
@@ -58,9 +38,8 @@ FPSGame::FPSGame(GLFWwindow* window)
     mSphere{Geometry::makeSphere()},
     mBox{Geometry::makeBox()},
     mBoxWFrame{Geometry::makeBoxWireframe()},
-    mBackPackModel{Util::getAssetPath("models/Backpack/backpack.obj"), true, true},
-    mAk47Model{Util::getAssetPath("models/ak47/ak47.obj"), true, false},
-    mGroundPlane{Geometry::makePlane(100.0f, 100.0f, {Texture::loadFromFile(Util::getAssetPath("textures/bathroom-tiling.jpg"))})}
+    mGroundPlane{Geometry::makePlane(100.0f, 100.0f, {Texture::loadFromFile(Util::getAssetPath("textures/bathroom-tiling.jpg"))})},
+    mSkullModel(Util::getAssetPath("models/Skull/12140_Skull_v3_L2.obj"), true, false)
 {
     glfwGetWindowSize(mWindow, &mWidth, &mHeight);
     glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
@@ -117,16 +96,16 @@ FPSGame::FPSGame(GLFWwindow* window)
     };
 
     mPressHandlers[GLFW_KEY_W] = [this]() {
-        mVelo.z = -5.f;
+        mVelo.z = -speed;
     };
     mPressHandlers[GLFW_KEY_D] = [this]() {
-        mVelo.x = 5.f;
+        mVelo.x = speed;
     };
     mPressHandlers[GLFW_KEY_S] = [this]() {
-        mVelo.z = 5.f;
+        mVelo.z = speed;
     };
     mPressHandlers[GLFW_KEY_A] = [this]() {
-        mVelo.x = -5.f;
+        mVelo.x = -speed;
     };
 
     mReleaseHandlers[GLFW_KEY_W] = [this]() {
@@ -141,11 +120,22 @@ FPSGame::FPSGame(GLFWwindow* window)
     mReleaseHandlers[GLFW_KEY_A] = [this]() {
         mVelo.x = 0.f;
     };
+
+
+//    makeSkullWall(10, 10);
 }
 
 FPSGame::~FPSGame()
 {
     Util::shutdownGraphics();
+}
+
+void FPSGame::framebufferSizeCallback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+    FPSGame& self = FPSGame::instance();
+    self.mWidth = width;
+    self.mHeight = height;
 }
 
 void FPSGame::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
@@ -229,7 +219,38 @@ void FPSGame::update(Duration dt)
     }
     ImGui::End();
 
+    ImGui::Begin("Entities");
+    if (ImGui::Button("Add skull")) {
+        Entity skull;
+        skull.model = &mSkullModel;
+        skull.name = "skull" + std::to_string(mEntities.size());
+        mEntities.push_back(skull);
+    }
+    if (ImGui::Button("Add eyeball")) {
+        Entity eye;
+        if (mEyeModel == nullptr) {
+            mEyeModel = new Model(Util::getAssetPath("models/Eye/eyeball.obj"), true, false);
+        }
+        eye.model = mEyeModel;
+        eye.name = "Eye" + std::to_string(mEntities.size());
+        mEntities.push_back(eye);
+    }
+    for (auto& entity : mEntities) {
+        entity.update();
+    }
+    ImGui::End();
+
+    ImGui::Begin("Player");
     mPlayer.onGui();
+    ImGui::End();
+
+/*
+    const float t = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    const float yaw = glm::radians(20 * std::sin(3 * t));
+    for (auto& entity : mEntities) {
+        entity.yaw = yaw;
+    }
+    */
 }
 
 void FPSGame::render()
@@ -260,11 +281,10 @@ void FPSGame::render()
 
     model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
     shader.setMat4("model", model);
-    mBackPackModel.draw(shader);
 
-    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-    shader.setMat4("model", model);
-    mAk47Model.draw(shader);
+    for (auto& entity : mEntities) {
+        entity.draw(shader);
+    }
 
     model = glm::translate(model, glm::vec3(0.0f, -4.0f, 0.0f));
     shader.setMat4("model", model);
@@ -279,12 +299,14 @@ void FPSGame::run()
 {
     while (!glfwWindowShouldClose(mWindow))
     {
+        const auto dt = mTimer.tick();
+
         glfwPollEvents();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        update(mTimer.tick());
+        update(dt);
 
         ImGui::Render();
         glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
@@ -294,6 +316,25 @@ void FPSGame::run()
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(mWindow);
+    }
+}
+
+void FPSGame::makeSkullWall(int width, int height)
+{
+    glm::vec3 startPos{};
+    const glm::vec3 scale{0.1f, 0.1f, 0.1f};
+    const glm::vec3 dw{2.f, 0.0f, 0.0f};
+    const glm::vec3 dh{0.0f, 2.5f, 0.0f};
+
+    for (int x = 0; x < width; ++x) {
+        for (int y = 0; y < height; ++y) {
+            Entity skull;
+            skull.model = &mSkullModel;
+            skull.pitch = glm::radians(-90.f);
+            skull.pos = static_cast<float>(x) * dw + static_cast<float>(y) * dh;
+            skull.scale = scale;
+            mEntities.push_back(skull);
+        }
     }
 }
 

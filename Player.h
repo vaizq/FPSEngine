@@ -40,8 +40,8 @@ public:
     }
 private:
     glm::vec3 pos{0.13f, -0.234f, -0.519f};
-    float rotationYaw{glm::radians(1.f)};
-    float rotationPitch{glm::radians(278.f)};
+    float rotationYaw{glm::radians(-80.f)};
+    float rotationPitch{glm::radians(0.f)};
     glm::mat4 gunTranslation{};
     Camera mCamera;
     Model mGun;

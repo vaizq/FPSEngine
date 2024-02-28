@@ -20,6 +20,20 @@
 #include "Util.h"
 #include "Model.h"
 #include "Player.h"
+#include "Entity.h"
+
+
+enum class ShaderID
+{
+    Model,
+    Color
+};
+
+enum class ModelID
+{
+    Ak47,
+    Backpack
+};
 
 
 class FPSGame
@@ -40,6 +54,7 @@ private:
     static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
     static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
     static void cursorCallback(GLFWwindow* window, double xPos, double yPos);
+    void makeSkullWall(int width, int height);
 
     GLFWwindow* mWindow;
     int mWidth{};
@@ -58,11 +73,12 @@ private:
     float mAngle = 0.0f;
     bool mRotate{false};
     int mNVertices{100};
-    Camera mCamera;
     bool mUseCamera{false};
-    Model mAk47Model;
-    Model mBackPackModel;
     bool mUseColorShader{true};
+    Camera mCamera;
+    std::vector<Entity> mEntities;
+    Model mSkullModel;
+    Model* mEyeModel;
     Player mPlayer;
     Mesh mGroundPlane;
 };

@@ -7,6 +7,7 @@
 
 void Model::loadModel(string const &path)
 {
+    std::cout << "Load model from " << path << std::endl;
     // read file via ASSIMP
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);

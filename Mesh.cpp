@@ -39,7 +39,7 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
 
 Mesh::~Mesh()
 {
-    // deleteBuffers();
+    deleteBuffers();
 }
 
 
@@ -103,5 +103,4 @@ void Mesh::deleteBuffers()
     glDeleteBuffers(1, &mEBO);
     glDeleteBuffers(1, &mVBO);
     glDeleteVertexArrays(1, &mVAO);
-    std::cout << "Buffers are deleted" << std::endl;
 }
