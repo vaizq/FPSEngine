@@ -122,7 +122,7 @@ FPSGame::FPSGame(GLFWwindow* window)
     };
 
 
-//    makeSkullWall(10, 10);
+    makeSkullWall(10, 10);
 }
 
 FPSGame::~FPSGame()
@@ -244,13 +244,11 @@ void FPSGame::update(Duration dt)
     mPlayer.onGui();
     ImGui::End();
 
-/*
     const float t = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::steady_clock::now().time_since_epoch()).count();
     const float yaw = glm::radians(20 * std::sin(3 * t));
     for (auto& entity : mEntities) {
         entity.yaw = yaw;
     }
-    */
 }
 
 void FPSGame::render()
