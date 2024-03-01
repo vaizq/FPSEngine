@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 add_definitions(-DSRC_DIR="${SRC_DIR}")
 
+find_package(nlohmann_json CONFIG REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(asio CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
@@ -29,3 +30,4 @@ add_executable(FPSFromScratch main.cpp
 target_include_directories(FPSFromScratch PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/imgui ${Stb_INCLUDE_DIR})
 
 target_link_libraries(FPSFromScratch PRIVATE asio::asio glfw imgui::imgui glm::glm assimp::assimp)
+target_link_libraries(FPSFromScratch PRIVATE nlohmann_json::nlohmann_json)

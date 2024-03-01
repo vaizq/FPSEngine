@@ -23,19 +23,6 @@
 #include "Entity.h"
 
 
-enum class ShaderID
-{
-    Model,
-    Color
-};
-
-enum class ModelID
-{
-    Ak47,
-    Backpack
-};
-
-
 class FPSGame
 {
 public:
@@ -54,7 +41,9 @@ private:
     static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
     static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
     static void cursorCallback(GLFWwindow* window, double xPos, double yPos);
-    void makeSkullWall(int width, int height);
+    void buildScene();
+    void loadScene();
+    void saveScene();
 
     GLFWwindow* mWindow;
     int mWidth{};
@@ -62,25 +51,17 @@ private:
     DeltaTimer<Clock> mTimer;
     Shader mTextureShader;
     Shader mColorShader;
-    Mesh mSphere;
-    Mesh mBox;
-    Mesh mBoxWFrame;
+    Camera mCamera;
     glm::vec3 mVelo;
     glm::vec3 mPos;
     std::map<int, std::function<void()>> mPressHandlers;
     std::map<int, std::function<void()>> mReleaseHandlers;
     GLenum mDrawMode = GL_TRIANGLES;
-    float mAngle = 0.0f;
-    bool mRotate{false};
-    int mNVertices{100};
     bool mUseCamera{false};
     bool mUseColorShader{true};
-    Camera mCamera;
-    std::vector<Entity> mEntities;
     Model mSkullModel;
-    Model* mEyeModel;
-    Player mPlayer;
-    Mesh mGroundPlane;
+    Model mEyeModel;
+    Scene::Ptr mScene;
 };
 
 

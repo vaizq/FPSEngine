@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <numeric>
 #include <thread>
+#include <nlohmann/json.hpp>
 
 
 using namespace std::chrono_literals;
@@ -35,19 +36,17 @@ FPSGame::FPSGame(GLFWwindow* window)
 :   mWindow{window},
     mTextureShader{Util::getShaderPath("model.vert").c_str(), Util::getShaderPath("model.frag").c_str()},
     mColorShader{Util::getShaderPath("model.vert").c_str(), Util::getShaderPath("color.frag").c_str()},
-    mSphere{Geometry::makeSphere()},
-    mBox{Geometry::makeBox()},
-    mBoxWFrame{Geometry::makeBoxWireframe()},
-    mGroundPlane{Geometry::makePlane(100.0f, 100.0f, {Texture::loadFromFile(Util::getAssetPath("textures/bathroom-tiling.jpg"))})},
-    mSkullModel(Util::getAssetPath("models/Skull/12140_Skull_v3_L2.obj"), true, false)
+    mSkullModel(Util::getAssetPath("models/Skull/12140_Skull_v3_L2.obj")),
+    mEyeModel(Util::getAssetPath("models/Eye/eyeball.obj"))
 {
     glfwGetWindowSize(mWindow, &mWidth, &mHeight);
     glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
     glfwSetKeyCallback(mWindow, keyCallback);
     glfwSetCursorPosCallback(mWindow, cursorCallback);
 
-
     Util::initImgui(mWindow); // Initialize ImGui after my callbacks are installed
+
+    loadScene();
 
     // Switch drawing mode when R is pressed
     mPressHandlers[GLFW_KEY_M] = [this]() {
@@ -82,19 +81,6 @@ FPSGame::FPSGame(GLFWwindow* window)
         }
     };
 
-    mPressHandlers[GLFW_KEY_R] = [this]() {
-        mRotate = !mRotate;
-    };
-
-    mPressHandlers[GLFW_KEY_UP] = [this]() {
-        mNVertices *= 2;
-        mSphere = Geometry::makeSphere(mNVertices);
-    };
-    mReleaseHandlers[GLFW_KEY_DOWN] = [this]() {
-        mNVertices /= 2;
-        mSphere = Geometry::makeSphere(mNVertices);
-    };
-
     mPressHandlers[GLFW_KEY_W] = [this]() {
         mVelo.z = -speed;
     };
@@ -120,13 +106,11 @@ FPSGame::FPSGame(GLFWwindow* window)
     mReleaseHandlers[GLFW_KEY_A] = [this]() {
         mVelo.x = 0.f;
     };
-
-
-    makeSkullWall(10, 10);
 }
 
 FPSGame::~FPSGame()
 {
+    saveScene();
     Util::shutdownGraphics();
 }
 
@@ -198,20 +182,11 @@ static void displayFPS(FPSGame::Duration dt)
 
 void FPSGame::update(Duration dt)
 {
-    if (mRotate)
-        mAngle += glm::radians(45.0f) * dt.count();
     mCamera.translate(-mVelo.z * dt.count(), mVelo.x * dt.count());
 
     displayFPS(dt);
 
-
     ImGui::Begin("Settings");
-    {
-        static glm::vec3 size{1.f, 1.f, 1.f};
-        if (ImGui::SliderFloat3("BoxDimensions", &size[0], 0.f, 100.f)) {
-            mBoxWFrame = Geometry::makeBoxWireframe(size);
-        }
-    }
     {
         if (ImGui::Button(mUseColorShader ? "Use Texture shader" : "Use Color shader")) {
             mUseColorShader = !mUseColorShader;
@@ -220,35 +195,16 @@ void FPSGame::update(Duration dt)
     ImGui::End();
 
     ImGui::Begin("Entities");
-    if (ImGui::Button("Add skull")) {
-        Entity skull;
-        skull.model = &mSkullModel;
-        skull.name = "skull" + std::to_string(mEntities.size());
-        mEntities.push_back(skull);
-    }
-    if (ImGui::Button("Add eyeball")) {
-        Entity eye;
-        if (mEyeModel == nullptr) {
-            mEyeModel = new Model(Util::getAssetPath("models/Eye/eyeball.obj"), true, false);
-        }
-        eye.model = mEyeModel;
-        eye.name = "Eye" + std::to_string(mEntities.size());
-        mEntities.push_back(eye);
-    }
-    for (auto& entity : mEntities) {
-        entity.update();
-    }
+    mScene->forEach([](Entity& entity) {
+        ImGui::PushID(&entity);
+        ImGui::SeparatorText(entity.name.c_str());
+        entity.onGUI();
+        ImGui::PopID();
+    });
     ImGui::End();
 
     ImGui::Begin("Player");
-    mPlayer.onGui();
     ImGui::End();
-
-    const float t = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::steady_clock::now().time_since_epoch()).count();
-    const float yaw = glm::radians(20 * std::sin(3 * t));
-    for (auto& entity : mEntities) {
-        entity.yaw = yaw;
-    }
 }
 
 void FPSGame::render()
@@ -259,7 +215,6 @@ void FPSGame::render()
 
     glm::mat4 model(1);
     glm::mat4 projection(1);
-    model = glm::rotate(model, mAngle, glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 view = mCamera.getViewMatrix();
     projection = glm::perspective(glm::radians(45.0f), (float)mWidth / (float)mHeight, 0.1f, 100.0f);
 
@@ -267,30 +222,8 @@ void FPSGame::render()
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
 
-    mSphere.draw(shader, mDrawMode);
-
-    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-    shader.setMat4("model", model);
-    mBox.draw(shader, mDrawMode);
-
-    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-    shader.setMat4("model", model);
-    mBoxWFrame.draw(shader, mDrawMode);
-
-    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-    shader.setMat4("model", model);
-
-    for (auto& entity : mEntities) {
-        entity.draw(shader);
-    }
-
-    model = glm::translate(model, glm::vec3(0.0f, -4.0f, 0.0f));
-    shader.setMat4("model", model);
-    mGroundPlane.draw(shader);
-
-    mPlayer.draw(shader);
+    mScene->draw(shader);
 }
-
 
 
 void FPSGame::run()
@@ -317,23 +250,71 @@ void FPSGame::run()
     }
 }
 
-void FPSGame::makeSkullWall(int width, int height)
+void FPSGame::buildScene()
 {
-    glm::vec3 startPos{};
-    const glm::vec3 scale{0.1f, 0.1f, 0.1f};
-    const glm::vec3 dw{2.f, 0.0f, 0.0f};
-    const glm::vec3 dh{0.0f, 2.5f, 0.0f};
+    auto makeEye = [this](std::string name) {
+        auto eye = std::make_unique<Scene>();
+        eye->entity.model = &mEyeModel;
+        eye->entity.name = std::move(name);
+        return eye;
+    };
 
-    for (int x = 0; x < width; ++x) {
-        for (int y = 0; y < height; ++y) {
-            Entity skull;
-            skull.model = &mSkullModel;
-            skull.pitch = glm::radians(-90.f);
-            skull.pos = static_cast<float>(x) * dw + static_cast<float>(y) * dh;
-            skull.scale = scale;
-            mEntities.push_back(skull);
-        }
+    auto skullWithEyes = std::make_unique<Scene>();
+    skullWithEyes->entity.model = &mSkullModel;
+    skullWithEyes->entity.name = "Skull";
+    skullWithEyes->children.push_back(makeEye("left eye"));
+    skullWithEyes->children.push_back(makeEye("right eye"));
+
+    mScene = std::make_unique<Scene>();
+    mScene->entity.name = "World";
+    mScene->children.push_back(std::move(skullWithEyes));
+}
+
+
+static constexpr auto sceneFile{"scene.json"};
+
+void FPSGame::loadScene()
+{
+    buildScene();
+
+    // Load transformations from a file
+    try {
+        std::ifstream ifs(sceneFile);
+        const auto json = nlohmann::json::parse(ifs);
+        mScene->forEach([&json](Entity& entity) {
+            const auto& name = entity.name;
+            entity.position.x = json[name]["posX"];
+            entity.position.y = json[name]["posY"];
+            entity.position.z = json[name]["posZ"];
+            entity.yaw = json[name]["yaw"];
+            entity.pitch = json[name]["pitch"];
+            entity.scale = json[name]["scale"];
+        });
+    }
+    catch(const std::exception& e) {
+        std::cerr << "Unable to load scene: " << e.what() << std::endl;
     }
 }
 
+void FPSGame::saveScene()
+{
+    nlohmann::json json;
+    mScene->forEach([&json](Entity& entity) {
+        const auto& name = entity.name;
+        json[name]["posX"] = entity.position.x;
+        json[name]["posY"] = entity.position.y;
+        json[name]["posZ"] = entity.position.z;
+        json[name]["yaw"] = entity.yaw;
+        json[name]["pitch"] = entity.pitch;
+        json[name]["scale"] = entity.scale;
+    });
+
+    try {
+        std::ofstream ofs{sceneFile};
+        ofs << json.dump();
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Failed to save scene: " << e.what() << std::endl;
+    }
+}
 
