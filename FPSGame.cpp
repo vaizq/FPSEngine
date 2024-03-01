@@ -14,6 +14,7 @@
 #include <numeric>
 #include <thread>
 #include <nlohmann/json.hpp>
+#include "Tracker.h"
 
 
 using namespace std::chrono_literals;
@@ -37,7 +38,8 @@ FPSGame::FPSGame(GLFWwindow* window)
     mTextureShader{Util::getShaderPath("model.vert").c_str(), Util::getShaderPath("model.frag").c_str()},
     mColorShader{Util::getShaderPath("model.vert").c_str(), Util::getShaderPath("color.frag").c_str()},
     mSkullModel(Util::getAssetPath("models/Skull/12140_Skull_v3_L2.obj")),
-    mEyeModel(Util::getAssetPath("models/Eye/eyeball.obj"))
+    mEyeModel(Util::getAssetPath("models/Eye/eyeball.obj")),
+    mGroundPlane(Geometry::makePlane(100.f, 100.f, {Texture::loadFromFile(Util::getAssetPath("textures/bathroom-tiling.jpg"))}))
 {
     glfwGetWindowSize(mWindow, &mWidth, &mHeight);
     glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
@@ -47,6 +49,14 @@ FPSGame::FPSGame(GLFWwindow* window)
     Util::initImgui(mWindow); // Initialize ImGui after my callbacks are installed
 
     loadScene();
+
+    if (mSkull = mScene->getEntity("Skull"); mSkull == nullptr) {
+        std::cerr << "Unable to get skull entity!" << std::endl;
+    }
+
+    if (mTarget = mScene->getEntity("Target"); mSkull == nullptr) {
+        std::cerr << "Unable to get Target entity!" << std::endl;
+    }
 
     // Switch drawing mode when R is pressed
     mPressHandlers[GLFW_KEY_M] = [this]() {
@@ -186,10 +196,17 @@ void FPSGame::update(Duration dt)
 
     displayFPS(dt);
 
+    static bool useTracking{false};
     ImGui::Begin("Settings");
     {
         if (ImGui::Button(mUseColorShader ? "Use Texture shader" : "Use Color shader")) {
             mUseColorShader = !mUseColorShader;
+        }
+        if (ImGui::Button(useTracking ? "Disable tracking" : "Enable tracking")) {
+            useTracking = !useTracking;
+        }
+        if (ImGui::Button(mDrawCoordinateSystems ? "Disable coordinate systems" : "Draw coordinate systems")) {
+            mDrawCoordinateSystems = !mDrawCoordinateSystems;
         }
     }
     ImGui::End();
@@ -203,26 +220,57 @@ void FPSGame::update(Duration dt)
     });
     ImGui::End();
 
-    ImGui::Begin("Player");
-    ImGui::End();
+    if (useTracking) {
+        setDirection(*mSkull, mCamera.getPosition());
+    }
 }
 
 void FPSGame::render()
 {
     Shader& shader = mUseColorShader ? mColorShader : mTextureShader;
 
-    shader.use();
-
-    glm::mat4 model(1);
     glm::mat4 projection(1);
     glm::mat4 view = mCamera.getViewMatrix();
     projection = glm::perspective(glm::radians(45.0f), (float)mWidth / (float)mHeight, 0.1f, 100.0f);
 
-    shader.setMat4("model", model);
+    if (mDrawCoordinateSystems) {
+        mColorShader.use();
+        mColorShader.setMat4("view", view);
+        mColorShader.setMat4("projection", projection);
+
+        mScene->forEach([this](Entity &entity, const glm::mat4 &transform)
+                        {
+                            mColorShader.setMat4("model", glm::scale(transform, glm::vec3{5.f}));
+                            static Mesh xAxis = Geometry::makeXAxis();
+                            static Mesh yAxis = Geometry::makeYAxis();
+                            static Mesh zAxis = Geometry::makeZAxis();
+
+                            mColorShader.setVec3("color", Util::red);
+                            xAxis.draw(mColorShader, GL_LINES);
+
+                            mColorShader.setVec3("color", Util::green);
+                            yAxis.draw(mColorShader, GL_LINES);
+
+                            mColorShader.setVec3("color", Util::blue);
+                            zAxis.draw(mColorShader, GL_LINES);
+                        });
+    }
+
+    shader.use();
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
 
-    mScene->draw(shader);
+    mScene->forEach([this, &shader](Entity& entity, const glm::mat4& transform) {
+        shader.setMat4("model", transform);
+        if (entity.model != nullptr) {
+            entity.model->draw(shader);
+        }
+    });
+
+    glm::mat4 model(1);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+    shader.setMat4("model", model);
+    mGroundPlane.draw(shader);
 }
 
 
@@ -268,6 +316,7 @@ void FPSGame::buildScene()
     mScene = std::make_unique<Scene>();
     mScene->entity.name = "World";
     mScene->children.push_back(std::move(skullWithEyes));
+    mScene->children.push_back(makeEye("Target"));
 }
 
 
@@ -283,17 +332,21 @@ void FPSGame::loadScene()
         const auto json = nlohmann::json::parse(ifs);
         mScene->forEach([&json](Entity& entity) {
             const auto& name = entity.name;
-            entity.position.x = json[name]["posX"];
-            entity.position.y = json[name]["posY"];
-            entity.position.z = json[name]["posZ"];
-            entity.yaw = json[name]["yaw"];
-            entity.pitch = json[name]["pitch"];
-            entity.scale = json[name]["scale"];
+            if (json.contains(name)) {
+                entity.position.x = json[name]["posX"];
+                entity.position.y = json[name]["posY"];
+                entity.position.z = json[name]["posZ"];
+                entity.yaw = json[name]["yaw"];
+                entity.pitch = json[name]["pitch"];
+                entity.scale = json[name]["scale"];
+            }
         });
     }
     catch(const std::exception& e) {
         std::cerr << "Unable to load scene: " << e.what() << std::endl;
     }
+
+
 }
 
 void FPSGame::saveScene()

@@ -48,20 +48,24 @@ private:
     GLFWwindow* mWindow;
     int mWidth{};
     int mHeight{};
-    DeltaTimer<Clock> mTimer;
+    DeltaTimer<Clock> mTimer{};
     Shader mTextureShader;
     Shader mColorShader;
     Camera mCamera;
-    glm::vec3 mVelo;
-    glm::vec3 mPos;
+    glm::vec3 mVelo{};
+    glm::vec3 mPos{};
     std::map<int, std::function<void()>> mPressHandlers;
     std::map<int, std::function<void()>> mReleaseHandlers;
     GLenum mDrawMode = GL_TRIANGLES;
     bool mUseCamera{false};
     bool mUseColorShader{true};
+    bool mDrawCoordinateSystems{false};
     Model mSkullModel;
     Model mEyeModel;
     Scene::Ptr mScene;
+    Entity* mSkull{};
+    Entity* mTarget{};
+    Mesh mGroundPlane;
 };
 
 

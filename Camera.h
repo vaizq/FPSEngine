@@ -18,6 +18,10 @@ public:
     void rotateYaw(float amount);
     void rotatePitch(float amount);
     [[nodiscard]] glm::mat4 getViewMatrix();
+    [[nodiscard]] const glm::vec3& getPosition() const
+    {
+        return mPos;
+    }
 private:
     void updateVectors();
     glm::vec3 mPos{};

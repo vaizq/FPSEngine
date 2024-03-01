@@ -19,5 +19,5 @@ void main()
 
     gl_Position = projection * view * model * vec4(inPosition, 1.0);
     texCoord = inTexCoord;
-    lightIntensity = 0.1 + min(0.9, (1.0 + dot(normalize(inNormal), normalize(lightDirection))) / 2.0);
+    lightIntensity = 1.0f;//0.1 + min(0.9, (1.0 + dot(normalize(inNormal), normalize(lightDirection))) / 2.0);
 }

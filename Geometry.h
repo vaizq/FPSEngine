@@ -16,7 +16,7 @@ namespace Geometry
         std::vector<unsigned int> indices;
 
         constexpr float R = 1.0f;
-        const int nHeight = (int)std::sqrt((float) nVertices);
+        const int nHeight = (int) std::sqrt((float) nVertices);
         const int nRim = nHeight;
 
         const float delta = 2 * R / nHeight;
@@ -30,7 +30,7 @@ namespace Geometry
                 float x = r * std::cos(angle);
                 float z = r * std::sin(angle);
                 glm::vec3 pos{x, y, z};
-                vertices.emplace_back(pos, glm::normalize(pos),glm::vec2{});
+                vertices.emplace_back(pos, glm::normalize(pos), glm::vec2{});
             }
         }
 
@@ -78,7 +78,7 @@ namespace Geometry
         return Mesh{vertices, indices, {}};
     }
 
-    Mesh makeBox(const glm::vec3& size = glm::vec3{1.0f, 1.0f, 1.0f})
+    Mesh makeBox(const glm::vec3 &size = glm::vec3{1.0f, 1.0f, 1.0f})
     {
         const float dx = size.x / 2.0f;
         const float dy = size.y / 2.0f;
@@ -88,8 +88,8 @@ namespace Geometry
         std::vector<unsigned> indices;
 
 
-
-        auto makeVertex = [&vertices](const glm::vec3& pos){
+        auto makeVertex = [&vertices](const glm::vec3 &pos)
+        {
             vertices.emplace_back(pos, glm::normalize(pos), glm::vec2{});
         };
 
@@ -167,7 +167,7 @@ namespace Geometry
         return Mesh{std::move(vertices), std::move(indices), {}};
     }
 
-    Mesh makeBoxWireframe(const glm::vec3& size = glm::vec3{1.0f, 1.0f, 1.0f})
+    Mesh makeBoxWireframe(const glm::vec3 &size = glm::vec3{1.0f, 1.0f, 1.0f})
     {
         const float dx = size.x / 2.0f;
         const float dy = size.y / 2.0f;
@@ -176,7 +176,8 @@ namespace Geometry
         std::vector<Vertex> vertices;
         std::vector<unsigned> indices;
 
-        auto makeVertex = [&vertices](const glm::vec3& pos){
+        auto makeVertex = [&vertices](const glm::vec3 &pos)
+        {
             vertices.emplace_back(pos, glm::normalize(pos), glm::vec2{});
         };
 
@@ -256,7 +257,8 @@ namespace Geometry
         return Mesh{std::move(vertices), std::move(indices), {}};
     }
 
-    Mesh makePlane(float width, float height, std::vector<Texture> textures = {}) {
+    Mesh makePlane(float width, float height, std::vector<Texture> textures = {})
+    {
         std::vector<Vertex> vertices;
         std::vector<unsigned> indices;
 
@@ -289,6 +291,70 @@ namespace Geometry
         indices.push_back(3);
 
         return Mesh{std::move(vertices), std::move(indices), std::move(textures)};
+    }
+
+    Mesh makeCoordinateMesh()
+    {
+        std::vector<Vertex> vertices;
+        std::vector<unsigned> indices;
+
+        vertices.emplace_back(glm::vec3{-1.f, 0.f, 0.f}, glm::vec3{}, glm::vec2{});
+        vertices.emplace_back(glm::vec3{1.f, 0.f, 0.f}, glm::vec3{}, glm::vec2{});
+        vertices.emplace_back(glm::vec3{0.f, -1.f, 0.f}, glm::vec3{}, glm::vec2{});
+        vertices.emplace_back(glm::vec3{0.f, 1.f, 0.f}, glm::vec3{}, glm::vec2{});
+        vertices.emplace_back(glm::vec3{0.f, 0.f, -1.f}, glm::vec3{}, glm::vec2{});
+        vertices.emplace_back(glm::vec3{0.f, 0.f, 1.f}, glm::vec3{}, glm::vec2{});
+
+        indices.push_back(0);
+        indices.push_back(1);
+        indices.push_back(2);
+        indices.push_back(3);
+        indices.push_back(4);
+        indices.push_back(5);
+
+        return Mesh{std::move(vertices), std::move(indices), {}};
+    }
+
+    Mesh makeXAxis()
+    {
+        std::vector<Vertex> vertices;
+        std::vector<unsigned> indices;
+
+        vertices.emplace_back(glm::vec3{-1.f, 0.f, 0.f}, glm::vec3{}, glm::vec2{});
+        vertices.emplace_back(glm::vec3{1.f, 0.f, 0.f}, glm::vec3{}, glm::vec2{});
+
+        indices.push_back(0);
+        indices.push_back(1);
+
+        return Mesh{std::move(vertices), std::move(indices), {}};
+    }
+
+    Mesh makeYAxis()
+    {
+        std::vector<Vertex> vertices;
+        std::vector<unsigned> indices;
+
+        vertices.emplace_back(glm::vec3{0.f, -1.f, 0.f}, glm::vec3{}, glm::vec2{});
+        vertices.emplace_back(glm::vec3{0.f, 1.f, 0.f}, glm::vec3{}, glm::vec2{});
+
+        indices.push_back(0);
+        indices.push_back(1);
+
+        return Mesh{std::move(vertices), std::move(indices), {}};
+    }
+
+    Mesh makeZAxis()
+    {
+        std::vector<Vertex> vertices;
+        std::vector<unsigned> indices;
+
+        vertices.emplace_back(glm::vec3{0.f, 0.f, -1.f}, glm::vec3{}, glm::vec2{});
+        vertices.emplace_back(glm::vec3{0.f, 0.f, 1.f}, glm::vec3{}, glm::vec2{});
+
+        indices.push_back(0);
+        indices.push_back(1);
+
+        return Mesh{std::move(vertices), std::move(indices), {}};
     }
 
 }

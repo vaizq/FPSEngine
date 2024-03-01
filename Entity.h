@@ -19,21 +19,31 @@ struct Entity
     float pitch{};
     float scale{1.f};
 
+    glm::vec3 deltaPosition{};
+    float deltaYaw{};
+    float deltaPitch{};
+    float deltaScale{1.f};
+
     void onGUI()
     {
         ImGui::DragFloat3("Position", &position[0], 0.1f);
         ImGui::SliderAngle("Yaw", &yaw);
         ImGui::SliderAngle("Pitch", &pitch);
         ImGui::DragFloat("Scale", &scale, 0.1f);
+
+        ImGui::DragFloat3("DeltaPosition", &deltaPosition[0], 0.1f);
+        ImGui::SliderAngle("DeltaYaw", &deltaYaw);
+        ImGui::SliderAngle("DeltaPitch", &deltaPitch);
+        ImGui::DragFloat("DeltaScale", &deltaScale, 0.1f);
     }
 
     [[nodiscard]] glm::mat4 modelViewMatrix() const
     {
         glm::mat4 modelMatrix{1.0f};
-        modelMatrix = glm::translate(modelMatrix, position);
-        modelMatrix = glm::rotate(modelMatrix, yaw, glm::vec3(0.f, 1.f, 0.f));
-        modelMatrix = glm::rotate(modelMatrix, pitch, glm::vec3(1.f, 0.f, 0.f));
-        modelMatrix = glm::scale(modelMatrix, glm::vec3{scale});
+        modelMatrix = glm::translate(modelMatrix, position + deltaPosition);
+        modelMatrix = glm::rotate(modelMatrix, yaw + deltaYaw, glm::vec3(0.f, 1.f, 0.f));
+        modelMatrix = glm::rotate(modelMatrix, pitch + deltaPitch, glm::vec3(1.f, 0.f, 0.f));
+        modelMatrix = glm::scale(modelMatrix, glm::vec3{scale * deltaScale});
         return modelMatrix;
     }
 };
@@ -44,6 +54,22 @@ struct Scene
     Entity entity;
     std::vector<Scene::Ptr> children;
 
+    Entity* getEntity(const std::string& name)
+    {
+        if (entity.name == name) {
+            return &entity;
+        }
+        else if(!children.empty()) {
+            for (auto& child : children) {
+                if (auto* e = child->getEntity(name); e != nullptr) {
+                    return e;
+                }
+            }
+        }
+
+        return nullptr;
+    }
+
     void forEach(std::function<void(Entity&)>&& callable) {
         callable(entity);
         for (auto& child : children) {
@@ -51,10 +77,21 @@ struct Scene
         }
     }
 
+    void forEach(std::function<void(Entity&, const glm::mat4& transform)>&& callable, const glm::mat4& transform = glm::mat4{1.0f}) {
+        auto t2 = transform * entity.modelViewMatrix();
+
+        callable(entity, t2);
+
+        for (auto& child : children) {
+            child->forEach(std::move(callable), t2);
+        }
+    }
+
     void draw(Shader& shader, const glm::mat4& transform = glm::mat4{1.0f}) const
     {
         auto t2 = transform * entity.modelViewMatrix();
         shader.setMat4("model", t2);
+
         if (entity.model != nullptr) {
             entity.model->draw(shader);
         }
