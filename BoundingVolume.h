@@ -7,6 +7,7 @@
 
 #include <glm/glm.hpp>
 #include <variant>
+#include "Transform.h"
 
 
 struct Sphere
@@ -25,9 +26,8 @@ using BoundingShape = std::variant<Sphere, Cuboid>;
 
 struct BoundingVolume
 {
-    glm::vec3 position;
-    float yaw{};
-    float pitch{};
+    Transform transform;
+    BoundingShape shape;
 };
 
 #endif //FPSFROMSCRATCH_BOUNDINGVOLUME_H
