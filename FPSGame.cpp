@@ -226,7 +226,7 @@ static void displayFPS(FPSGame::Duration dt)
 void FPSGame::update(Duration dt)
 {
     mCamera.FPSTranslate(-mVelo.z * dt.count(), mVelo.x * dt.count());
-//    mPlayer->deltaTransform = Transform(mCamera.getPosition() + mCamera.getFront(), mCamera.getYaw(),mCamera.getPitch(), 1.0f);
+    mPlayer->deltaTransform = Transform(mCamera.getPosition() + mCamera.getFront(), -mCamera.getYaw(),-mCamera.getPitch(), 1.0f);
 
     displayFPS(dt);
 

@@ -12,12 +12,14 @@
 #include <nlohmann/json.hpp>
 #include "BoundingVolume.h"
 #include "MyGui.h"
+#include "Camera.h"
 
 
 struct Entity
 {
     std::string name{};
     Model* model{};
+    Camera* camera{};
     Transform initialTransform;
     Transform deltaTransform;
     BoundingVolume bounds;
