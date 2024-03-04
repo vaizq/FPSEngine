@@ -7,6 +7,7 @@
 
 
 #include "BoundingVolume.h"
+#include <iostream>
 
 struct RayCast
 {
@@ -14,24 +15,25 @@ struct RayCast
     glm::vec3 direction;
 };
 
-struct RayHit
+std::optional<glm::vec3> intersects(const RayCast& ray, const BoundingVolume& boundingVolume)
 {
-    glm::vec3 point;
-    glm::vec3 offDirection;
-};
-
-bool doesHit(const RayCast& ray, const BoundingVolume& boundingVolume)
-{
-    return std::visit([&](auto&& shape) -> bool {
+    return std::visit([&](auto&& shape) -> std::optional<glm::vec3> {
         using T = std::decay_t<decltype(shape)>;
         if constexpr (std::is_same_v<T, Sphere>) {
             const auto& sphereCenter= boundingVolume.transform.position;
             auto diff = sphereCenter - ray.startPosition;
+            const float r = boundingVolume.transform.scale * shape.radius;
             glm::vec3 p = ray.startPosition + glm::normalize(ray.direction) * glm::length(diff);
-            return glm::length(sphereCenter - p) < shape.radius;
+            if (glm::length(sphereCenter - p) < r) {
+                std::cout << "scale: " << boundingVolume.transform.scale;
+                return sphereCenter - glm::normalize(ray.direction) * r;
+            }
+            else {
+                return std::nullopt;
+            }
         }
         else if constexpr (std::is_same_v<T, Cuboid>) {
-            return false;
+            return std::nullopt;
         }
     }, boundingVolume.shape);
 }

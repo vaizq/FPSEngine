@@ -15,6 +15,7 @@
 #include <thread>
 #include <nlohmann/json.hpp>
 #include "Tracker.h"
+#include "RayCast.h"
 
 
 using namespace std::chrono_literals;
@@ -39,7 +40,10 @@ FPSGame::FPSGame(GLFWwindow* window)
     mColorShader{Util::getShaderPath("model.vert").c_str(), Util::getShaderPath("color.frag").c_str()},
     mSkullModel(Util::getAssetPath("models/Skull/12140_Skull_v3_L2.obj")),
     mEyeModel(Util::getAssetPath("models/Eye/eyeball.obj")),
-    mGroundPlane(Geometry::makePlane(100.f, 100.f, {Texture::loadFromFile(Util::getAssetPath("textures/bathroom-tiling.jpg"))}))
+    mAK47Model(Util::getAssetPath("models/ak47/ak47.obj")),
+    mGroundPlane(Geometry::makePlane(100.f, 100.f, {Texture::loadFromFile(Util::getAssetPath("textures/bathroom-tiling.jpg"))})),
+    mSphereMesh(Geometry::makeSphere(300)),
+    mCrosshire(Geometry::makeCrosshire())
 {
     glfwGetWindowSize(mWindow, &mWidth, &mHeight);
     glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
@@ -47,15 +51,17 @@ FPSGame::FPSGame(GLFWwindow* window)
     glfwSetCursorPosCallback(mWindow, cursorCallback);
 
     Util::initImgui(mWindow); // Initialize ImGui after my callbacks are installed
+    mCamera.setPosition(glm::vec3(0.0f, 3.0f, 0.0f));
 
     loadScene();
+
 
     if (mSkull = mScene->getEntity("Skull"); mSkull == nullptr) {
         std::cerr << "Unable to get skull entity!" << std::endl;
     }
 
-    if (mTarget = mScene->getEntity("Target"); mSkull == nullptr) {
-        std::cerr << "Unable to get Target entity!" << std::endl;
+    if (mPlayer = mScene->getEntity("player"); mPlayer == nullptr) {
+        std::cerr << "Unable to get player entity!" << std::endl;
     }
 
     // Switch drawing mode when R is pressed
@@ -91,30 +97,40 @@ FPSGame::FPSGame(GLFWwindow* window)
         }
     };
 
+
+
+    mPressHandlers[GLFW_KEY_S] = [this]() {
+        mVelo.z = speed;
+    };
     mPressHandlers[GLFW_KEY_W] = [this]() {
         mVelo.z = -speed;
     };
     mPressHandlers[GLFW_KEY_D] = [this]() {
         mVelo.x = speed;
     };
-    mPressHandlers[GLFW_KEY_S] = [this]() {
-        mVelo.z = speed;
-    };
     mPressHandlers[GLFW_KEY_A] = [this]() {
         mVelo.x = -speed;
     };
 
+    mReleaseHandlers[GLFW_KEY_S] = [this]() {
+        if (mVelo.z > 0.0f) {
+            mVelo.z = 0.0f;
+        }
+    };
     mReleaseHandlers[GLFW_KEY_W] = [this]() {
-        mVelo.z = 0.f;
+        if (mVelo.z < 0.0f) {
+            mVelo.z = 0.0f;
+        }
     };
     mReleaseHandlers[GLFW_KEY_D] = [this]() {
-        mVelo.x = 0.f;
-    };
-    mReleaseHandlers[GLFW_KEY_S] = [this]() {
-        mVelo.z = 0.f;
+        if (mVelo.x > 0.0f) {
+            mVelo.x = 0.0f;
+        }
     };
     mReleaseHandlers[GLFW_KEY_A] = [this]() {
-        mVelo.x = 0.f;
+        if (mVelo.x < 0.0f) {
+            mVelo.x = 0.0f;
+        }
     };
 }
 
@@ -155,7 +171,7 @@ void FPSGame::keyCallback(GLFWwindow *window, int key, int scancode, int action,
 
 void FPSGame::cursorCallback(GLFWwindow *window, double xPos, double yPos)
 {
-
+    // Rotate camera
     static float prevX{static_cast<float>(xPos)};
     static float prevY{static_cast<float>(yPos)};
 
@@ -173,6 +189,23 @@ void FPSGame::cursorCallback(GLFWwindow *window, double xPos, double yPos)
 
     prevX = static_cast<float> (xPos);
     prevY = static_cast<float> (yPos);
+
+
+    const RayCast ray{self.mCamera.getPosition(), self.mCamera.getFront()};
+    self.mTarget = nullptr;
+    auto closest = glm::vec3{std::numeric_limits<float>::max()};
+    // Find closest object intersecting with a raycast fired from main camera
+    self.mScene->forEach([&self, &ray, &closest](Entity& entity, const glm::mat4& parentTransform) {
+        // Transform local entity bounds into world coordinates
+        BoundingVolume bounds{Transform{parentTransform * entity.modelViewMatrix() * entity.bounds.transform.modelMatrix()}, entity.bounds.shape};
+
+        if (auto intersectionPoint = intersects(ray, bounds);
+        glm::length(*intersectionPoint - ray.startPosition) < glm::length(closest - ray.startPosition)) {
+            self.mTarget = &entity;
+            closest = *intersectionPoint;
+        }
+    });
+
 }
 
 static void displayFPS(FPSGame::Duration dt)
@@ -192,7 +225,8 @@ static void displayFPS(FPSGame::Duration dt)
 
 void FPSGame::update(Duration dt)
 {
-    mCamera.translate(-mVelo.z * dt.count(), mVelo.x * dt.count());
+    mCamera.FPSTranslate(-mVelo.z * dt.count(), mVelo.x * dt.count());
+//    mPlayer->deltaTransform = Transform(mCamera.getPosition() + mCamera.getFront(), mCamera.getYaw(),mCamera.getPitch(), 1.0f);
 
     displayFPS(dt);
 
@@ -205,9 +239,14 @@ void FPSGame::update(Duration dt)
         if (ImGui::Button(useTracking ? "Disable tracking" : "Enable tracking")) {
             useTracking = !useTracking;
         }
-        if (ImGui::Button(mDrawCoordinateSystems ? "Disable coordinate systems" : "Draw coordinate systems")) {
+        if (ImGui::Button(mDrawCoordinateSystems ? "Hide coordinate systems" : "Draw coordinate systems")) {
             mDrawCoordinateSystems = !mDrawCoordinateSystems;
         }
+        if (ImGui::Button(mDrawBounds ? "Hide bounds" : "Draw bounds")) {
+            mDrawBounds = !mDrawBounds;
+        }
+
+        ImGui::SliderFloat("Crosshire scale", &mCrosshireScale, 0.0001f, 1.0f);
     }
     ImGui::End();
 
@@ -233,14 +272,15 @@ void FPSGame::render()
     glm::mat4 view = mCamera.getViewMatrix();
     projection = glm::perspective(glm::radians(45.0f), (float)mWidth / (float)mHeight, 0.1f, 100.0f);
 
+    // Draw different coordinate systems
     if (mDrawCoordinateSystems) {
         mColorShader.use();
         mColorShader.setMat4("view", view);
         mColorShader.setMat4("projection", projection);
 
-        mScene->forEach([this](Entity &entity, const glm::mat4 &transform)
+        mScene->forEach([this](Entity &entity, const glm::mat4 &parentTransform)
                         {
-                            mColorShader.setMat4("model", glm::scale(transform, glm::vec3{5.f}));
+                            mColorShader.setMat4("model", glm::scale(parentTransform * entity.modelViewMatrix(), glm::vec3{5.f}));
                             static Mesh xAxis = Geometry::makeXAxis();
                             static Mesh yAxis = Geometry::makeYAxis();
                             static Mesh zAxis = Geometry::makeZAxis();
@@ -256,21 +296,63 @@ void FPSGame::render()
                         });
     }
 
-    shader.use();
-    shader.setMat4("view", view);
-    shader.setMat4("projection", projection);
+    // Draw bounds
+    if (mDrawBounds) {
+        mColorShader.use();
+        mColorShader.setMat4("view", view);
+        mColorShader.setMat4("projection", projection);
 
-    mScene->forEach([this, &shader](Entity& entity, const glm::mat4& transform) {
-        shader.setMat4("model", transform);
-        if (entity.model != nullptr) {
-            entity.model->draw(shader);
-        }
-    });
+        mScene->forEach([this](Entity& entity, const glm::mat4& parentTransform) {
 
-    glm::mat4 model(1);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-    shader.setMat4("model", model);
-    mGroundPlane.draw(shader);
+            if (auto shape = std::get_if<Sphere>(&entity.bounds.shape)) {
+                auto finalTransform = parentTransform * entity.modelViewMatrix() * entity.bounds.transform.modelMatrix();
+                finalTransform = glm::scale(finalTransform, glm::vec3(shape->radius));
+                mColorShader.setMat4("model", finalTransform);
+                if (mTarget == &entity) {
+                    mColorShader.setVec3("color", Util::red);
+                }
+                else {
+                    mColorShader.setVec3("color", Util::green);
+                }
+                mSphereMesh.draw(mColorShader, GL_LINES);
+            }
+        });
+    }
+
+    // Draw scene
+    {
+        shader.use();
+        shader.setMat4("view", view);
+        shader.setMat4("projection", projection);
+
+        mScene->forEach([this, &shader](Entity &entity, const glm::mat4 &transform)
+                        {
+                            shader.setMat4("model", transform * entity.modelViewMatrix());
+                            if (entity.model != nullptr) {
+                                entity.model->draw(shader);
+                            }
+                        });
+
+        glm::mat4 model(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+        shader.setMat4("model", model);
+        mGroundPlane.draw(shader);
+    }
+
+
+    // Draw crosshire
+    {
+        glm::mat4 model(1.0f);
+        const float k = static_cast<float>(mWidth) / static_cast<float>(mHeight);
+        model = glm::scale(model, glm::vec3(mCrosshireScale, mCrosshireScale * k, 1.0f));
+        mColorShader.use();
+        mColorShader.setMat4("view", glm::mat4{1.0f});
+        mColorShader.setMat4("projection", glm::mat4{1.0f});
+        mColorShader.setMat4("model", model);
+        mColorShader.setVec3("color", glm::vec3(0.0f, 1.0f, 0.0f));
+
+        mCrosshire.draw(mColorShader, GL_LINES);
+    }
 }
 
 
@@ -310,13 +392,22 @@ void FPSGame::buildScene()
     auto skullWithEyes = std::make_unique<Scene>();
     skullWithEyes->entity.model = &mSkullModel;
     skullWithEyes->entity.name = "Skull";
+    skullWithEyes->entity.bounds.shape = Sphere{1.0f};
     skullWithEyes->children.push_back(makeEye("left eye"));
     skullWithEyes->children.push_back(makeEye("right eye"));
+
+    auto ak47 = std::make_unique<Scene>();
+    ak47->entity.model = &mAK47Model;
+    ak47->entity.name = "ak47";
+
+    auto player = std::make_unique<Scene>();
+    player->entity.name = "player";
+    player->children.push_back(std::move(ak47));
 
     mScene = std::make_unique<Scene>();
     mScene->entity.name = "World";
     mScene->children.push_back(std::move(skullWithEyes));
-    mScene->children.push_back(makeEye("Target"));
+    mScene->children.push_back(std::move(player));
 }
 
 
@@ -333,20 +424,14 @@ void FPSGame::loadScene()
         mScene->forEach([&json](Entity& entity) {
             const auto& name = entity.name;
             if (json.contains(name)) {
-                entity.position.x = json[name]["posX"];
-                entity.position.y = json[name]["posY"];
-                entity.position.z = json[name]["posZ"];
-                entity.yaw = json[name]["yaw"];
-                entity.pitch = json[name]["pitch"];
-                entity.scale = json[name]["scale"];
+                entity.initialTransform = Transform::deserialize(json[name]["initialTransform"]);
+                entity.deltaTransform = Transform::deserialize(json[name]["deltaTransform"]);
             }
         });
     }
     catch(const std::exception& e) {
         std::cerr << "Unable to load scene: " << e.what() << std::endl;
     }
-
-
 }
 
 void FPSGame::saveScene()
@@ -354,12 +439,8 @@ void FPSGame::saveScene()
     nlohmann::json json;
     mScene->forEach([&json](Entity& entity) {
         const auto& name = entity.name;
-        json[name]["posX"] = entity.position.x;
-        json[name]["posY"] = entity.position.y;
-        json[name]["posZ"] = entity.position.z;
-        json[name]["yaw"] = entity.yaw;
-        json[name]["pitch"] = entity.pitch;
-        json[name]["scale"] = entity.scale;
+        json[name]["initialTransform"] = Transform::serialize(entity.initialTransform);
+        json[name]["deltaTransform"] = Transform::serialize(entity.deltaTransform);
     });
 
     try {

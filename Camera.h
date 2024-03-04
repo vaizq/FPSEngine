@@ -14,6 +14,7 @@ class Camera
 public:
     Camera();
     void translate(float forwardAmount, float rightAmount);
+    void FPSTranslate(float forwardAmount, float rightAmount);
     void setPosition(const glm::vec3& pos);
     void rotateYaw(float amount);
     void rotatePitch(float amount);
@@ -21,6 +22,18 @@ public:
     [[nodiscard]] const glm::vec3& getPosition() const
     {
         return mPos;
+    }
+    [[nodiscard]] float getYaw() const
+    {
+        return mYaw;
+    }
+    [[nodiscard]] float getPitch() const
+    {
+        return mPitch;
+    }
+    [[nodiscard]] const glm::vec3& getFront() const
+    {
+        return mFront;
     }
 private:
     void updateVectors();

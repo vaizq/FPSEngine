@@ -60,12 +60,18 @@ private:
     bool mUseCamera{false};
     bool mUseColorShader{true};
     bool mDrawCoordinateSystems{false};
+    bool mDrawBounds{false};
+    float mCrosshireScale{1.0f};
     Model mSkullModel;
     Model mEyeModel;
+    Model mAK47Model;
     Scene::Ptr mScene;
     Entity* mSkull{};
+    Entity* mPlayer{};
     Entity* mTarget{};
     Mesh mGroundPlane;
+    Mesh mSphereMesh;
+    Mesh mCrosshire;
 };
 
 

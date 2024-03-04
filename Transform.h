@@ -7,15 +7,32 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <nlohmann/json_fwd.hpp>
 
 struct Transform
 {
-    glm::vec3 position;
+    glm::vec3 position{};
     float yaw{};
     float pitch{};
     float scale{1.0f};
 
-    glm::mat4 modelMatrix() const
+    Transform() = default;
+
+    Transform(const glm::vec3& position, float yaw, float pitch, float scale)
+    : position{position}, yaw{yaw}, pitch{pitch}, scale{scale}
+    {}
+
+    explicit Transform(const glm::mat4& matrix)
+    : position{matrix[3]}
+    {
+        glm::vec3 rotation = glm::eulerAngles(glm::quat_cast(matrix));
+        yaw = rotation.y;
+        pitch = rotation.x;
+        scale = glm::length(glm::vec3(matrix[0]));
+    }
+
+    [[nodiscard]] glm::mat4 modelMatrix() const
     {
         auto m = glm::translate(glm::mat4{1.0f}, position);
         m = glm::rotate(m, yaw, glm::vec3(0.f, 1.f, 0.f));
@@ -23,7 +40,16 @@ struct Transform
         m = glm::scale(m, glm::vec3{scale});
         return m;
     }
+
+    static nlohmann::json serialize(const Transform& transform);
+    static Transform deserialize(const nlohmann::json& j);
 };
+
+static Transform operator+(const Transform& lhs, const Transform& rhs)
+{
+    return Transform{lhs.position + rhs.position, lhs.yaw + rhs.yaw, lhs.pitch + rhs.pitch, lhs.scale + rhs.scale};
+}
+
 
 
 #endif //FPSFROMSCRATCH_TRANSFORM_H

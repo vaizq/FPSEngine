@@ -8,45 +8,53 @@
 #include "Shader.h"
 #include "Model.h"
 #include <imgui.h>
+#include "Transform.h"
+#include <nlohmann/json.hpp>
+#include "BoundingVolume.h"
+#include "MyGui.h"
 
 
 struct Entity
 {
     std::string name{};
     Model* model{};
-    glm::vec3 position{};
-    float yaw{};
-    float pitch{};
-    float scale{1.f};
-
-    glm::vec3 deltaPosition{};
-    float deltaYaw{};
-    float deltaPitch{};
-    float deltaScale{1.f};
+    Transform initialTransform;
+    Transform deltaTransform;
+    BoundingVolume bounds;
 
     void onGUI()
     {
-        ImGui::DragFloat3("Position", &position[0], 0.1f);
-        ImGui::SliderAngle("Yaw", &yaw);
-        ImGui::SliderAngle("Pitch", &pitch);
-        ImGui::DragFloat("Scale", &scale, 0.1f);
+        ImGui::SeparatorText("Initial transformation");
+        MyGui::InputTransform("initial", initialTransform);
 
-        ImGui::DragFloat3("DeltaPosition", &deltaPosition[0], 0.1f);
-        ImGui::SliderAngle("DeltaYaw", &deltaYaw);
-        ImGui::SliderAngle("DeltaPitch", &deltaPitch);
-        ImGui::DragFloat("DeltaScale", &deltaScale, 0.1f);
+        ImGui::SeparatorText("Delta transformation");
+        MyGui::InputTransform("delta", deltaTransform);
+
+        ImGui::SeparatorText("BoundingVolume");
+        MyGui::InputTransform("bounds", bounds.transform);
+
+        std::visit([this](auto&& shape) {
+            using T = std::decay_t<decltype(shape)>;
+            if constexpr (std::is_same_v<T, Sphere>) {
+                ImGui::DragFloat("radius", &shape.radius);
+            }
+
+        }, bounds.shape);
     }
 
     [[nodiscard]] glm::mat4 modelViewMatrix() const
     {
-        glm::mat4 modelMatrix{1.0f};
-        modelMatrix = glm::translate(modelMatrix, position + deltaPosition);
-        modelMatrix = glm::rotate(modelMatrix, yaw + deltaYaw, glm::vec3(0.f, 1.f, 0.f));
-        modelMatrix = glm::rotate(modelMatrix, pitch + deltaPitch, glm::vec3(1.f, 0.f, 0.f));
-        modelMatrix = glm::scale(modelMatrix, glm::vec3{scale * deltaScale});
-        return modelMatrix;
+        Transform totalTransform{initialTransform.position + deltaTransform.position,
+                                 initialTransform.yaw + deltaTransform.yaw,
+                                 initialTransform.pitch + deltaTransform.pitch,
+                                 initialTransform.scale * deltaTransform.scale};
+        return totalTransform.modelMatrix();
     }
+
+    static nlohmann::json serialize(const Entity& entity);
+    static Entity deserialize(const nlohmann::json& j);
 };
+
 
 struct Scene
 {
@@ -77,10 +85,11 @@ struct Scene
         }
     }
 
-    void forEach(std::function<void(Entity&, const glm::mat4& transform)>&& callable, const glm::mat4& transform = glm::mat4{1.0f}) {
-        auto t2 = transform * entity.modelViewMatrix();
+    void forEach(std::function<void(Entity& entity, const glm::mat4& parentTransform)>&& callable, const glm::mat4& transform = glm::mat4{1.0f}) {
 
-        callable(entity, t2);
+        callable(entity, transform);
+
+        auto t2 = transform * entity.modelViewMatrix();
 
         for (auto& child : children) {
             child->forEach(std::move(callable), t2);

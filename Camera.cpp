@@ -56,3 +56,12 @@ void Camera::translate(float forwardAmount, float rightAmount)
     mPos += mFront * forwardAmount;
     mPos += mRight * rightAmount;
 }
+
+void Camera::FPSTranslate(float forwardAmount, float rightAmount)
+{
+    glm::vec3 forward(mFront.x, 0.0f, mFront.z);
+    forward = glm::normalize(forward);
+
+    mPos += forward * forwardAmount;
+    mPos += mRight * rightAmount;
+}

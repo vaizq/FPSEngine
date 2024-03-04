@@ -357,6 +357,24 @@ namespace Geometry
         return Mesh{std::move(vertices), std::move(indices), {}};
     }
 
+    Mesh makeCrosshire()
+    {
+        std::vector<Vertex> vertices;
+        std::vector<unsigned> indices;
+
+        vertices.emplace_back(glm::vec3{-1.f, 0.f, 0.f}, glm::vec3{}, glm::vec2{});
+        vertices.emplace_back(glm::vec3{1.f, 0.f, 0.f}, glm::vec3{}, glm::vec2{});
+        vertices.emplace_back(glm::vec3{0.f, -1.f, 0.f}, glm::vec3{}, glm::vec2{});
+        vertices.emplace_back(glm::vec3{0.f, 1.f, 0.f}, glm::vec3{}, glm::vec2{});
+
+        indices.push_back(0);
+        indices.push_back(1);
+        indices.push_back(2);
+        indices.push_back(3);
+
+        return Mesh{std::move(vertices), std::move(indices), {}};
+    }
+
 }
 
 #endif //FPSFROMSCRATCH_GEOMETRY_H
