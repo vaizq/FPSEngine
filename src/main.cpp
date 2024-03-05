@@ -1,5 +1,5 @@
 #include <iostream>
-#include "FPSGame.h"
+#include "game/FPSGame.h"
 
 int main()
 {

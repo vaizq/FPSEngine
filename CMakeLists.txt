@@ -18,18 +18,18 @@ add_executable(FPSFromScratch src/main.cpp
         extern/glad.c
         extern/imgui_impl_glfw.cpp
         extern/imgui_impl_opengl3.cpp
-        src/FPSGame.cpp
-        src/Shader.h
-        src/Mesh.cpp
-        src/Model.cpp
-        src/Util.h
-        src/Texture.cpp
-        src/Camera.cpp
-        src/Util.cpp
-        src/ResourceManager.cpp
-        src/Entity.cpp
-        src/Transform.cpp
-        src/MyGui.cpp)
+        src/game/FPSGame.cpp
+        src/core/Shader.h
+        src/core/Mesh.cpp
+        src/core/Model.cpp
+        src/core/Util.h
+        src/core/Texture.cpp
+        src/core/Camera.cpp
+        src/core/Util.cpp
+        src/core/ResourceManager.cpp
+        src/core/Entity.cpp
+        src/core/Transform.cpp
+        src/core/MyGui.cpp)
 
 target_include_directories(FPSFromScratch PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/imgui ${Stb_INCLUDE_DIR})
 target_link_libraries(FPSFromScratch PRIVATE asio::asio glfw imgui::imgui glm::glm assimp::assimp)
