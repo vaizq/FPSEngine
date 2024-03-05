@@ -5,7 +5,7 @@
 #ifndef FPSFROMSCRATCH_MODEL_H
 #define FPSFROMSCRATCH_MODEL_H
 
-#include <glad/glad.h>
+#include "glad/glad.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

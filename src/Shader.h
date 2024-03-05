@@ -5,7 +5,7 @@
 #ifndef FPSFROMSCRATCH_SHADER_H
 #define FPSFROMSCRATCH_SHADER_H
 
-#include <glad/glad.h>
+#include "glad/glad.h"
 #include <glm/glm.hpp>
 
 #include <string>

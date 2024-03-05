@@ -6,7 +6,7 @@
 #define FPSFROMSCRATCH_FPSGAME_H
 
 
-#include "include/glad/glad.h"
+#include "glad/glad.h"
 #include <GLFW/glfw3.h>
 #include <glm/vec3.hpp>
 #include "Shader.h"
@@ -52,6 +52,7 @@ private:
     Shader mTextureShader;
     Shader mColorShader;
     Camera mCamera;
+    Camera mDebugCamera;
     glm::vec3 mVelo{};
     glm::vec3 mPos{};
     std::map<int, std::function<void()>> mPressHandlers;
@@ -61,6 +62,7 @@ private:
     bool mUseColorShader{true};
     bool mDrawCoordinateSystems{false};
     bool mDrawBounds{false};
+    bool mUseDebugCamera{false};
     float mCrosshireScale{1.0f};
     Model mSkullModel;
     Model mEyeModel;

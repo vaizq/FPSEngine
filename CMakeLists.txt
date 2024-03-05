@@ -13,24 +13,32 @@ find_package(imgui CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 find_package(assimp CONFIG REQUIRED)
-add_executable(FPSFromScratch main.cpp
+
+add_executable(FPSFromScratch src/main.cpp
         extern/glad.c
         extern/imgui_impl_glfw.cpp
         extern/imgui_impl_opengl3.cpp
-        FPSGame.cpp
-        Shader.h
-        Mesh.cpp
-        Model.cpp
-        Util.h
-        Texture.cpp
-        Camera.cpp
-        Util.cpp
-        ResourceManager.cpp
-        Entity.cpp
-        Transform.cpp
-        MyGui.cpp)
+        src/FPSGame.cpp
+        src/Shader.h
+        src/Mesh.cpp
+        src/Model.cpp
+        src/Util.h
+        src/Texture.cpp
+        src/Camera.cpp
+        src/Util.cpp
+        src/ResourceManager.cpp
+        src/Entity.cpp
+        src/Transform.cpp
+        src/MyGui.cpp)
 
 target_include_directories(FPSFromScratch PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/imgui ${Stb_INCLUDE_DIR})
-
 target_link_libraries(FPSFromScratch PRIVATE asio::asio glfw imgui::imgui glm::glm assimp::assimp)
 target_link_libraries(FPSFromScratch PRIVATE nlohmann_json::nlohmann_json)
+
+
+find_package(Catch2 CONFIG REQUIRED)
+
+add_executable(Tests
+        tests/test_main.cpp)
+
+target_link_libraries(Tests PRIVATE Catch2::Catch2 Catch2::Catch2WithMain)

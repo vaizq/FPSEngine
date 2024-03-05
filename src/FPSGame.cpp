@@ -8,8 +8,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "Geometry.h"
 #include <imgui.h>
-#include <imgui_impl_opengl3.h>
-#include <imgui_impl_glfw.h>
+#include "imgui/imgui_impl_opengl3.h"
+#include "imgui/imgui_impl_glfw.h"
 #include <algorithm>
 #include <numeric>
 #include <thread>
@@ -181,10 +181,15 @@ void FPSGame::cursorCallback(GLFWwindow *window, double xPos, double yPos)
 
     float sensitivity = 0.001f;
 
-    if (self.mUseCamera)
+    if (self.mUseCamera && !self.mUseDebugCamera)
     {
         self.mCamera.rotateYaw(sensitivity * dx);
         self.mCamera.rotatePitch(-sensitivity * dy);
+    }
+    else if (self.mUseCamera && self.mUseDebugCamera)
+    {
+        self.mDebugCamera.rotateYaw(sensitivity * dx);
+        self.mDebugCamera.rotatePitch(-sensitivity * dy);
     }
 
     prevX = static_cast<float> (xPos);
@@ -225,8 +230,13 @@ static void displayFPS(FPSGame::Duration dt)
 
 void FPSGame::update(Duration dt)
 {
-    mCamera.FPSTranslate(-mVelo.z * dt.count(), mVelo.x * dt.count());
-    mPlayer->deltaTransform = Transform(mCamera.getPosition() + mCamera.getFront(), -mCamera.getYaw(),-mCamera.getPitch(), 1.0f);
+    if (mUseDebugCamera) {
+        mDebugCamera.translate(-mVelo.z * dt.count(), mVelo.x * dt.count());
+    }
+    else {
+        mCamera.FPSTranslate(-mVelo.z * dt.count(), mVelo.x * dt.count());
+    }
+    mPlayer->deltaTransform = mCamera.getTransform();
 
     displayFPS(dt);
 
@@ -247,6 +257,14 @@ void FPSGame::update(Duration dt)
         }
 
         ImGui::SliderFloat("Crosshire scale", &mCrosshireScale, 0.0001f, 1.0f);
+
+        if (ImGui::Button(mUseDebugCamera ? "Use FPS camera" : "Use debug camera")) {
+            mUseDebugCamera = !mUseDebugCamera;
+        }
+
+        if (mUseDebugCamera) {
+            MyGui::InputTransform("DebugCamera", mDebugCamera.getTransform());
+        }
     }
     ImGui::End();
 
@@ -269,7 +287,7 @@ void FPSGame::render()
     Shader& shader = mUseColorShader ? mColorShader : mTextureShader;
 
     glm::mat4 projection(1);
-    glm::mat4 view = mCamera.getViewMatrix();
+    glm::mat4 view = mUseDebugCamera ? mDebugCamera.getViewMatrix() : mCamera.getViewMatrix();
     projection = glm::perspective(glm::radians(45.0f), (float)mWidth / (float)mHeight, 0.1f, 100.0f);
 
     // Draw different coordinate systems

@@ -15,46 +15,46 @@ Camera::Camera()
 
 glm::mat4 Camera::getViewMatrix()
 {
-    return glm::lookAt(mPos, mPos + mFront, mUp);
+    updateVectors();
+    return glm::lookAt(mTransform.position, mTransform.position + mFront, mUp);
 }
 
 void Camera::updateVectors()
 {
-    mFront = glm::normalize(glm::vec3(std::cos(mYaw) * std::cos(mPitch), std::sin(mPitch), std::sin(mYaw) * std::cos(mPitch)));
+    mFront = glm::normalize(glm::vec3(std::cos(mTransform.yaw) * std::cos(mTransform.pitch), std::sin(mTransform.pitch), std::sin(mTransform.yaw) * std::cos(mTransform.pitch)));
     mRight = glm::normalize(glm::cross(mFront, worldUp));
     mUp = glm::normalize(glm::cross(mRight, mFront));
 }
 
 void Camera::setPosition(const glm::vec3 &pos)
 {
-    mPos = pos;
+    mTransform.position = pos;
 }
 
 void Camera::rotatePitch(float amount)
 {
     constexpr float maxAngle = glm::radians(89.f);
 
-    mPitch += amount;
-    if (mPitch > maxAngle) {
-        mPitch = maxAngle;
+    mTransform.pitch += amount;
+    if (mTransform.pitch > maxAngle) {
+        mTransform.pitch = maxAngle;
     }
-    else if (mPitch < -maxAngle) {
-        mPitch = -maxAngle;
+    else if (mTransform.pitch < -maxAngle) {
+        mTransform.pitch = -maxAngle;
     }
     updateVectors();
 }
 
 void Camera::rotateYaw(float amount)
 {
-    std::cout << "DYAW: " << amount << '\n';
-    mYaw += amount;
+    mTransform.yaw += amount;
     updateVectors();
 }
 
 void Camera::translate(float forwardAmount, float rightAmount)
 {
-    mPos += mFront * forwardAmount;
-    mPos += mRight * rightAmount;
+    mTransform.position += mFront * forwardAmount;
+    mTransform.position += mRight * rightAmount;
 }
 
 void Camera::FPSTranslate(float forwardAmount, float rightAmount)
@@ -62,6 +62,11 @@ void Camera::FPSTranslate(float forwardAmount, float rightAmount)
     glm::vec3 forward(mFront.x, 0.0f, mFront.z);
     forward = glm::normalize(forward);
 
-    mPos += forward * forwardAmount;
-    mPos += mRight * rightAmount;
+    mTransform.position += forward * forwardAmount;
+    mTransform.position += mRight * rightAmount;
+}
+
+glm::mat4 Camera::getModelMatrix() const
+{
+    return mTransform.modelMatrix();
 }

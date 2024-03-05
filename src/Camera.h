@@ -7,6 +7,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "Transform.h"
 
 
 class Camera
@@ -19,17 +20,29 @@ public:
     void rotateYaw(float amount);
     void rotatePitch(float amount);
     [[nodiscard]] glm::mat4 getViewMatrix();
+    [[nodiscard]] glm::mat4 getModelMatrix() const;
+
+    [[nodiscard]] const Transform& getTransform() const
+    {
+        return mTransform;
+    }
+
+    [[nodiscard]] Transform& getTransform()
+    {
+        return mTransform;
+    }
+
     [[nodiscard]] const glm::vec3& getPosition() const
     {
-        return mPos;
+        return mTransform.position;
     }
     [[nodiscard]] float getYaw() const
     {
-        return mYaw;
+        return mTransform.yaw;
     }
     [[nodiscard]] float getPitch() const
     {
-        return mPitch;
+        return mTransform.pitch;
     }
     [[nodiscard]] const glm::vec3& getFront() const
     {
@@ -37,12 +50,11 @@ public:
     }
 private:
     void updateVectors();
-    glm::vec3 mPos{};
+    Transform mTransform;
     glm::vec3 mUp{0.0f, 1.0f, 0.0f};
     glm::vec3 mFront{0.0f, 0.0f, -1.0f};
     glm::vec3 mRight{1.0f, 0.0f, 0.0f};
-    float mYaw{glm::radians(-90.f)};
-    float mPitch{};
+
 };
 
 
