@@ -17,8 +17,4 @@ struct Texture
     std::string path;
 };
 
-
-
-
-
 #endif //FPSFROMSCRATCH_TEXTURE_H

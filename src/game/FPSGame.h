@@ -20,7 +20,7 @@
 #include "../core/Util.h"
 #include "../core/Model.h"
 #include "Player.h"
-#include "../core/Entity.h"
+#include "../core/GameObject.h"
 
 
 class FPSGame
@@ -64,18 +64,19 @@ private:
     bool mDrawBounds{false};
     bool mUseDebugCamera{false};
     float mCrosshireScale{1.0f};
-    Model mSkullModel;
-    Model mEyeModel;
-    Model mAK47Model;
-    Scene::Ptr mScene;
-    Entity* mSkull{};
-    Entity* mLeftEye{};
-    Entity* mRightEye{};
-    Entity* mPlayer{};
-    Entity* mTarget{};
     Mesh mGroundPlane;
     Mesh mSphereMesh;
     Mesh mCrosshire;
+    Model mSkullModel;
+    Model mEyeModel;
+    Model mAK47Model;
+    std::unique_ptr<GameObject> mScene;
+    GameObject* mSkull{};
+    GameObject* mLeftEye{};
+    GameObject* mRightEye{};
+    GameObject* mPlayer{};
+    GameObject* mTarget{};
+
 };
 
 

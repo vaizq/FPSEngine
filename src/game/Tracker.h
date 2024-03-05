@@ -5,18 +5,10 @@
 #ifndef FPSFROMSCRATCH_TRACKER_H
 #define FPSFROMSCRATCH_TRACKER_H
 
-#include "../core/Entity.h"
+#include "../core/GameObject.h"
 #include <cmath>
 
 
-
-// Rotate entity to face a point
-void setDirection(Entity& e, const glm::vec3& p)
-{
-    auto v = glm::normalize(p - e.transform.position);
-    e.transform.yaw = atan2(v.x, v.z) + glm::radians(180.0f);
-    e.transform.pitch = asin(v.y);
-}
 
 // Align transform to face the target
 void alignTo(const glm::vec3& target, Transform& transform)
@@ -26,7 +18,7 @@ void alignTo(const glm::vec3& target, Transform& transform)
     transform.pitch = asin(v.y);
 }
 
-void alignTo(const glm::vec3& target, Entity& entity, const glm::mat4& parentTransform = glm::mat4{1.f})
+void alignTo(const glm::vec3& target, GameObject& entity, const glm::mat4& parentTransform = glm::mat4{1.f})
 {
     // Transform entity to world coordinates
     Transform worldTransform{parentTransform * entity.transform.modelMatrix()};

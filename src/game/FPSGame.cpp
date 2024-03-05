@@ -16,6 +16,7 @@
 #include <nlohmann/json.hpp>
 #include "Tracker.h"
 #include "../core/RayCast.h"
+#include "Player.h"
 
 
 using namespace std::chrono_literals;
@@ -47,23 +48,23 @@ FPSGame::FPSGame(GLFWwindow* window)
 {
     glfwGetWindowSize(mWindow, &mWidth, &mHeight);
     glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
-    glfwSetKeyCallback(mWindow, keyCallback);
-    glfwSetCursorPosCallback(mWindow, cursorCallback);
-
+    InputManager::registerCallbacks(mWindow); // Initialize InputManager
     Util::initImgui(mWindow); // Initialize ImGui after my callbacks are installed
-    mCamera.setPosition(glm::vec3(0.0f, 3.0f, 0.0f));
 
     loadScene();
 
     // Get some entities from scene
-    mSkull = mScene->getEntity("Skull");
-    mLeftEye = mScene->getEntity("leftEye");
-    mRightEye = mScene->getEntity("rightEye");
-    mPlayer = mScene->getEntity("player");
+    mSkull = mScene->findChildren("Skull");
+    mLeftEye = mScene->findChildren("leftEye");
+    mRightEye = mScene->findChildren("rightEye");
+
+    if (mSkull == nullptr || mLeftEye == nullptr || mRightEye == nullptr) {
+        std::cerr << "Unable to find all game objects" << std::endl;
+    }
 
 
     // Switch drawing mode when R is pressed
-    mPressHandlers[GLFW_KEY_M] = [this]() {
+    InputManager::instance().pressHandlers[GLFW_KEY_M] = [this]() {
         switch (mDrawMode)
         {
             case GL_TRIANGLES:
@@ -83,7 +84,7 @@ FPSGame::FPSGame(GLFWwindow* window)
         }
     };
 
-    mPressHandlers[GLFW_KEY_ESCAPE] = [this]() {
+    InputManager::instance().pressHandlers[GLFW_KEY_ESCAPE] = [this]() {
         int curMode = glfwGetInputMode(mWindow, GLFW_CURSOR);
         if (curMode == GLFW_CURSOR_NORMAL) {
             glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -95,37 +96,35 @@ FPSGame::FPSGame(GLFWwindow* window)
         }
     };
 
-
-
-    mPressHandlers[GLFW_KEY_S] = [this]() {
+    InputManager::instance().pressHandlers[GLFW_KEY_S] = [this]() {
         mVelo.z = speed;
     };
-    mPressHandlers[GLFW_KEY_W] = [this]() {
+    InputManager::instance().pressHandlers[GLFW_KEY_W] = [this]() {
         mVelo.z = -speed;
     };
-    mPressHandlers[GLFW_KEY_D] = [this]() {
+    InputManager::instance().pressHandlers[GLFW_KEY_D] = [this]() {
         mVelo.x = speed;
     };
-    mPressHandlers[GLFW_KEY_A] = [this]() {
+    InputManager::instance().pressHandlers[GLFW_KEY_A] = [this]() {
         mVelo.x = -speed;
     };
 
-    mReleaseHandlers[GLFW_KEY_S] = [this]() {
+    InputManager::instance().releaseHandlers[GLFW_KEY_S] = [this]() {
         if (mVelo.z > 0.0f) {
             mVelo.z = 0.0f;
         }
     };
-    mReleaseHandlers[GLFW_KEY_W] = [this]() {
+    InputManager::instance().releaseHandlers[GLFW_KEY_W] = [this]() {
         if (mVelo.z < 0.0f) {
             mVelo.z = 0.0f;
         }
     };
-    mReleaseHandlers[GLFW_KEY_D] = [this]() {
+    InputManager::instance().releaseHandlers[GLFW_KEY_D] = [this]() {
         if (mVelo.x > 0.0f) {
             mVelo.x = 0.0f;
         }
     };
-    mReleaseHandlers[GLFW_KEY_A] = [this]() {
+    InputManager::instance().releaseHandlers[GLFW_KEY_A] = [this]() {
         if (mVelo.x < 0.0f) {
             mVelo.x = 0.0f;
         }
@@ -146,70 +145,6 @@ void FPSGame::framebufferSizeCallback(GLFWwindow* window, int width, int height)
     self.mHeight = height;
 }
 
-void FPSGame::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
-{
-    FPSGame& self = FPSGame::instance();
-
-    switch (action)
-    {
-        case GLFW_PRESS:
-            if (self.mPressHandlers.contains(key)) {
-                self.mPressHandlers[key]();
-            }
-            break;
-        case GLFW_RELEASE:
-            if (self.mReleaseHandlers.contains(key)) {
-                self.mReleaseHandlers[key]();
-            }
-            break;
-        default:
-            break;
-    }
-}
-
-void FPSGame::cursorCallback(GLFWwindow *window, double xPos, double yPos)
-{
-    // Rotate camera
-    static float prevX{static_cast<float>(xPos)};
-    static float prevY{static_cast<float>(yPos)};
-
-    FPSGame& self = FPSGame::instance();
-    auto dx = (float) (xPos - prevX);
-    auto dy = (float) (yPos - prevY);
-
-    float sensitivity = 0.001f;
-
-    if (self.mUseCamera && !self.mUseDebugCamera)
-    {
-        self.mCamera.rotateYaw(sensitivity * dx);
-        self.mCamera.rotatePitch(-sensitivity * dy);
-    }
-    else if (self.mUseCamera && self.mUseDebugCamera)
-    {
-        self.mDebugCamera.rotateYaw(sensitivity * dx);
-        self.mDebugCamera.rotatePitch(-sensitivity * dy);
-    }
-
-    prevX = static_cast<float> (xPos);
-    prevY = static_cast<float> (yPos);
-
-
-    const RayCast ray{self.mCamera.getPosition(), self.mCamera.getFront()};
-    self.mTarget = nullptr;
-    auto closest = glm::vec3{std::numeric_limits<float>::max()};
-    // Find closest object intersecting with a raycast fired from main camera
-    self.mScene->forEach([&self, &ray, &closest](Entity& entity, const glm::mat4& parentTransform) {
-        // Transform local entity bounds into world coordinates
-        BoundingVolume bounds{Transform{parentTransform * entity.transform.modelMatrix() * entity.bounds.transform.modelMatrix()}, entity.bounds.shape};
-
-        auto intersectionPoint = intersects(ray, bounds);
-        if (intersectionPoint != std::nullopt && glm::length(*intersectionPoint - ray.startPosition) < glm::length(closest - ray.startPosition)) {
-            self.mTarget = &entity;
-            closest = *intersectionPoint;
-        }
-    });
-}
-
 static void displayFPS(FPSGame::Duration dt)
 {
     static std::vector<float> fpsMeasurements{};
@@ -227,12 +162,9 @@ static void displayFPS(FPSGame::Duration dt)
 
 void FPSGame::update(Duration dt)
 {
-    if (mUseDebugCamera) {
-        mDebugCamera.translate(-mVelo.z * dt.count(), mVelo.x * dt.count());
-    }
-    else {
-        mCamera.FPSTranslate(-mVelo.z * dt.count(), mVelo.x * dt.count());
-    }
+    mScene->forEach([dt](GameObject& obj) {
+        obj.update(dt);
+    });
 
     displayFPS(dt);
 
@@ -265,7 +197,7 @@ void FPSGame::update(Duration dt)
     ImGui::End();
 
     ImGui::Begin("Entities");
-    mScene->forEach([](Entity& entity) {
+    mScene->forEach([](GameObject& entity) {
         ImGui::PushID(&entity);
         ImGui::SeparatorText(entity.name.c_str());
         entity.onGUI();
@@ -277,6 +209,21 @@ void FPSGame::update(Duration dt)
         alignTo(mCamera.getPosition(), *mLeftEye, mSkull->transform.modelMatrix());
         alignTo(mCamera.getPosition(), *mRightEye, mSkull->transform.modelMatrix());
     }
+
+    const RayCast ray{mCamera.getPosition(), mCamera.getFront()};
+    mTarget = nullptr;
+    auto closest = glm::vec3{std::numeric_limits<float>::max()};
+    // Find closest object intersecting with a raycast fired from main camera
+    mScene->forEach([this, &ray, &closest](GameObject& entity, const glm::mat4& parentTransform) {
+        // Transform local entity bounds into world coordinates
+        BoundingVolume bounds{Transform{parentTransform * entity.transform.modelMatrix() * entity.bounds.transform.modelMatrix()}, entity.bounds.shape};
+
+        auto intersectionPoint = intersects(ray, bounds);
+        if (intersectionPoint != std::nullopt && glm::length(*intersectionPoint - ray.startPosition) < glm::length(closest - ray.startPosition)) {
+            mTarget = &entity;
+            closest = *intersectionPoint;
+        }
+    });
 }
 
 void FPSGame::render()
@@ -293,7 +240,7 @@ void FPSGame::render()
         mColorShader.setMat4("view", view);
         mColorShader.setMat4("projection", projection);
 
-        mScene->forEach([this](Entity &entity, const glm::mat4 &parentTransform)
+        mScene->forEach([this](GameObject &entity, const glm::mat4 &parentTransform)
                         {
                             auto drawCoordinates = [this]()
                             {
@@ -322,7 +269,7 @@ void FPSGame::render()
         mColorShader.setMat4("view", view);
         mColorShader.setMat4("projection", projection);
 
-        mScene->forEach([this](Entity& entity, const glm::mat4& parentTransform) {
+        mScene->forEach([this](GameObject& entity, const glm::mat4& parentTransform) {
 
             if (auto shape = std::get_if<Sphere>(&entity.bounds.shape)) {
                 auto finalTransform = parentTransform * entity.transform.modelMatrix() * entity.bounds.transform.modelMatrix();
@@ -345,7 +292,7 @@ void FPSGame::render()
         shader.setMat4("view", view);
         shader.setMat4("projection", projection);
 
-        mScene->forEach([&shader](Entity &entity, const glm::mat4 &transform)
+        mScene->forEach([&shader](GameObject &entity, const glm::mat4 &transform)
                         {
                             shader.setMat4("model", transform * entity.transform.modelMatrix());
                             if (entity.model != nullptr) {
@@ -403,29 +350,23 @@ void FPSGame::run()
 void FPSGame::buildScene()
 {
     auto makeEye = [this](std::string name) {
-        auto eye = std::make_unique<Scene>();
-        eye->entity.model = &mEyeModel;
-        eye->entity.name = std::move(name);
+        auto eye = std::make_unique<GameObject>();
+        eye->name = std::move(name);
+        eye->model = &mEyeModel;
         return eye;
     };
 
-    auto skullWithEyes = std::make_unique<Scene>();
-    skullWithEyes->entity.model = &mSkullModel;
-    skullWithEyes->entity.name = "Skull";
-    skullWithEyes->entity.bounds.shape = Sphere{1.0f};
+    auto skullWithEyes = std::make_unique<GameObject>();
+    skullWithEyes->name = "Skull";
+    skullWithEyes->model = &mSkullModel;
+    skullWithEyes->bounds.shape = Sphere{1.0f};
     skullWithEyes->children.push_back(makeEye("leftEye"));
     skullWithEyes->children.push_back(makeEye("rightEye"));
 
-    auto ak47 = std::make_unique<Scene>();
-    ak47->entity.model = &mAK47Model;
-    ak47->entity.name = "ak47";
+    auto player = std::make_unique<Player>(mCamera, &mAK47Model);
 
-    auto player = std::make_unique<Scene>();
-    player->entity.name = "player";
-    player->children.push_back(std::move(ak47));
-
-    mScene = std::make_unique<Scene>();
-    mScene->entity.name = "World";
+    mScene = std::make_unique<GameObject>();
+    mScene->name = "World";
     mScene->children.push_back(std::move(skullWithEyes));
     mScene->children.push_back(std::move(player));
 }
@@ -441,10 +382,10 @@ void FPSGame::loadScene()
     try {
         std::ifstream ifs(sceneFile);
         const auto json = nlohmann::json::parse(ifs);
-        mScene->forEach([&json](Entity& entity) {
+        mScene->forEach([&json](GameObject& entity) {
             const auto& name = entity.name;
             if (json.contains(name)) {
-                entity.transform = Transform::deserialize(json[name]["transform"]);
+                GameObject::deserialize(json[name], entity);
             }
         });
     }
@@ -456,9 +397,9 @@ void FPSGame::loadScene()
 void FPSGame::saveScene()
 {
     nlohmann::json json;
-    mScene->forEach([&json](Entity& entity) {
+    mScene->forEach([&json](GameObject& entity) {
         const auto& name = entity.name;
-        json[name]["transform"] = Transform::serialize(entity.transform);
+        json[name] = GameObject::serialize(entity);
     });
 
     try {

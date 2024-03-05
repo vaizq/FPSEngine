@@ -27,9 +27,10 @@ add_executable(FPSFromScratch src/main.cpp
         src/core/Camera.cpp
         src/core/Util.cpp
         src/core/ResourceManager.cpp
-        src/core/Entity.cpp
+        src/core/GameObject.cpp
         src/core/Transform.cpp
-        src/core/MyGui.cpp)
+        src/core/MyGui.cpp
+        src/core/InputManager.h)
 
 target_include_directories(FPSFromScratch PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/imgui ${Stb_INCLUDE_DIR})
 target_link_libraries(FPSFromScratch PRIVATE asio::asio glfw imgui::imgui glm::glm assimp::assimp)
