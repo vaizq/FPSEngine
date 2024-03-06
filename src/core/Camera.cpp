@@ -6,8 +6,6 @@
 #include <iostream>
 
 
-constexpr glm::vec3 worldUp{0.0f, 1.0f, 0.0f};
-
 Camera::Camera()
 {
     updateVectors();
@@ -21,7 +19,7 @@ glm::mat4 Camera::getViewMatrix()
 
 void Camera::updateVectors()
 {
-    mFront = glm::normalize(glm::vec3(std::cos(mTransform.yaw) * std::cos(mTransform.pitch), std::sin(mTransform.pitch), std::sin(mTransform.yaw) * std::cos(mTransform.pitch)));
+    mFront = mTransform.front();
     mRight = glm::normalize(glm::cross(mFront, worldUp));
     mUp = glm::normalize(glm::cross(mRight, mFront));
 }

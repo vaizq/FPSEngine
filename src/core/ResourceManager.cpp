@@ -21,12 +21,12 @@ std::string texturePath(const std::string& textureName)
 
 std::string modelPath(const std::string& modelName)
 {
-    return assetsDir + "/textures/" + modelName;
+    return assetsDir + "/models/" + modelName;
 }
 
 std::string shaderPath(const std::string& shaderName)
 {
-    return shadersDir + shaderName;
+    return shadersDir + '/' + shaderName;
 }
 
 
@@ -39,15 +39,11 @@ void ResourceManager::loadAll()
 
 Texture &ResourceManager::getTexture(const string &name)
 {
-    if (!mTextures.contains(name)) {
-        mTextures[name] = Texture::loadFromFile(texturePath(name));
-    }
-    return mTextures[name];
+    return mTextures.at(name);
 }
 
 Model &ResourceManager::getModel(const string &name)
 {
-    mModels.try_emplace(name, modelPath(name));
     return mModels.at(name);
 }
 
@@ -65,6 +61,9 @@ void ResourceManager::loadModels()
 {
     mModels.emplace("ak47", modelPath("ak47/ak47.obj"));
     mModels.emplace("backpack", modelPath("Backpack/backpack.obj"));
+    mModels.emplace("eyeBall", modelPath("Eye/eyeball.obj"));
+    mModels.emplace("skull", modelPath("Skull/skull.obj"));
+    mModels.emplace("skull", modelPath("Skull/skull.obj"));
 }
 
 void ResourceManager::loadShaders()

@@ -13,33 +13,42 @@ find_package(imgui CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 find_package(assimp CONFIG REQUIRED)
+find_package(OpenAL CONFIG REQUIRED)
+find_package(FreeALUT CONFIG REQUIRED)
+find_package(Catch2 CONFIG REQUIRED)
 
-add_executable(FPSFromScratch src/main.cpp
-        extern/glad.c
-        extern/imgui_impl_glfw.cpp
-        extern/imgui_impl_opengl3.cpp
-        src/game/FPSGame.cpp
-        src/core/Shader.h
-        src/core/Mesh.cpp
-        src/core/Model.cpp
-        src/core/Util.h
-        src/core/Texture.cpp
-        src/core/Camera.cpp
-        src/core/Util.cpp
-        src/core/ResourceManager.cpp
-        src/core/GameObject.cpp
-        src/core/Transform.cpp
-        src/core/MyGui.cpp
-        src/core/InputManager.h)
+set(SRC_FILES
+    extern/glad.c
+    extern/imgui_impl_glfw.cpp
+    extern/imgui_impl_opengl3.cpp
+    src/game/FPSGame.cpp
+    src/core/Shader.h
+    src/core/Mesh.cpp
+    src/core/Model.cpp
+    src/core/Util.h
+    src/core/Texture.cpp
+    src/core/Camera.cpp
+    src/core/Util.cpp
+    src/core/ResourceManager.cpp
+    src/core/GameObject.cpp
+    src/core/Transform.cpp
+    src/core/MyGui.cpp
+    src/core/InputManager.h
+)
+
+add_executable(FPSFromScratch src/main.cpp ${SRC_FILES})
 
 target_include_directories(FPSFromScratch PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/imgui ${Stb_INCLUDE_DIR})
 target_link_libraries(FPSFromScratch PRIVATE asio::asio glfw imgui::imgui glm::glm assimp::assimp)
 target_link_libraries(FPSFromScratch PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(FPSFromScratch PRIVATE OpenAL::OpenAL)
+target_link_libraries(FPSFromScratch PRIVATE FreeALUT::alut)
 
-
-find_package(Catch2 CONFIG REQUIRED)
-
-add_executable(Tests
-        tests/test_main.cpp)
+add_executable(Tests tests/test_main.cpp ${SRC_FILES})
 
 target_link_libraries(Tests PRIVATE Catch2::Catch2 Catch2::Catch2WithMain)
+target_include_directories(Tests PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/imgui ${Stb_INCLUDE_DIR})
+target_link_libraries(Tests PRIVATE asio::asio glfw imgui::imgui glm::glm assimp::assimp)
+target_link_libraries(Tests PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(Tests PRIVATE OpenAL::OpenAL)
+target_link_libraries(Tests PRIVATE FreeALUT::alut)

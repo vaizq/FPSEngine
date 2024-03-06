@@ -17,13 +17,29 @@
 
 struct GameObject
 {
+    using Duration = std::chrono::duration<float>;
+
     std::string name{};
+    GameObject* parent;
     Model* model{};
     Transform transform;
     BoundingVolume bounds;
     std::vector<std::unique_ptr<GameObject>> children;
 
     virtual ~GameObject() = default;
+
+    Transform worldTransform()
+    {
+        GameObject* scene = this;
+        auto modelMatrix = scene->transform.modelMatrix();
+
+        while (scene->parent != nullptr) {
+            scene = scene->parent;
+            modelMatrix = scene->transform.modelMatrix() * modelMatrix;
+        }
+
+        return Transform{modelMatrix};
+    }
 
     virtual void onGUI()
     {
@@ -85,62 +101,5 @@ struct GameObject
     static void deserialize(const nlohmann::json& j, GameObject& obj);
 };
 
-/*
-struct Scene
-{
-    using Ptr = std::unique_ptr<Scene>;
-    GameObject entity;
-    std::vector<Scene::Ptr> children;
-
-    GameObject* getEntity(const std::string& name)
-    {
-        if (entity.name == name) {
-            return &entity;
-        }
-        else if(!children.empty()) {
-            for (auto& child : children) {
-                if (auto* e = child->getEntity(name); e != nullptr) {
-                    return e;
-                }
-            }
-        }
-
-        return nullptr;
-    }
-
-    void forEach(std::function<void(GameObject&)>&& callable) {
-        callable(entity);
-        for (auto& child : children) {
-            child->forEach(std::move(callable));
-        }
-    }
-
-    void forEach(std::function<void(GameObject& entity, const glm::mat4& parentTransform)>&& callable, const glm::mat4& transform = glm::mat4{1.0f}) {
-
-        callable(entity, transform);
-
-        auto t2 = transform * entity.transform.modelMatrix();
-
-        for (auto& child : children) {
-            child->forEach(std::move(callable), t2);
-        }
-    }
-
-    void draw(Shader& shader, const glm::mat4& transform = glm::mat4{1.0f}) const
-    {
-        auto t2 = transform * entity.transform.modelMatrix();
-        shader.setMat4("model", t2);
-
-        if (entity.model != nullptr) {
-            entity.model->draw(shader);
-        }
-
-        for (auto& child : children)
-        {
-            child->draw(shader, t2);
-        }
-    }
-};
- */
 
 #endif //FPSFROMSCRATCH_GAMEOBJECT_H

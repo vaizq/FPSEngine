@@ -64,7 +64,7 @@ FPSGame::FPSGame(GLFWwindow* window)
 
 
     // Switch drawing mode when R is pressed
-    InputManager::instance().pressHandlers[GLFW_KEY_M] = [this]() {
+    InputManager::instance().keyPressHandlers[GLFW_KEY_M] = [this]() {
         switch (mDrawMode)
         {
             case GL_TRIANGLES:
@@ -84,47 +84,49 @@ FPSGame::FPSGame(GLFWwindow* window)
         }
     };
 
-    InputManager::instance().pressHandlers[GLFW_KEY_ESCAPE] = [this]() {
+    InputManager::instance().keyPressHandlers[GLFW_KEY_ESCAPE] = [this]() {
         int curMode = glfwGetInputMode(mWindow, GLFW_CURSOR);
         if (curMode == GLFW_CURSOR_NORMAL) {
             glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             mUseCamera = true;
+            mPlayer->enableInput = true;
         }
         else {
             glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             mUseCamera = false;
+            mPlayer->enableInput = false;
         }
     };
 
-    InputManager::instance().pressHandlers[GLFW_KEY_S] = [this]() {
+    InputManager::instance().keyPressHandlers[GLFW_KEY_S] = [this]() {
         mVelo.z = speed;
     };
-    InputManager::instance().pressHandlers[GLFW_KEY_W] = [this]() {
+    InputManager::instance().keyPressHandlers[GLFW_KEY_W] = [this]() {
         mVelo.z = -speed;
     };
-    InputManager::instance().pressHandlers[GLFW_KEY_D] = [this]() {
+    InputManager::instance().keyPressHandlers[GLFW_KEY_D] = [this]() {
         mVelo.x = speed;
     };
-    InputManager::instance().pressHandlers[GLFW_KEY_A] = [this]() {
+    InputManager::instance().keyPressHandlers[GLFW_KEY_A] = [this]() {
         mVelo.x = -speed;
     };
 
-    InputManager::instance().releaseHandlers[GLFW_KEY_S] = [this]() {
+    InputManager::instance().keyReleaseHandlers[GLFW_KEY_S] = [this]() {
         if (mVelo.z > 0.0f) {
             mVelo.z = 0.0f;
         }
     };
-    InputManager::instance().releaseHandlers[GLFW_KEY_W] = [this]() {
+    InputManager::instance().keyReleaseHandlers[GLFW_KEY_W] = [this]() {
         if (mVelo.z < 0.0f) {
             mVelo.z = 0.0f;
         }
     };
-    InputManager::instance().releaseHandlers[GLFW_KEY_D] = [this]() {
+    InputManager::instance().keyReleaseHandlers[GLFW_KEY_D] = [this]() {
         if (mVelo.x > 0.0f) {
             mVelo.x = 0.0f;
         }
     };
-    InputManager::instance().releaseHandlers[GLFW_KEY_A] = [this]() {
+    InputManager::instance().keyReleaseHandlers[GLFW_KEY_A] = [this]() {
         if (mVelo.x < 0.0f) {
             mVelo.x = 0.0f;
         }
@@ -206,8 +208,8 @@ void FPSGame::update(Duration dt)
     ImGui::End();
 
     if (useTracking) {
-        alignTo(mCamera.getPosition(), *mLeftEye, mSkull->transform.modelMatrix());
-        alignTo(mCamera.getPosition(), *mRightEye, mSkull->transform.modelMatrix());
+        alignTo(mPlayer->transform.position, *mLeftEye, mSkull->transform.modelMatrix());
+        alignTo(mPlayer->transform.position, *mRightEye, mSkull->transform.modelMatrix());
     }
 
     const RayCast ray{mCamera.getPosition(), mCamera.getFront()};
@@ -224,6 +226,10 @@ void FPSGame::update(Duration dt)
             closest = *intersectionPoint;
         }
     });
+
+    if (mTarget != nullptr) {
+        // Kill the fucker
+    }
 }
 
 void FPSGame::render()
@@ -349,14 +355,20 @@ void FPSGame::run()
 
 void FPSGame::buildScene()
 {
-    auto makeEye = [this](std::string name) {
+    mScene = std::make_unique<GameObject>();
+    auto skullWithEyes = std::make_unique<GameObject>();
+
+    mScene->name = "World";
+
+    auto makeEye = [this, &skullWithEyes](std::string name) {
         auto eye = std::make_unique<GameObject>();
+        eye->parent = skullWithEyes.get();
         eye->name = std::move(name);
         eye->model = &mEyeModel;
         return eye;
     };
 
-    auto skullWithEyes = std::make_unique<GameObject>();
+    skullWithEyes->parent = mScene.get();
     skullWithEyes->name = "Skull";
     skullWithEyes->model = &mSkullModel;
     skullWithEyes->bounds.shape = Sphere{1.0f};
@@ -364,9 +376,9 @@ void FPSGame::buildScene()
     skullWithEyes->children.push_back(makeEye("rightEye"));
 
     auto player = std::make_unique<Player>(mCamera, &mAK47Model);
+    player->parent = mScene.get();
+    mPlayer = player.get();
 
-    mScene = std::make_unique<GameObject>();
-    mScene->name = "World";
     mScene->children.push_back(std::move(skullWithEyes));
     mScene->children.push_back(std::move(player));
 }

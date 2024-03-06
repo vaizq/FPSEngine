@@ -16,6 +16,9 @@ namespace Util
     std::string getShaderPath(const std::string& shaderName);
     std::string getAssetPath(const std::string& assetName);
 
+    // Extract filename from a filepath. /some/path/folder/filename.extension -> filename
+    std::string extractFilename(const std::string& filepath);
+
 
     GLFWwindow* initGraphics(int windowWidth = 640, int windowHeight = 480, const std::string& windowName = "GLFW Window");
     void shutdownGraphics();

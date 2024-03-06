@@ -63,7 +63,7 @@ private:
     bool mDrawCoordinateSystems{false};
     bool mDrawBounds{false};
     bool mUseDebugCamera{false};
-    float mCrosshireScale{1.0f};
+    float mCrosshireScale{0.0f};
     Mesh mGroundPlane;
     Mesh mSphereMesh;
     Mesh mCrosshire;
@@ -74,8 +74,8 @@ private:
     GameObject* mSkull{};
     GameObject* mLeftEye{};
     GameObject* mRightEye{};
-    GameObject* mPlayer{};
     GameObject* mTarget{};
+    Player* mPlayer{};
 
 };
 

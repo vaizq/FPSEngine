@@ -3,14 +3,13 @@
 //
 
 #include <catch2/catch_test_macros.hpp>
+#include "../src/core/Util.h"
 
-unsigned int Factorial( unsigned int number ) {
-    return number <= 1 ? number : Factorial(number-1)*number;
-}
-
-TEST_CASE( "Factorials are computed", "[factorial]" ) {
-    REQUIRE( Factorial(1) == 1 );
-    REQUIRE( Factorial(2) == 2 );
-    REQUIRE( Factorial(3) == 6 );
-    REQUIRE( Factorial(10) == 3628800 );
+TEST_CASE( "filename extracting", "[utils]" ) {
+    REQUIRE(Util::extractFilename("filename") == "filename");
+    REQUIRE(Util::extractFilename("filename.txt") == "filename");
+    REQUIRE(Util::extractFilename("/some/path/to/file/filename") == "filename");
+    REQUIRE(Util::extractFilename("/some/../path/to/file/filename.txt") == "filename");
+    REQUIRE(Util::extractFilename("filename.txt") == "filename");
+    REQUIRE(Util::extractFilename("~/../.folder/filename.txt") == "filename");
 }

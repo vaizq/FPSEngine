@@ -10,6 +10,10 @@
 #include <glm/gtc/quaternion.hpp>
 #include <nlohmann/json_fwd.hpp>
 
+
+static constexpr glm::vec3 worldUp{0.0f, 1.0f, 0.0f};
+static constexpr float yawFix{glm::radians(-90.f)};
+
 struct Transform
 {
     glm::vec3 position{};
@@ -35,10 +39,25 @@ struct Transform
     [[nodiscard]] glm::mat4 modelMatrix() const
     {
         auto m = glm::translate(glm::mat4{1.0f}, position);
-        m = glm::rotate(m, yaw, glm::vec3(0.f, 1.f, 0.f));
+        m = glm::rotate(m, -yaw, glm::vec3(0.f, 1.f, 0.f));
         m = glm::rotate(m, pitch, glm::vec3(1.f, 0.f, 0.f));
         m = glm::scale(m, glm::vec3{scale});
         return m;
+    }
+
+    [[nodiscard]] glm::vec3 front() const
+    {
+        return glm::normalize(glm::vec3(std::cos(yaw + yawFix) * std::cos(pitch), std::sin(pitch), std::sin(yaw + yawFix) * std::cos(pitch)));
+    }
+
+    [[nodiscard]] glm::vec3 right() const
+    {
+        return glm::normalize(glm::cross(front(), worldUp));
+    }
+
+    [[nodiscard]] glm::vec3 up() const
+    {
+        return glm::normalize(glm::cross(right(), front()));
     }
 
     static nlohmann::json serialize(const Transform& transform);

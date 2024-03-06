@@ -23,6 +23,25 @@ std::string Util::getAssetPath(const std::string& assetName) {
     return std::string(assetsDir) + '/' + assetName;
 }
 
+std::string Util::extractFilename(const std::string& filepath)
+{
+    auto filenameBegin = [&filepath]() {
+        auto result = filepath.find_last_of('/');
+        if (result == std::string::npos) {
+            return 0UL;
+        }
+        else {
+            return result + 1;
+        }
+    }();
+
+    auto filenameEnd = [&filepath, filenameBegin]() {
+        return filenameBegin + filepath.substr(filenameBegin).find_last_of('.');
+    }();
+
+    return filepath.substr(filenameBegin, filenameEnd - filenameBegin);
+}
+
 GLFWwindow *Util::initGraphics(int windowWidth, int windowHeight, const std::string& windowName)
 {
     glfwInit();

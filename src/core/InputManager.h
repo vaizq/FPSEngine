@@ -74,8 +74,10 @@ public:
         return mouseButton(button) == KeyState::Pressed;
     }
 
-    std::map<KeyCode, std::function<void()>> pressHandlers;
-    std::map<KeyCode, std::function<void()>> releaseHandlers;
+    std::map<KeyCode, std::function<void()>> keyPressHandlers;
+    std::map<KeyCode, std::function<void()>> keyReleaseHandlers;
+    std::map<KeyCode, std::function<void()>> buttonPressHandlers;
+    std::map<KeyCode, std::function<void()>> buttonReleaseHandlers;
 
 private:
     InputManager() = default;
@@ -87,14 +89,14 @@ private:
         {
             case GLFW_PRESS:
                 self.mKeyboard[key] = KeyState::Pressed;
-                if (self.pressHandlers.contains(key)) {
-                    self.pressHandlers[key]();
+                if (self.keyPressHandlers.contains(key)) {
+                    self.keyPressHandlers[key]();
                 }
                 break;
             case GLFW_RELEASE:
                 self.mKeyboard[key] = KeyState::Released;
-                if (self.releaseHandlers.contains(key)) {
-                    self.releaseHandlers[key]();
+                if (self.keyReleaseHandlers.contains(key)) {
+                    self.keyReleaseHandlers[key]();
                 }
                 break;
         }
@@ -115,9 +117,15 @@ private:
         {
             case GLFW_PRESS:
                 self.mMouseButtons[button] = KeyState::Pressed;
+                if (self.buttonPressHandlers.contains(button)) {
+                    self.buttonPressHandlers[button]();
+                }
                 break;
             case GLFW_RELEASE:
                 self.mMouseButtons[button] = KeyState::Released;
+                if (self.buttonReleaseHandlers.contains(button)) {
+                    self.buttonReleaseHandlers[button]();
+                }
                 break;
         }
     }
