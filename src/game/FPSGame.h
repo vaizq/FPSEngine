@@ -49,16 +49,11 @@ private:
     int mWidth{};
     int mHeight{};
     DeltaTimer<Clock> mTimer{};
-    Shader mTextureShader;
-    Shader mColorShader;
     Camera mCamera;
     Camera mDebugCamera;
-    glm::vec3 mVelo{};
-    glm::vec3 mPos{};
     std::map<int, std::function<void()>> mPressHandlers;
     std::map<int, std::function<void()>> mReleaseHandlers;
     GLenum mDrawMode = GL_TRIANGLES;
-    bool mUseCamera{false};
     bool mUseColorShader{true};
     bool mDrawCoordinateSystems{false};
     bool mDrawBounds{false};
@@ -67,9 +62,6 @@ private:
     Mesh mGroundPlane;
     Mesh mSphereMesh;
     Mesh mCrosshire;
-    Model mSkullModel;
-    Model mEyeModel;
-    Model mAK47Model;
     std::unique_ptr<GameObject> mScene;
     GameObject* mSkull{};
     GameObject* mLeftEye{};

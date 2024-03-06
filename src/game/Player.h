@@ -15,11 +15,12 @@
 #include "../core/InputManager.h"
 #include "../core/AudioSource.h"
 #include "Weapon.h"
+#include "../core/ResourceManager.h"
 
 class Player : public GameObject
 {
 public:
-    Player(Camera& camera, Model* gunModel)
+    Player(Camera& camera)
     : mCamera{camera}
     {
         name = "Player";
@@ -27,7 +28,7 @@ public:
         mWeapon = gun.get();
         gun->parent = this;
         gun->name = "PlayersWeapon";
-        gun->model = gunModel;
+        gun->model = &ResourceManager::instance().getModel("ak47");
         children.push_back(std::move(gun));
 
         mPrevMousePos = InputManager::instance().mousePos();

@@ -30,7 +30,6 @@ public:
     ResourceManager& operator=(ResourceManager&&) = delete;
 
     void loadAll();
-    ~ResourceManager();
 
     Texture& getTexture(const std::string& name);
     Model& getModel(const std::string& name);

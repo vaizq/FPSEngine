@@ -17,6 +17,7 @@
 #include "Tracker.h"
 #include "../core/RayCast.h"
 #include "Player.h"
+#include "../core/ResourceManager.h"
 
 
 using namespace std::chrono_literals;
@@ -37,11 +38,6 @@ FPSGame& FPSGame::instance() {
 
 FPSGame::FPSGame(GLFWwindow* window)
 :   mWindow{window},
-    mTextureShader{Util::getShaderPath("model.vert").c_str(), Util::getShaderPath("model.frag").c_str()},
-    mColorShader{Util::getShaderPath("model.vert").c_str(), Util::getShaderPath("color.frag").c_str()},
-    mSkullModel(Util::getAssetPath("models/Skull/skull.obj")),
-    mEyeModel(Util::getAssetPath("models/Eye/eyeball.obj")),
-    mAK47Model(Util::getAssetPath("models/ak47/ak47.obj")),
     mGroundPlane(Geometry::makePlane(100.f, 100.f, {Texture::loadFromFile(Util::getAssetPath("textures/bathroom-tiling.jpg"))})),
     mSphereMesh(Geometry::makeSphere(300)),
     mCrosshire(Geometry::makeCrosshire())
@@ -50,6 +46,8 @@ FPSGame::FPSGame(GLFWwindow* window)
     glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
     InputManager::registerCallbacks(mWindow); // Initialize InputManager
     Util::initImgui(mWindow); // Initialize ImGui after my callbacks are installed
+
+    ResourceManager::instance().loadAll();
 
     loadScene();
 
@@ -88,47 +86,11 @@ FPSGame::FPSGame(GLFWwindow* window)
         int curMode = glfwGetInputMode(mWindow, GLFW_CURSOR);
         if (curMode == GLFW_CURSOR_NORMAL) {
             glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            mUseCamera = true;
             mPlayer->enableInput = true;
         }
         else {
             glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            mUseCamera = false;
             mPlayer->enableInput = false;
-        }
-    };
-
-    InputManager::instance().keyPressHandlers[GLFW_KEY_S] = [this]() {
-        mVelo.z = speed;
-    };
-    InputManager::instance().keyPressHandlers[GLFW_KEY_W] = [this]() {
-        mVelo.z = -speed;
-    };
-    InputManager::instance().keyPressHandlers[GLFW_KEY_D] = [this]() {
-        mVelo.x = speed;
-    };
-    InputManager::instance().keyPressHandlers[GLFW_KEY_A] = [this]() {
-        mVelo.x = -speed;
-    };
-
-    InputManager::instance().keyReleaseHandlers[GLFW_KEY_S] = [this]() {
-        if (mVelo.z > 0.0f) {
-            mVelo.z = 0.0f;
-        }
-    };
-    InputManager::instance().keyReleaseHandlers[GLFW_KEY_W] = [this]() {
-        if (mVelo.z < 0.0f) {
-            mVelo.z = 0.0f;
-        }
-    };
-    InputManager::instance().keyReleaseHandlers[GLFW_KEY_D] = [this]() {
-        if (mVelo.x > 0.0f) {
-            mVelo.x = 0.0f;
-        }
-    };
-    InputManager::instance().keyReleaseHandlers[GLFW_KEY_A] = [this]() {
-        if (mVelo.x < 0.0f) {
-            mVelo.x = 0.0f;
         }
     };
 }
@@ -234,7 +196,8 @@ void FPSGame::update(Duration dt)
 
 void FPSGame::render()
 {
-    Shader& shader = mUseColorShader ? mColorShader : mTextureShader;
+    Shader& shader = ResourceManager::instance().getShader(mUseColorShader ? "color" : "model");
+    Shader& colorShader = ResourceManager::instance().getShader("color");
 
     glm::mat4 projection(1);
     glm::mat4 view = mUseDebugCamera ? mDebugCamera.getViewMatrix() : mCamera.getViewMatrix();
@@ -242,52 +205,52 @@ void FPSGame::render()
 
     // Draw different coordinate systems
     if (mDrawCoordinateSystems) {
-        mColorShader.use();
-        mColorShader.setMat4("view", view);
-        mColorShader.setMat4("projection", projection);
+        colorShader.use();
+        colorShader.setMat4("view", view);
+        colorShader.setMat4("projection", projection);
 
-        mScene->forEach([this](GameObject &entity, const glm::mat4 &parentTransform)
+        mScene->forEach([this, &colorShader](GameObject &entity, const glm::mat4 &parentTransform)
                         {
-                            auto drawCoordinates = [this]()
+                            auto drawCoordinates = [this, &colorShader]()
                             {
                                 static Mesh xAxis = Geometry::makeXAxis();
                                 static Mesh yAxis = Geometry::makeYAxis();
                                 static Mesh zAxis = Geometry::makeZAxis();
 
-                                mColorShader.setVec3("color", Util::red);
-                                xAxis.draw(mColorShader, GL_LINES);
+                                colorShader.setVec3("color", Util::red);
+                                xAxis.draw(colorShader, GL_LINES);
 
-                                mColorShader.setVec3("color", Util::green);
-                                yAxis.draw(mColorShader, GL_LINES);
+                                colorShader.setVec3("color", Util::green);
+                                yAxis.draw(colorShader, GL_LINES);
 
-                                mColorShader.setVec3("color", Util::blue);
-                                zAxis.draw(mColorShader, GL_LINES);
+                                colorShader.setVec3("color", Util::blue);
+                                zAxis.draw(colorShader, GL_LINES);
                             };
 
-                            mColorShader.setMat4("model", glm::scale(parentTransform * entity.transform.modelMatrix(), glm::vec3{5.f}));
+                            colorShader.setMat4("model", glm::scale(parentTransform * entity.transform.modelMatrix(), glm::vec3{5.f}));
                             drawCoordinates();
                         });
     }
 
     // Draw bounds
     if (mDrawBounds) {
-        mColorShader.use();
-        mColorShader.setMat4("view", view);
-        mColorShader.setMat4("projection", projection);
+        colorShader.use();
+        colorShader.setMat4("view", view);
+        colorShader.setMat4("projection", projection);
 
-        mScene->forEach([this](GameObject& entity, const glm::mat4& parentTransform) {
+        mScene->forEach([this, &colorShader](GameObject& entity, const glm::mat4& parentTransform) {
 
             if (auto shape = std::get_if<Sphere>(&entity.bounds.shape)) {
                 auto finalTransform = parentTransform * entity.transform.modelMatrix() * entity.bounds.transform.modelMatrix();
                 finalTransform = glm::scale(finalTransform, glm::vec3(shape->radius));
-                mColorShader.setMat4("model", finalTransform);
+                colorShader.setMat4("model", finalTransform);
                 if (mTarget == &entity) {
-                    mColorShader.setVec3("color", Util::red);
+                    colorShader.setVec3("color", Util::red);
                 }
                 else {
-                    mColorShader.setVec3("color", Util::green);
+                    colorShader.setVec3("color", Util::green);
                 }
-                mSphereMesh.draw(mColorShader, GL_LINES);
+                mSphereMesh.draw(colorShader, GL_LINES);
             }
         });
     }
@@ -318,13 +281,13 @@ void FPSGame::render()
         glm::mat4 model(1.0f);
         const float k = static_cast<float>(mWidth) / static_cast<float>(mHeight);
         model = glm::scale(model, glm::vec3(mCrosshireScale, mCrosshireScale * k, 1.0f));
-        mColorShader.use();
-        mColorShader.setMat4("view", glm::mat4{1.0f});
-        mColorShader.setMat4("projection", glm::mat4{1.0f});
-        mColorShader.setMat4("model", model);
-        mColorShader.setVec3("color", glm::vec3(0.0f, 1.0f, 0.0f));
+        colorShader.use();
+        colorShader.setMat4("view", glm::mat4{1.0f});
+        colorShader.setMat4("projection", glm::mat4{1.0f});
+        colorShader.setMat4("model", model);
+        colorShader.setVec3("color", glm::vec3(0.0f, 1.0f, 0.0f));
 
-        mCrosshire.draw(mColorShader, GL_LINES);
+        mCrosshire.draw(colorShader, GL_LINES);
     }
 }
 
@@ -364,18 +327,18 @@ void FPSGame::buildScene()
         auto eye = std::make_unique<GameObject>();
         eye->parent = skullWithEyes.get();
         eye->name = std::move(name);
-        eye->model = &mEyeModel;
+        eye->model = &ResourceManager::instance().getModel("eyeBall");
         return eye;
     };
 
     skullWithEyes->parent = mScene.get();
     skullWithEyes->name = "Skull";
-    skullWithEyes->model = &mSkullModel;
+    skullWithEyes->model = &ResourceManager::instance().getModel("skull");
     skullWithEyes->bounds.shape = Sphere{1.0f};
     skullWithEyes->children.push_back(makeEye("leftEye"));
     skullWithEyes->children.push_back(makeEye("rightEye"));
 
-    auto player = std::make_unique<Player>(mCamera, &mAK47Model);
+    auto player = std::make_unique<Player>(mCamera);
     player->parent = mScene.get();
     mPlayer = player.get();
 
