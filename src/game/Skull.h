@@ -5,7 +5,7 @@
 #ifndef FPSFROMSCRATCH_SKULL_H
 #define FPSFROMSCRATCH_SKULL_H
 
-#include "../core/GameObject.h"
+#include "../engine/GameObject.h"
 
 struct SkullWithEyes
 {

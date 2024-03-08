@@ -60,6 +60,13 @@ struct GameObject
 
     virtual void update(std::chrono::duration<float> dt) {}
 
+    virtual void render(Shader& shader)
+    {
+        if (model != nullptr) {
+            model->draw(shader);
+        }
+    }
+
     // Apply functor to this and all the children recursively
     void forEach(std::function<void(GameObject&)>&& callable)
     {

@@ -113,14 +113,14 @@ extern "C" {
 #ifndef GLAPI
 #define GLAPI extern
 #endif
-/* glcorearb.h is for use with OpenGL core profile implementations.
+/* glcorearb.h is for use with OpenGL engine profile implementations.
 ** It should should be placed in the same directory as gl.h and
 ** included as <GL/glcorearb.h>.
 **
-** glcorearb.h includes only APIs in the latest OpenGL core profile
+** glcorearb.h includes only APIs in the latest OpenGL engine profile
 ** implementation together with APIs in newer ARB extensions which
-** can be supported by the core profile. It does not, and never will
-** include functionality removed from the core profile, such as
+** can be supported by the engine profile. It does not, and never will
+** include functionality removed from the engine profile, such as
 ** fixed-function vertex and fragment processing.
 **
 ** Do not #include both <GL/glcorearb.h> and either of <GL/gl.h> or
@@ -128,7 +128,7 @@ extern "C" {
 */
 /* Generated C header for:
  * API: gl
- * Profile: core
+ * Profile: engine
  * Versions considered: .*
  * Versions emitted: .*
  * Default extensions included: glcore

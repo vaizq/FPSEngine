@@ -35,6 +35,9 @@ public:
     Model& getModel(const std::string& name);
     Shader& getShader(const std::string& name);
 
+    glm::mat4 view{1.0f};
+    glm::mat4 projection{1.0f};
+
 private:
     ResourceManager() = default;
 

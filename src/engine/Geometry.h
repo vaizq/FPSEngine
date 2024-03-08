@@ -7,6 +7,7 @@
 
 #include "Mesh.h"
 #include <glm/glm.hpp>
+#include "Perlin.h"
 
 namespace Geometry
 {
@@ -375,6 +376,57 @@ namespace Geometry
         return Mesh{std::move(vertices), std::move(indices), {}};
     }
 
+    Mesh makePerlinTerrain(int width, int height, float scale = 1.0f, std::vector<Texture> textures = {})
+    {
+        std::vector<Vertex> vertices;
+        std::vector<unsigned> indices;
+
+        Perlin2D perlin(width, height);
+
+        // Calculate vertices
+        for (int zi = 0; zi < height; ++zi) {
+            for (int xi = 0; xi < width; ++xi) {
+                auto x = static_cast<float>(xi);
+                auto z = static_cast<float>(zi);
+                float y = perlin(glm::vec2(x + 0.5f, z + 0.5f)) * scale;
+                vertices.emplace_back(glm::vec3(x, y, z), glm::vec3{}, glm::vec2{});
+            }
+        }
+
+        auto vertexIndex= [width, height](int xi, int yi) {
+            return (yi * width) + xi;
+        };
+
+        // Each quad has an index
+        // Each vertex has an index
+        // Each vertex has a xi and yi
+
+        for (int qi = 0; qi < width * height; ++qi) {
+            int zi = qi / width;
+            int xi = qi % width;
+            int ai = zi * (width + 1) + xi;
+            int bi = ai + width + 1;
+            int ci = bi + 1;
+            int di = ai + 1;
+
+            auto n0 = glm::normalize(glm::cross(vertices[di].position - vertices[ai].position, vertices[bi].position - vertices[ai].position));
+            auto n1 = glm::normalize(glm::cross(vertices[bi].position - vertices[ci].position, vertices[di].position - vertices[ci].position));
+            vertices[ai].normal = n0;
+            vertices[bi].normal = n0;
+            vertices[di].normal = n0;
+            vertices[ci].normal = n1;
+
+            indices.push_back(ai);
+            indices.push_back(bi);
+            indices.push_back(di);
+
+            indices.push_back(di);
+            indices.push_back(bi);
+            indices.push_back(ci);
+        }
+
+        return Mesh{std::move(vertices), std::move(indices), std::move(textures)};
+    }
 }
 
 #endif //FPSFROMSCRATCH_GEOMETRY_H

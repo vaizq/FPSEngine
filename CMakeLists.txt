@@ -22,18 +22,18 @@ set(SRC_FILES
     extern/imgui_impl_glfw.cpp
     extern/imgui_impl_opengl3.cpp
     src/game/FPSGame.cpp
-    src/core/Shader.h
-    src/core/Mesh.cpp
-    src/core/Model.cpp
-    src/core/Util.h
-    src/core/Texture.cpp
-    src/core/Camera.cpp
-    src/core/Util.cpp
-    src/core/ResourceManager.cpp
-    src/core/GameObject.cpp
-    src/core/Transform.cpp
-    src/core/MyGui.cpp
-    src/core/InputManager.h
+        src/engine/Shader.h
+        src/engine/Mesh.cpp
+        src/engine/Model.cpp
+        src/engine/Util.h
+        src/engine/Texture.cpp
+        src/engine/Camera.cpp
+        src/engine/Util.cpp
+        src/engine/ResourceManager.cpp
+        src/engine/GameObject.cpp
+        src/engine/Transform.cpp
+        src/engine/MyGui.cpp
+        src/engine/InputManager.h
 )
 
 add_executable(FPSFromScratch src/main.cpp ${SRC_FILES})

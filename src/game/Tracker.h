@@ -5,7 +5,7 @@
 #ifndef FPSFROMSCRATCH_TRACKER_H
 #define FPSFROMSCRATCH_TRACKER_H
 
-#include "../core/GameObject.h"
+#include "../engine/GameObject.h"
 #include <cmath>
 
 

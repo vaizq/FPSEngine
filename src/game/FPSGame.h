@@ -9,18 +9,18 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 #include <glm/vec3.hpp>
-#include "../core/Shader.h"
-#include "../core/Mesh.h"
+#include "../engine/Shader.h"
+#include "../engine/Mesh.h"
 #include <memory>
 #include <functional>
 #include <map>
-#include "../core/Camera.h"
+#include "../engine/Camera.h"
 #include <chrono>
-#include "../core/DeltaTimer.hpp"
-#include "../core/Util.h"
-#include "../core/Model.h"
+#include "../engine/DeltaTimer.hpp"
+#include "../engine/Util.h"
+#include "../engine/Model.h"
 #include "Player.h"
-#include "../core/GameObject.h"
+#include "../engine/GameObject.h"
 
 
 class FPSGame
@@ -68,7 +68,6 @@ private:
     GameObject* mRightEye{};
     GameObject* mTarget{};
     Player* mPlayer{};
-
 };
 
 

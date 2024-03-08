@@ -6,16 +6,18 @@
 #define FPSFROMSCRATCH_PLAYER_H
 
 
-#include "../core/Model.h"
-#include "../core/Shader.h"
-#include "../core/Camera.h"
-#include "../core/Util.h"
-#include "../core/GameObject.h"
+#include "../engine/Model.h"
+#include "../engine/Shader.h"
+#include "../engine/Camera.h"
+#include "../engine/Util.h"
+#include "../engine/GameObject.h"
 #include <imgui.h>
-#include "../core/InputManager.h"
-#include "../core/AudioSource.h"
+#include "../engine/InputManager.h"
+#include "../engine/AudioSource.h"
 #include "Weapon.h"
-#include "../core/ResourceManager.h"
+#include "../engine/ResourceManager.h"
+
+static glm::vec3 gravity{0.0f, -10.0f, 0.0f};
 
 class Player : public GameObject
 {
@@ -53,11 +55,18 @@ public:
         {
             mWeapon->releaseTrigger();
         };
+
+        InputManager::instance().keyPressHandlers[GLFW_KEY_SPACE] = [this] ()
+        {
+            if (transform.position.y == mGroundLevel) {
+                mVelocity.y = 20.0f;
+                transform.position.y += 0.1f;
+            }
+        };
     }
 
     ~Player() override
     {
-        GameObject::~GameObject();
         mWeapon->transform = mWeaponRegularTransform;
     }
 
@@ -70,12 +79,20 @@ public:
         mCamera.getTransform() = transform;
     }
 
+    void onGUI() override
+    {
+        GameObject::onGUI();
+
+        ImGui::DragFloat3("Gravity", &gravity[0], 0.1f);
+    }
+
     bool enableInput{true};
 
 private:
     void updatePosition(std::chrono::duration<float> dt)
     {
-        mVelocity = glm::vec3{0.0f};
+        mVelocity.x = 0.f;
+        mVelocity.z = 0.f;
 
         if (InputManager::instance().keyPressed(GLFW_KEY_W)) {
             auto front = transform.front();
@@ -99,9 +116,23 @@ private:
             mVelocity.z += right.z;
         }
 
-        if (glm::length(mVelocity) > std::numeric_limits<float>::epsilon()) {
-            transform.position += mSpeed * glm::normalize(mVelocity) * dt.count();
+        if (transform.position.y > mGroundLevel) {
+            mVelocity += gravity * dt.count();
+            transform.position.y += mVelocity.y * dt.count();
         }
+        else {
+            mVelocity.y = 0.0f;
+            transform.position.y = mGroundLevel;
+        }
+
+
+        auto xzVelocity = glm::vec3(mVelocity.x, 0.0f, mVelocity.z);
+
+
+        if (glm::length(xzVelocity) > std::numeric_limits<float>::epsilon()) {
+            transform.position += mSpeed * glm::normalize(xzVelocity) * dt.count();
+        }
+
 
         AudioManager::instance().setTransform(transform);
     }
@@ -126,6 +157,7 @@ private:
     const Transform mWeaponAimTransform{glm::vec3{0.0f, -0.2f, -0.6f}, 0.0f, glm::radians(1.0f), 3.6f};
     Transform mWeaponRegularTransform{};
     Weapon* mWeapon;
+    float mGroundLevel{4.0f};
 };
 
 #endif //FPSFROMSCRATCH_PLAYER_H

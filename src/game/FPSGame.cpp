@@ -4,9 +4,9 @@
 
 #include "FPSGame.h"
 #include <iostream>
-#include "../core/Util.h"
+#include "../engine/Util.h"
 #include <glm/gtc/matrix_transform.hpp>
-#include "../core/Geometry.h"
+#include "../engine/Geometry.h"
 #include <imgui.h>
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_glfw.h"
@@ -15,9 +15,9 @@
 #include <thread>
 #include <nlohmann/json.hpp>
 #include "Tracker.h"
-#include "../core/RayCast.h"
+#include "../engine/RayCast.h"
 #include "Player.h"
-#include "../core/ResourceManager.h"
+#include "../engine/ParticleEmitter.h"
 
 
 using namespace std::chrono_literals;
@@ -38,7 +38,7 @@ FPSGame& FPSGame::instance() {
 
 FPSGame::FPSGame(GLFWwindow* window)
 :   mWindow{window},
-    mGroundPlane(Geometry::makePlane(100.f, 100.f, {Texture::loadFromFile(Util::getAssetPath("textures/bathroom-tiling.jpg"))})),
+    mGroundPlane(Geometry::makePerlinTerrain(100, 100, 10.f, {Texture::loadFromFile(Util::getAssetPath("textures/bathroom-tiling.jpg"))})),
     mSphereMesh(Geometry::makeSphere(300)),
     mCrosshire(Geometry::makeCrosshire())
 {
@@ -203,6 +203,9 @@ void FPSGame::render()
     glm::mat4 view = mUseDebugCamera ? mDebugCamera.getViewMatrix() : mCamera.getViewMatrix();
     projection = glm::perspective(glm::radians(45.0f), (float)mWidth / (float)mHeight, 0.1f, 100.0f);
 
+    ResourceManager::instance().view = view;
+    ResourceManager::instance().projection = projection;
+
     // Draw different coordinate systems
     if (mDrawCoordinateSystems) {
         colorShader.use();
@@ -264,9 +267,7 @@ void FPSGame::render()
         mScene->forEach([&shader](GameObject &entity, const glm::mat4 &transform)
                         {
                             shader.setMat4("model", transform * entity.transform.modelMatrix());
-                            if (entity.model != nullptr) {
-                                entity.model->draw(shader);
-                            }
+                            entity.render(shader);
                         });
 
         glm::mat4 model(1.0f);

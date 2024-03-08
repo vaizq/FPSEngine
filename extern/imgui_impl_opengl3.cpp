@@ -71,7 +71,7 @@
 //  2018-11-13: OpenGL: Support for GL 4.5's glClipControl(GL_UPPER_LEFT) / GL_CLIP_ORIGIN.
 //  2018-08-29: OpenGL: Added support for more OpenGL loaders: glew and glad, with comments indicative that any loader can be used.
 //  2018-08-09: OpenGL: Default to OpenGL ES 3 on iOS and Android. GLSL version default to "#version 300 ES".
-//  2018-07-30: OpenGL: Support for GLSL 300 ES and 410 core. Fixes for Emscripten compilation.
+//  2018-07-30: OpenGL: Support for GLSL 300 ES and 410 engine. Fixes for Emscripten compilation.
 //  2018-07-10: OpenGL: Support for more GLSL versions (based on the GLSL version string). Added error output when shaders fail to compile/link.
 //  2018-06-08: Misc: Extracted imgui_impl_opengl3.cpp/.h away from the old combined GLFW/SDL+OpenGL3 examples.
 //  2018-06-08: OpenGL: Use draw_data->DisplayPos and draw_data->DisplaySize to setup projection matrix and clipping rectangle.
@@ -96,11 +96,11 @@
 //  3.0       130       "#version 130"
 //  3.1       140       "#version 140"
 //  3.2       150       "#version 150"
-//  3.3       330       "#version 330 core"
-//  4.0       400       "#version 400 core"
-//  4.1       410       "#version 410 core"
-//  4.2       420       "#version 410 core"
-//  4.3       430       "#version 430 core"
+//  3.3       330       "#version 330 engine"
+//  4.0       400       "#version 400 engine"
+//  4.1       410       "#version 410 engine"
+//  4.2       420       "#version 410 engine"
+//  4.3       430       "#version 430 engine"
 //  ES 2.0    100       "#version 100"      = WebGL 1.0
 //  ES 3.0    300       "#version 300 es"   = WebGL 2.0
 //----------------------------------------

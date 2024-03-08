@@ -5,8 +5,9 @@
 #ifndef FPSFROMSCRATCH_WEAPON_H
 #define FPSFROMSCRATCH_WEAPON_H
 
-#include "../core/GameObject.h"
-#include "../core/AudioSource.h"
+
+#include "../engine/GameObject.h"
+#include "../engine/AudioSource.h"
 
 
 class Weapon : public GameObject
