@@ -78,8 +78,8 @@ private:
         return glm::dot(gradient, dist);
     }
 
-    int mWidth;
-    int mHeight;
+    const int mWidth;
+    const int mHeight;
     std::vector<glm::vec2> mGradientCache;
     std::vector<bool> mCacheStatus;
     std::random_device mRndDevice{};

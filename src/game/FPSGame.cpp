@@ -38,7 +38,7 @@ FPSGame& FPSGame::instance() {
 
 FPSGame::FPSGame(GLFWwindow* window)
 :   mWindow{window},
-    mGroundPlane(Geometry::makePerlinTerrain(100, 100, 10.f, {Texture::loadFromFile(Util::getAssetPath("textures/bathroom-tiling.jpg"))})),
+    mGroundPlane(Geometry::makePerlinTerrain(2, 2, 2, glm::vec3(1.0f), {Texture::loadFromFile(Util::getAssetPath("textures/bathroom-tiling.jpg"))})),
     mSphereMesh(Geometry::makeSphere(300)),
     mCrosshire(Geometry::makeCrosshire())
 {
@@ -157,6 +157,19 @@ void FPSGame::update(Duration dt)
         if (mUseDebugCamera) {
             MyGui::InputTransform("DebugCamera", mDebugCamera.getTransform());
         }
+
+        static int width{100};
+        static int height{100};
+        static int gridSize{10};
+        static glm::vec3 scale{1.0f};
+
+        ImGui::DragInt("GroundWidth", &width);
+        ImGui::DragInt("GroundHeight", &height);
+        ImGui::DragInt("GroundGridSize", &gridSize);
+        ImGui::DragFloat3("GroundScale", &scale[0], 0.05f);
+        if (ImGui::Button("CalculateGround")) {
+            mGroundPlane = Geometry::makePerlinTerrain(width, height, gridSize, scale);
+        }
     }
     ImGui::End();
 
@@ -273,7 +286,7 @@ void FPSGame::render()
         glm::mat4 model(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
         shader.setMat4("model", model);
-        mGroundPlane.draw(shader);
+        mGroundPlane.draw(shader, mDrawMode);
     }
 
 
