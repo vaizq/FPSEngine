@@ -34,6 +34,7 @@ public:
     Mesh& operator=(const Mesh&) = delete;
 
     void draw(Shader& shader, GLenum mode = GL_TRIANGLES);
+
 private:
     void deleteBuffers();
     std::vector<Vertex> mVertices;
@@ -43,7 +44,6 @@ private:
     unsigned mVBO{};
     unsigned mEBO{};
 };
-
 
 #endif //FPSFROMSCRATCH_MESH_H
 

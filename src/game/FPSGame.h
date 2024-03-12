@@ -68,6 +68,7 @@ private:
     GameObject* mRightEye{};
     GameObject* mTarget{};
     Player* mPlayer{};
+    glm::vec3 mLightPosition{};
 };
 
 

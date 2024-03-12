@@ -35,9 +35,11 @@ set(SRC_FILES
         src/engine/MyGui.cpp
         src/engine/InputManager.h
         src/engine/Shader.cpp
+        src/engine/Light.h
 )
 
-add_executable(FPSFromScratch src/main.cpp ${SRC_FILES})
+add_executable(FPSFromScratch src/main.cpp ${SRC_FILES}
+        src/engine/Light.h)
 
 target_include_directories(FPSFromScratch PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/imgui ${Stb_INCLUDE_DIR})
 target_link_libraries(FPSFromScratch PRIVATE asio::asio glfw imgui::imgui glm::glm assimp::assimp)

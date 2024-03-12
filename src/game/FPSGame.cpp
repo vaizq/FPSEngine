@@ -162,6 +162,8 @@ void FPSGame::update(Duration dt)
             ResourceManager::instance().reloadShaders();
         }
 
+        ImGui::DragFloat3("Light position", &mLightPosition[0], 0.5f);
+
         static int width{100};
         static int height{100};
         static int gridSize{10};
@@ -277,19 +279,27 @@ void FPSGame::render()
 
     // Draw scene
     {
+        auto normalFromModel = [](const glm::mat4& model) {
+            return glm::transpose(glm::inverse(model));
+        };
+
         shader.use();
         shader.setMat4("view", view);
         shader.setMat4("projection", projection);
+        shader.setVec3("lightPosition", mLightPosition);
 
-        mScene->forEach([&shader](GameObject &entity, const glm::mat4 &transform)
+        mScene->forEach([&shader, normalFromModel](GameObject &entity, const glm::mat4 &transform)
                         {
-                            shader.setMat4("model", transform * entity.transform.modelMatrix());
+                            auto modelMatrix = transform * entity.transform.modelMatrix();
+                            shader.setMat4("model", modelMatrix);
+                            shader.setMat3("normalMatrix", normalFromModel(modelMatrix));
                             entity.render(shader);
                         });
 
         glm::mat4 model(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
         shader.setMat4("model", model);
+        shader.setMat4("normalMatrix", normalFromModel(model));
         mGroundPlane.draw(shader, mDrawMode);
     }
 
