@@ -13,11 +13,11 @@ out float lightIntensity;
 
 void main()
 {
-    vec3 lightPosition = vec3(0.0f, 10.0f, 0.0f);
-    vec3 worldPos = (model * vec4(inPosition, 1.0)).xyz;
-    vec3 lightDirection = worldPos - lightPosition;
+    vec3 lightPosition = vec3(0.0f, 100.0f, 0.0f);
+    vec4 worldPos = model * vec4(inPosition, 1.0);
+    vec3 lightDirection = worldPos.xyz - lightPosition;
 
-    gl_Position = projection * view * model * vec4(inPosition, 1.0);
+    gl_Position = projection * view * worldPos;
     texCoord = inTexCoord;
-    lightIntensity = 0.1 + min(0.9, (1.0 + dot(normalize(inNormal), normalize(lightDirection))) / 2.0);
+    lightIntensity =  (dot(normalize(lightDirection), normalize(worldPos).xyz) + 1.0) / 2.0;
 }

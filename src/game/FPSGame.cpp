@@ -158,6 +158,10 @@ void FPSGame::update(Duration dt)
             MyGui::InputTransform("DebugCamera", mDebugCamera.getTransform());
         }
 
+        if (ImGui::Button("Reload shaders")) {
+            ResourceManager::instance().reloadShaders();
+        }
+
         static int width{100};
         static int height{100};
         static int gridSize{10};
@@ -308,6 +312,8 @@ void FPSGame::render()
 
 void FPSGame::run()
 {
+    float targetFps = 144;
+    Duration targetDeltaTime = Duration{1} / targetFps;
     while (!glfwWindowShouldClose(mWindow))
     {
         const auto dt = mTimer.tick();
@@ -327,6 +333,10 @@ void FPSGame::run()
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(mWindow);
+
+        if (targetDeltaTime > dt) {
+            std::this_thread::sleep_for(targetDeltaTime - dt);
+        }
     }
 }
 

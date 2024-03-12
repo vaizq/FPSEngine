@@ -17,7 +17,6 @@
 class Shader
 {
 public:
-    unsigned int ID;
     // constructor generates the shader on the fly
     // ------------------------------------------------------------------------
     Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr);
@@ -25,6 +24,8 @@ public:
     // activate the shader
     // ------------------------------------------------------------------------
     void use();
+
+    void reload();
 
     void setBool(const std::string &name, bool value);
     void setInt(const std::string &name, int value);
@@ -41,9 +42,15 @@ public:
     void setMat4(const std::string &name, const glm::mat4 &mat);
 
 private:
+    GLuint loadShader(const char* vertexFilePath, const char* fragmentFilePath, const char* geometryFilePath = nullptr);
     void checkCompileErrors(GLuint shader, std::string type);
     GLint getUniformLocation(const std::string& name);
+
     std::unordered_map<std::string, GLint> mUniformLocations;
+    unsigned int mID;
+    const std::string mVertexPath;
+    const std::string mFragmentPath;
+    const std::string mGeometryPath;
 };
 
 #endif //FPSFROMSCRATCH_SHADER_H

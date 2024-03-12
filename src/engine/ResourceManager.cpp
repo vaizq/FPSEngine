@@ -72,13 +72,9 @@ void ResourceManager::loadShaders()
     mShaders.insert({"color", Shader{shaderPath("model.vert").c_str(), shaderPath("color.frag").c_str()}});
 }
 
-
-
-
-
-
-
-
-
-
-
+void ResourceManager::reloadShaders()
+{
+    for (auto& [name, shader] : mShaders) {
+        shader.reload();
+    }
+}

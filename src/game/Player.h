@@ -74,8 +74,8 @@ public:
     {
         if (enableInput) {
             updatePosition(dt);
-            updateRotation(dt);
         }
+        updateRotation(dt);
         mCamera.getTransform() = transform;
     }
 
@@ -143,8 +143,10 @@ private:
         float dx = mousePos.x - mPrevMousePos.x;
         float dy = -(mousePos.y - mPrevMousePos.y);
 
-        transform.yaw += mSensitivity * dx;
-        transform.pitch += mSensitivity * dy;
+        if (enableInput) {
+            transform.yaw += mSensitivity * dx;
+            transform.pitch += mSensitivity * dy;
+        }
 
         mPrevMousePos = mousePos;
     }
