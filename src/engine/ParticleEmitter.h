@@ -64,7 +64,7 @@ public:
         mFromPrevParticle += dt;
     }
 
-    void render(Shader& unusedShader) override
+    void render(Shader& unusedShader)
     {
         Shader& shader = ResourceManager::instance().getShader("color");
         shader.use();

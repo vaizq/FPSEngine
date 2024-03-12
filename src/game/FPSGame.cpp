@@ -288,6 +288,7 @@ void FPSGame::render()
         shader.setMat4("projection", projection);
         shader.setVec3("lightPosition", mLightPosition);
 
+        /*
         mScene->forEach([&shader, normalFromModel](GameObject &entity, const glm::mat4 &transform)
                         {
                             auto modelMatrix = transform * entity.transform.modelMatrix();
@@ -295,6 +296,8 @@ void FPSGame::render()
                             shader.setMat3("normalMatrix", normalFromModel(modelMatrix));
                             entity.render(shader);
                         });
+                        */
+        mScene->render(shader);
 
         glm::mat4 model(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));

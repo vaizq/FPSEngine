@@ -58,10 +58,19 @@ struct GameObject
 
     virtual void update(std::chrono::duration<float> dt) {}
 
-    virtual void render(Shader& shader)
+    virtual void render(Shader& shader, const glm::mat4& parentTransform = glm::mat4{1.0f})
     {
+        const auto modelMatrix = parentTransform * transform.modelMatrix();
+        const auto normalMatrix = glm::transpose(glm::inverse(modelMatrix));
+        shader.setMat4("model", modelMatrix);
+        shader.setMat3("normalMatrix", normalMatrix);
+
         if (model != nullptr) {
             model->draw(shader);
+        }
+
+        for (auto& child : children) {
+            child->render(shader, modelMatrix);
         }
     }
 
