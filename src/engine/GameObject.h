@@ -43,11 +43,9 @@ struct GameObject
 
     virtual void onGUI()
     {
-        ImGui::SeparatorText("Initial transformation");
-        MyGui::InputTransform("initial", transform);
+        MyGui::InputTransform("LocalTransform", transform);
 
-        ImGui::SeparatorText("BoundingVolume");
-        MyGui::InputTransform("bounds", bounds.transform);
+        MyGui::InputTransform("BoundsTransform", bounds.transform);
 
         std::visit([this](auto&& shape) {
             using T = std::decay_t<decltype(shape)>;

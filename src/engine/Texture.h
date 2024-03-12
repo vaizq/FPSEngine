@@ -13,7 +13,7 @@ struct Texture
     static Texture loadFromFile(std::string path, bool gamma = false);
 
     unsigned id{};
-    std::string type;
+    std::string type{"texture_diffuse"};
     std::string path;
 };
 

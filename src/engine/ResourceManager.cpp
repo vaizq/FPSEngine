@@ -55,6 +55,7 @@ Shader &ResourceManager::getShader(const string &name)
 void ResourceManager::loadTextures()
 {
     mTextures["bathroom-tiling"] = Texture::loadFromFile(texturePath("bathroom-tiling.jpg"));
+    mTextures["dirt"] = Texture::loadFromFile(texturePath("dirt.jpg"));
 }
 
 void ResourceManager::loadModels()

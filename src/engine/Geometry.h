@@ -376,9 +376,6 @@ namespace Geometry
         return Mesh{std::move(vertices), std::move(indices), {}};
     }
 
-
-
-
     Mesh makePerlinTerrain(int width, int height, int gridSize = 10.f, glm::vec3 scale = glm::vec3{1.0f}, std::vector<Texture> textures = {})
     {
         std::vector<Vertex> vertices;
@@ -395,7 +392,7 @@ namespace Geometry
                 float x = dx * static_cast<float>(xi);
                 float z = dy * static_cast<float>(zi);
                 float y = perlin(glm::vec2(x, z));
-                vertices.emplace_back(glm::vec3(x, y, z) * scale, glm::vec3{}, glm::vec2{});
+                vertices.emplace_back(glm::vec3(x, y, z) * scale, glm::vec3{}, glm::vec2{std::fmod(x, static_cast<int>(x)), std::fmod(z, static_cast<int>(z))});
             }
         }
 

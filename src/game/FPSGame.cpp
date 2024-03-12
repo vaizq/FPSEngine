@@ -30,6 +30,7 @@ FPSGame& FPSGame::instance() {
     static std::unique_ptr<FPSGame> self;
     if (self == nullptr) {
         auto window = Util::initGraphics(800, 600, "FPS Game");
+        ResourceManager::instance().loadAll();
         self = std::unique_ptr<FPSGame>(new FPSGame(window));
     }
     return *self;
@@ -38,7 +39,7 @@ FPSGame& FPSGame::instance() {
 
 FPSGame::FPSGame(GLFWwindow* window)
 :   mWindow{window},
-    mGroundPlane(Geometry::makePerlinTerrain(2, 2, 2, glm::vec3(1.0f), {Texture::loadFromFile(Util::getAssetPath("textures/bathroom-tiling.jpg"))})),
+    mGroundPlane(Geometry::makePerlinTerrain(2, 2, 2, glm::vec3(1.0f), {ResourceManager::instance().getTexture("dirt")})),
     mSphereMesh(Geometry::makeSphere(300)),
     mCrosshire(Geometry::makeCrosshire())
 {
@@ -47,7 +48,6 @@ FPSGame::FPSGame(GLFWwindow* window)
     InputManager::registerCallbacks(mWindow); // Initialize InputManager
     Util::initImgui(mWindow); // Initialize ImGui after my callbacks are installed
 
-    ResourceManager::instance().loadAll();
 
     loadScene();
 
@@ -168,7 +168,7 @@ void FPSGame::update(Duration dt)
         ImGui::DragInt("GroundGridSize", &gridSize);
         ImGui::DragFloat3("GroundScale", &scale[0], 0.05f);
         if (ImGui::Button("CalculateGround")) {
-            mGroundPlane = Geometry::makePerlinTerrain(width, height, gridSize, scale);
+            mGroundPlane = Geometry::makePerlinTerrain(width, height, gridSize, scale, {ResourceManager::instance().getTexture("dirt")});
         }
     }
     ImGui::End();

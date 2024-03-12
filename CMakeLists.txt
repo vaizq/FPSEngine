@@ -34,6 +34,7 @@ set(SRC_FILES
         src/engine/Transform.cpp
         src/engine/MyGui.cpp
         src/engine/InputManager.h
+        src/engine/Shader.cpp
 )
 
 add_executable(FPSFromScratch src/main.cpp ${SRC_FILES})
