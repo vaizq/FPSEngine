@@ -162,8 +162,6 @@ void FPSGame::update(Duration dt)
             ResourceManager::instance().reloadShaders();
         }
 
-        ImGui::DragFloat3("Light position", &mLightPosition[0], 0.5f);
-
         static int width{100};
         static int height{100};
         static int gridSize{10};
@@ -286,17 +284,8 @@ void FPSGame::render()
         shader.use();
         shader.setMat4("view", view);
         shader.setMat4("projection", projection);
-        shader.setVec3("lightPosition", mLightPosition);
+        shader.setVec3("lightPosition", mScene->findChildren("light")->transform.position);
 
-        /*
-        mScene->forEach([&shader, normalFromModel](GameObject &entity, const glm::mat4 &transform)
-                        {
-                            auto modelMatrix = transform * entity.transform.modelMatrix();
-                            shader.setMat4("model", modelMatrix);
-                            shader.setMat3("normalMatrix", normalFromModel(modelMatrix));
-                            entity.render(shader);
-                        });
-                        */
         mScene->render(shader);
 
         glm::mat4 model(1.0f);
@@ -379,8 +368,13 @@ void FPSGame::buildScene()
     player->parent = mScene.get();
     mPlayer = player.get();
 
+    auto light = std::make_unique<Light>();
+    light->name = "light";
+    light->parent = mScene.get();
+
     mScene->children.push_back(std::move(skullWithEyes));
     mScene->children.push_back(std::move(player));
+    mScene->children.push_back(std::move(light));
 }
 
 

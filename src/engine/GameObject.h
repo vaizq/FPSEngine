@@ -44,7 +44,6 @@ struct GameObject
     virtual void onGUI()
     {
         MyGui::InputTransform("LocalTransform", transform);
-
         MyGui::InputTransform("BoundsTransform", bounds.transform);
 
         std::visit([this](auto&& shape) {
@@ -93,16 +92,16 @@ struct GameObject
         }
     }
 
-    GameObject* findChildren(const std::string& name)
+    GameObject* findChildren(const std::string& childName)
     {
-        if (this->name == name) {
+        if (this->name == childName) {
             return this;
         }
 
         GameObject* result{nullptr};
 
         for (auto& child : children) {
-            result = child->findChildren(name);
+            result = child->findChildren(childName);
             if (result != nullptr) {
                 return result;
             }

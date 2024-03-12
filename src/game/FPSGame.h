@@ -21,6 +21,7 @@
 #include "../engine/Model.h"
 #include "Player.h"
 #include "../engine/GameObject.h"
+#include "../engine/Light.h"
 
 
 class FPSGame
@@ -68,7 +69,6 @@ private:
     GameObject* mRightEye{};
     GameObject* mTarget{};
     Player* mPlayer{};
-    glm::vec3 mLightPosition{};
 };
 
 

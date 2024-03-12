@@ -6,22 +6,16 @@
 #define FPSFROMSCRATCH_LIGHT_H
 
 #include "GameObject.h"
-#include "ResourceManager.h"
-#include "Geometry.h"
 
-struct Light : public GameObject
+class Light : public GameObject
 {
-    Transform transform{};
-    Mesh mesh{Geometry::makeBox()};
+public:
+    explicit Light();
 
-    void render(Shader& shader) override
-    {
-        auto& colorShader = ResourceManager::instance().getShader("color");
-        colorShader.setMat4("view", ResourceManager::instance().view);
-        colorShader.setMat4("projection", ResourceManager::instance().projection);
-        colorShader.setMat4("model", transform.modelMatrix());
+    void render(Shader& shader, const glm::mat4& parentTransform) override;
 
-    }
+private:
+    Mesh mMesh;
 };
 
 
