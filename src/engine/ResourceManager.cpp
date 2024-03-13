@@ -56,12 +56,13 @@ void ResourceManager::loadTextures()
 {
     mTextures["bathroom-tiling"] = Texture::loadFromFile(texturePath("bathroom-tiling.jpg"));
     mTextures["dirt"] = Texture::loadFromFile(texturePath("dirt.jpg"));
+    mTextures["loadingScreen"] = Texture::loadFromFile(texturePath("halloween.jpg"));
 }
 
 void ResourceManager::loadModels()
 {
     mModels.emplace("ak47", modelPath("ak47/ak47.obj"));
-    mModels.emplace("backpack", modelPath("Backpack/backpack.obj"));
+    //mModels.emplace("backpack", modelPath("Backpack/backpack.obj"));
     mModels.emplace("eyeBall", modelPath("Eye/eyeball.obj"));
     mModels.emplace("skull", modelPath("Skull/skull.obj"));
 }

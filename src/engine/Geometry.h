@@ -20,7 +20,7 @@ namespace Geometry
     Mesh makeYAxis();
     Mesh makeZAxis();
     Mesh makeCrosshire();
-    Mesh makePerlinTerrain(int width, int height, int gridSize = 10.f, glm::vec3 scale = glm::vec3{1.0f}, std::vector<Texture> textures = {});
+    Mesh makePerlinTerrain(Perlin2D& perlin, int gridSize = 10.f, glm::vec3 scale = glm::vec3{1.0f}, std::vector<Texture> textures = {});
 }
 
 #endif //FPSFROMSCRATCH_GEOMETRY_H

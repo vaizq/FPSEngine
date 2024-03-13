@@ -6,14 +6,18 @@
 #include "Geometry.h"
 #include "ResourceManager.h"
 
+static constexpr int gridWidth{100};
+static constexpr int gridHeight{100};
+
 Terrain::Terrain()
+:   mPerlin(gridWidth + 1, gridHeight + 1, 1),
+    mTerrainScale(30, 20, 30)
 {
     model = new Model();
     model->meshes.push_back(Geometry::makePerlinTerrain(
-            100,
-            100,
+            mPerlin,
             10,
-            glm::vec3{1.0f},
+            mTerrainScale,
             {ResourceManager::instance().getTexture("dirt")})
             );
 }
@@ -25,8 +29,16 @@ Terrain::~Terrain()
 
 float Terrain::height(const glm::vec3 &pos)
 {
-    return 0;
+    float x = pos.x / mTerrainScale.x;
+    float z = pos.z / mTerrainScale.z;
+    if (x > 0 && x < gridWidth && z > 0 && z < gridHeight) {
+        return mPerlin(glm::vec2(x, z)) * mTerrainScale.y;
+    }
+    else {
+        return 0.0f;
+    }
 }
+
 
 void Terrain::render(Shader &shader, const glm::mat4 &parentTransform)
 {
@@ -35,3 +47,38 @@ void Terrain::render(Shader &shader, const glm::mat4 &parentTransform)
     shader.setMat3("normalMatrix", glm::transpose(glm::inverse(modelMatrix)));
     model->draw(shader);
 }
+
+
+void Terrain::loadTerrain(glm::vec3 scale)
+{
+    mTerrainScale = scale;
+    model->meshes.clear();
+    model->meshes.push_back(Geometry::makePerlinTerrain(
+            mPerlin,
+            10,
+            mTerrainScale,
+            {ResourceManager::instance().getTexture("dirt")})
+    );
+}
+
+void Terrain::onGUI()
+{
+    GameObject::onGUI();
+    static glm::vec3 tscale;
+    ImGui::DragFloat3("Terrain Scale", &tscale[0], 0.1f);
+    if (ImGui::Button("Reload terrain")) {
+        loadTerrain(tscale);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+

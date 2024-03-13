@@ -66,6 +66,7 @@ private:
     void loadBuffers()
     {
         mAudioBuffers["ak47Fire"] = alutCreateBufferFromFile(Util::getAssetPath("audio/ak47.wav").c_str());
+        mAudioBuffers["theme"] = alutCreateBufferFromFile(Util::getAssetPath("audio/halloween-theme.wav").c_str());
 
         ALenum error = alGetError();
         if (error != ALUT_ERROR_NO_ERROR) {

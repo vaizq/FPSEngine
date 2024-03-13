@@ -19,6 +19,7 @@
 #include "Player.h"
 #include "../engine/ParticleEmitter.h"
 #include "../engine/Terrain.h"
+#include "../engine/LoadingScreen.h"
 
 
 using namespace std::chrono_literals;
@@ -31,23 +32,30 @@ FPSGame& FPSGame::instance() {
     static std::unique_ptr<FPSGame> self;
     if (self == nullptr) {
         auto window = Util::initGraphics(800, 600, "FPS Game");
+        AudioManager::instance();
+
+        auto themesong = std::make_unique<AudioSource>();
+        themesong->playAudio("theme", true);
+
+        // This takes forever
         ResourceManager::instance().loadAll();
-        self = std::unique_ptr<FPSGame>(new FPSGame(window));
+
+        self = std::unique_ptr<FPSGame>(new FPSGame(window, std::move(themesong)));
     }
     return *self;
 }
 
 
-FPSGame::FPSGame(GLFWwindow* window)
+FPSGame::FPSGame(GLFWwindow* window, std::unique_ptr<AudioSource> theme)
 :   mWindow{window},
     mSphereMesh(Geometry::makeSphere(300)),
-    mCrosshire(Geometry::makeCrosshire())
+    mCrosshire(Geometry::makeCrosshire()),
+    mTheme(std::move(theme))
 {
     glfwGetWindowSize(mWindow, &mWidth, &mHeight);
     glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
     InputManager::registerCallbacks(mWindow); // Initialize InputManager
     Util::initImgui(mWindow); // Initialize ImGui after my callbacks are installed
-
 
     loadScene();
 
@@ -121,6 +129,11 @@ static void displayFPS(FPSGame::Duration dt)
     ImGui::Begin("Status");
     ImGui::Text("FPS %.0f", fps);
     ImGui::End();
+}
+
+void FPSGame::onGUI(Duration dt)
+{
+
 }
 
 void FPSGame::update(Duration dt)
@@ -305,6 +318,10 @@ void FPSGame::render()
 
 void FPSGame::run()
 {
+    mScene->forEach([](GameObject& obj) {
+        obj.ready();
+    });
+
     float targetFps = 144;
     Duration targetDeltaTime = Duration{1} / targetFps;
     while (!glfwWindowShouldClose(mWindow))
@@ -315,6 +332,8 @@ void FPSGame::run()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+        onGUI(dt);
 
         update(dt);
 
@@ -331,6 +350,10 @@ void FPSGame::run()
             std::this_thread::sleep_for(targetDeltaTime - dt);
         }
     }
+
+    mScene->forEach([](GameObject& obj) {
+        obj.shutdown();
+    });
 }
 
 void FPSGame::buildScene()

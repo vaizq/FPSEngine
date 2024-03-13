@@ -16,8 +16,9 @@
 #include "../engine/AudioSource.h"
 #include "Weapon.h"
 #include "../engine/ResourceManager.h"
+#include "../engine/Terrain.h"
 
-static glm::vec3 gravity{0.0f, -10.0f, 0.0f};
+static glm::vec3 gravity{0.0f, -90.0f, 0.0f};
 
 class Player : public GameObject
 {
@@ -58,10 +59,20 @@ public:
 
         InputManager::instance().keyPressHandlers[GLFW_KEY_SPACE] = [this] ()
         {
-            if (transform.position.y == mGroundLevel) {
-                mVelocity.y = 20.0f;
+            if (transform.position.y <= mGroundLevel + mPlayerHeight) {
+                mVelocity.y = 40.0f;
                 transform.position.y += 0.1f;
             }
+        };
+        InputManager::instance().keyPressHandlers[GLFW_KEY_LEFT_SHIFT] = [this] ()
+        {
+            transform.position.y -= 3.0f;
+            mPlayerHeight = 3.0f;
+        };
+        InputManager::instance().keyReleaseHandlers[GLFW_KEY_LEFT_SHIFT] = [this] ()
+        {
+            transform.position.y += 3.0f;
+            mPlayerHeight = 6.0f;
         };
     }
 
@@ -70,8 +81,15 @@ public:
         mWeapon->transform = mWeaponRegularTransform;
     }
 
+    void ready() override
+    {
+        mTerrain = dynamic_cast<Terrain*>(findGameObject("terrain"));
+    }
+
     void update(std::chrono::duration<float> dt) override
     {
+        mGroundLevel = mTerrain->height(transform.position);
+
         if (enableInput) {
             updatePosition(dt);
         }
@@ -116,13 +134,13 @@ private:
             mVelocity.z += right.z;
         }
 
-        if (transform.position.y > mGroundLevel) {
+        if (transform.position.y > mGroundLevel + mPlayerHeight) {
             mVelocity += gravity * dt.count();
             transform.position.y += mVelocity.y * dt.count();
         }
         else {
             mVelocity.y = 0.0f;
-            transform.position.y = mGroundLevel;
+            transform.position.y = mGroundLevel + mPlayerHeight;
         }
 
 
@@ -162,6 +180,8 @@ private:
     Transform mWeaponRegularTransform{};
     Weapon* mWeapon;
     float mGroundLevel{4.0f};
+    Terrain* mTerrain;
+    float mPlayerHeight{6};
 };
 
 #endif //FPSFROMSCRATCH_PLAYER_H

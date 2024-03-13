@@ -30,6 +30,9 @@ public:
     ResourceManager& operator=(ResourceManager&&) = delete;
 
     void loadAll();
+    void loadTextures();
+    void loadModels();
+    void loadShaders();
 
     Texture& getTexture(const std::string& name);
     Model& getModel(const std::string& name);
@@ -41,10 +44,6 @@ public:
 
 private:
     ResourceManager() = default;
-
-    void loadTextures();
-    void loadModels();
-    void loadShaders();
 
     std::unordered_map<std::string, Texture> mTextures;
     std::unordered_map<std::string, Model> mModels;

@@ -33,12 +33,13 @@ public:
     static FPSGame& instance();
     ~FPSGame();
 
+    void onGUI(Duration dt);
     void update(Duration dt);
     void render();
     void run();
 
 private:
-    explicit FPSGame(GLFWwindow* window);
+    explicit FPSGame(GLFWwindow* window, std::unique_ptr<AudioSource> theme);
     static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
     static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
     static void cursorCallback(GLFWwindow* window, double xPos, double yPos);
@@ -55,7 +56,7 @@ private:
     std::map<int, std::function<void()>> mPressHandlers;
     std::map<int, std::function<void()>> mReleaseHandlers;
     GLenum mDrawMode = GL_TRIANGLES;
-    bool mUseColorShader{true};
+    bool mUseColorShader{false};
     bool mDrawCoordinateSystems{false};
     bool mDrawBounds{false};
     bool mUseDebugCamera{false};
@@ -68,6 +69,7 @@ private:
     GameObject* mRightEye{};
     GameObject* mTarget{};
     Player* mPlayer{};
+    std::unique_ptr<AudioSource> mTheme;
 };
 
 

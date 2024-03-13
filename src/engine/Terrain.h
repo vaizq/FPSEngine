@@ -6,15 +6,21 @@
 #define FPSFROMSCRATCH_TERRAIN_H
 
 #include "GameObject.h"
+#include "Perlin.h"
 
 
 class Terrain : public GameObject
 {
 public:
     Terrain();
-    ~Terrain();
+    ~Terrain() override;
+    void onGUI() override;
     float height(const glm::vec3& pos);
     void render(Shader& shader, const glm::mat4& parentTransform) override;
+private:
+    void loadTerrain(glm::vec3 scale);
+    Perlin2D mPerlin;
+    glm::vec3 mTerrainScale{1.0f};
 };
 
 

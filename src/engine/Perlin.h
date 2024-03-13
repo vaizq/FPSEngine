@@ -54,6 +54,14 @@ public:
         return interpolate(ix0, ix1, sy);
     }
 
+    int getWidth() {
+        return mWidth;
+    }
+
+    int getHeight() {
+        return mHeight;
+    }
+
 private:
     // w should be in range [0, 1]
     static float interpolate(float a, float b, float w) {

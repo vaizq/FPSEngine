@@ -41,6 +41,12 @@ struct GameObject
         return Transform{modelMatrix};
     }
 
+    // ready is called just before the first frame when all game objects have been initialized
+    virtual void ready() {}
+
+    // Shutdown is called after the last frame before any of the game objects have been deleted
+    virtual void shutdown() {}
+
     virtual void onGUI()
     {
         MyGui::InputTransform("LocalTransform", transform);
@@ -108,6 +114,16 @@ struct GameObject
         }
 
         return result;
+    }
+
+    GameObject* findGameObject(const std::string& childName) {
+        // First find the scene, then from it's children
+        auto scene = this;
+        while (scene->parent != nullptr) {
+            scene = scene->parent;
+        }
+
+        return scene->findChildren(childName);
     }
 
     static nlohmann::json serialize(const GameObject& entity);

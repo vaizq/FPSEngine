@@ -369,12 +369,13 @@ Mesh Geometry::makeCrosshire()
     return Mesh{std::move(vertices), std::move(indices), {}};
 }
 
-Mesh Geometry::makePerlinTerrain(int width, int height, int gridSize, glm::vec3 scale, std::vector<Texture> textures)
+Mesh Geometry::makePerlinTerrain(Perlin2D& perlin, int gridSize, glm::vec3 scale, std::vector<Texture> textures)
 {
     std::vector<Vertex> vertices;
     std::vector<unsigned> indices;
 
-    Perlin2D perlin(width + 1, height + 1);
+    const int width = perlin.getWidth() - 1;
+    const int height = perlin.getHeight() - 1;
 
     float dx = 1.0f / static_cast<float>(gridSize);
     float dy = 1.0f / static_cast<float>(gridSize);
