@@ -386,10 +386,9 @@ Mesh Geometry::makePerlinTerrain(Perlin2D& perlin, int gridSize, glm::vec3 scale
             float x = dx * static_cast<float>(xi);
             float z = dy * static_cast<float>(zi);
             float y = perlin(glm::vec2(x, z));
-            vertices.emplace_back(glm::vec3(x, y, z) * scale, glm::vec3{}, glm::vec2{std::fmod(x, static_cast<int>(x)), std::fmod(z, static_cast<int>(z))});
+            vertices.emplace_back(glm::vec3(x, y, z) * scale, glm::vec3{0.0f}, glm::vec2{std::fmod(x, static_cast<int>(x)), std::fmod(z, static_cast<int>(z))});
         }
     }
-
 
     // Each quad has an index
     // Each vertex has an index
@@ -406,21 +405,40 @@ Mesh Geometry::makePerlinTerrain(Perlin2D& perlin, int gridSize, glm::vec3 scale
         int ci = bi + 1; // upper right
         int di = ai + 1; // lower right
 
-        auto n0 = glm::normalize(glm::cross(vertices[di].position - vertices[ai].position, vertices[bi].position - vertices[ai].position));
-        auto n1 = glm::normalize(glm::cross(vertices[bi].position - vertices[ci].position, vertices[di].position - vertices[ci].position));
-        vertices[ai].normal = n0;
-        vertices[bi].normal = n0;
-        vertices[di].normal = n0;
-        vertices[ci].normal = n1;
+    /*
+           bi ------ ci
+           |         |
+           |         |
+           |         |
+           ai ------ di
+    */
 
 
-        indices.push_back(di);
-        indices.push_back(bi);
+        const auto& ad = vertices[di].position - vertices[ai].position;
+        const auto& ab = vertices[bi].position - vertices[ai].position;
+        const auto& cb = vertices[ai].position - vertices[ci].position;
+        const auto& cd = vertices[di].position - vertices[ci].position;
+
+        const auto n0 = glm::cross(ab, ad);
+        const auto n1 = glm::cross(cd, cb);
+
+        vertices[ai].normal += n0;
+        vertices[bi].normal += n0 + n1;
+        vertices[di].normal += n0 + n1;
+        vertices[ci].normal += n1;
+
         indices.push_back(ai);
+        indices.push_back(bi);
+        indices.push_back(di);
 
         indices.push_back(di);
-        indices.push_back(ci);
         indices.push_back(bi);
+        indices.push_back(ci);
+    }
+
+    // Normalize vertex normals
+    for (auto& vertex : vertices) {
+        vertex.normal = glm::normalize(vertex.normal);
     }
 
     return Mesh{std::move(vertices), std::move(indices), std::move(textures)};
