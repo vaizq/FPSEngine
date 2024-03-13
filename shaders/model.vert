@@ -20,5 +20,5 @@ void main()
     gl_Position = projection * view * worldPos;
     texCoord = inTexCoord;
     fragPosition = worldPos.xyz;
-    normal = normalMatrix * inNormal;
+    normal = normalize(normalMatrix * inNormal);
 }

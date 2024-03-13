@@ -98,7 +98,6 @@ FPSGame::FPSGame(GLFWwindow* window)
 FPSGame::~FPSGame()
 {
     saveScene();
-    Util::shutdownGraphics();
 }
 
 void FPSGame::framebufferSizeCallback(GLFWwindow* window, int width, int height)
@@ -285,6 +284,7 @@ void FPSGame::render()
         shader.setMat4("view", view);
         shader.setMat4("projection", projection);
         shader.setVec3("lightPosition", mScene->findChildren("light")->transform.position);
+        shader.setVec3("cameraPosition", mPlayer->transform.position);
 
         mScene->render(shader);
 
@@ -416,4 +416,3 @@ void FPSGame::saveScene()
         std::cerr << "Failed to save scene: " << e.what() << std::endl;
     }
 }
-
