@@ -60,7 +60,6 @@ private:
     bool mDrawBounds{false};
     bool mUseDebugCamera{false};
     float mCrosshireScale{0.0f};
-    Mesh mGroundPlane;
     Mesh mSphereMesh;
     Mesh mCrosshire;
     std::unique_ptr<GameObject> mScene;

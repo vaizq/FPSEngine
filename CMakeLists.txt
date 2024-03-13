@@ -37,6 +37,7 @@ set(SRC_FILES
         src/engine/Shader.cpp
         src/engine/Light.cpp
         src/engine/Geometry.cpp
+        src/engine/Terrain.cpp
 )
 
 add_executable(FPSFromScratch src/main.cpp ${SRC_FILES})

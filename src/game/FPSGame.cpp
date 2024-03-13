@@ -18,6 +18,7 @@
 #include "../engine/RayCast.h"
 #include "Player.h"
 #include "../engine/ParticleEmitter.h"
+#include "../engine/Terrain.h"
 
 
 using namespace std::chrono_literals;
@@ -39,7 +40,6 @@ FPSGame& FPSGame::instance() {
 
 FPSGame::FPSGame(GLFWwindow* window)
 :   mWindow{window},
-    mGroundPlane(Geometry::makePerlinTerrain(2, 2, 2, glm::vec3(1.0f), {ResourceManager::instance().getTexture("dirt")})),
     mSphereMesh(Geometry::makeSphere(300)),
     mCrosshire(Geometry::makeCrosshire())
 {
@@ -170,9 +170,6 @@ void FPSGame::update(Duration dt)
         ImGui::DragInt("GroundHeight", &height);
         ImGui::DragInt("GroundGridSize", &gridSize);
         ImGui::DragFloat3("GroundScale", &scale[0], 0.05f);
-        if (ImGui::Button("CalculateGround")) {
-            mGroundPlane = Geometry::makePerlinTerrain(width, height, gridSize, scale, {ResourceManager::instance().getTexture("dirt")});
-        }
     }
     ImGui::End();
 
@@ -287,12 +284,6 @@ void FPSGame::render()
         shader.setVec3("cameraPosition", mPlayer->transform.position);
 
         mScene->render(shader);
-
-        glm::mat4 model(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-        shader.setMat4("model", model);
-        shader.setMat4("normalMatrix", normalFromModel(model));
-        mGroundPlane.draw(shader, mDrawMode);
     }
 
 
@@ -372,9 +363,14 @@ void FPSGame::buildScene()
     light->name = "light";
     light->parent = mScene.get();
 
+    auto terrain = std::make_unique<Terrain>();
+    terrain->name = "terrain";
+    terrain->parent = mScene.get();
+
     mScene->children.push_back(std::move(skullWithEyes));
     mScene->children.push_back(std::move(player));
     mScene->children.push_back(std::move(light));
+    mScene->children.push_back(std::move(terrain));
 }
 
 
