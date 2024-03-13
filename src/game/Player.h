@@ -146,6 +146,8 @@ private:
         if (enableInput) {
             transform.yaw += mSensitivity * dx;
             transform.pitch += mSensitivity * dy;
+            constexpr float pitchLimit = glm::radians(89.9);
+            transform.pitch = std::clamp(transform.pitch, -pitchLimit, pitchLimit);
         }
 
         mPrevMousePos = mousePos;
