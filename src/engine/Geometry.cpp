@@ -386,7 +386,7 @@ Mesh Geometry::makePerlinTerrain(Perlin2D& perlin, int gridSize, glm::vec3 scale
             float x = dx * static_cast<float>(xi);
             float z = dy * static_cast<float>(zi);
             float y = perlin(glm::vec2(x, z));
-            vertices.emplace_back(glm::vec3(x, y, z) * scale, glm::vec3{0.0f}, glm::vec2{std::fmod(x, static_cast<int>(x)), std::fmod(z, static_cast<int>(z))});
+            vertices.emplace_back(glm::vec3(x, y, z) * scale, glm::vec3{0.0f}, glm::vec2{x, z});
         }
     }
 
@@ -413,7 +413,6 @@ Mesh Geometry::makePerlinTerrain(Perlin2D& perlin, int gridSize, glm::vec3 scale
            ai ------ di
     */
 
-
         const auto& ad = vertices[di].position - vertices[ai].position;
         const auto& ab = vertices[bi].position - vertices[ai].position;
         const auto& cb = vertices[ai].position - vertices[ci].position;
@@ -436,7 +435,6 @@ Mesh Geometry::makePerlinTerrain(Perlin2D& perlin, int gridSize, glm::vec3 scale
         indices.push_back(ci);
     }
 
-    // Normalize vertex normals
     for (auto& vertex : vertices) {
         vertex.normal = glm::normalize(vertex.normal);
     }

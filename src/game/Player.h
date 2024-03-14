@@ -83,7 +83,7 @@ public:
 
     void ready() override
     {
-        mTerrain = dynamic_cast<Terrain*>(findGameObject("terrain"));
+        mTerrain = findGameObject<Terrain>("terrain");
     }
 
     void update(std::chrono::duration<float> dt) override

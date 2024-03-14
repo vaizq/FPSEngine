@@ -4,6 +4,7 @@
 
 #include "Mesh.h"
 #include "glad/glad.h"
+#include "Renderer.h"
 
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
@@ -48,7 +49,7 @@ Mesh::~Mesh()
  * uniform sampler2D diffuse1;
  * uniform sampler2D specular0;
  */
-void Mesh::draw(Shader &shader, GLenum mode)
+void Mesh::draw(Shader &shader)
 {
     shader.use();
 
@@ -71,7 +72,7 @@ void Mesh::draw(Shader &shader, GLenum mode)
     }
 
     glBindVertexArray(mVAO);
-    glDrawElements(mode, mIndices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(Renderer::drawMode, mIndices.size(), GL_UNSIGNED_INT, 0);
 }
 
 Mesh::Mesh(Mesh &&other) noexcept
@@ -103,4 +104,30 @@ void Mesh::deleteBuffers()
     glDeleteBuffers(1, &mEBO);
     glDeleteBuffers(1, &mVBO);
     glDeleteVertexArrays(1, &mVAO);
+}
+
+void Mesh::draw(Shader &shader, GLenum mode)
+{
+    shader.use();
+
+    int diffuseID{0};
+    int specularID{0};
+
+    for (int i = 0; i < mTextures.size(); i++) {
+
+        glActiveTexture(GL_TEXTURE0 + i);
+
+        const Texture& tex = mTextures[i];
+        if (tex.type == "texture_diffuse") {
+            shader.setInt("texture_diffuse" + std::to_string(diffuseID++), i);
+        }
+        else if (tex.type == "texture_specular") {
+            shader.setInt("texture_specular" + std::to_string(specularID++), i);
+        }
+
+        glBindTexture(GL_TEXTURE_2D, tex.id);
+    }
+
+    glBindVertexArray(mVAO);
+    glDrawElements(mode, mIndices.size(), GL_UNSIGNED_INT, 0);
 }

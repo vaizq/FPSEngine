@@ -33,7 +33,8 @@ public:
     Mesh(const Mesh&) = delete;
     Mesh& operator=(const Mesh&) = delete;
 
-    void draw(Shader& shader, GLenum mode = GL_TRIANGLES);
+    void draw(Shader& shader);
+    void draw(Shader& shader, GLenum mode);
 
 private:
     void deleteBuffers();

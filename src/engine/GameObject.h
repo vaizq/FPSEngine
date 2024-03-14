@@ -116,14 +116,21 @@ struct GameObject
         return result;
     }
 
-    GameObject* findGameObject(const std::string& childName) {
+    GameObject* findGameObject(const std::string& objectName) {
         // First find the scene, then from it's children
         auto scene = this;
         while (scene->parent != nullptr) {
             scene = scene->parent;
         }
 
-        return scene->findChildren(childName);
+        return scene->findChildren(objectName);
+    }
+
+    // Give object type and name and get a pointer to that object or nullptr if not found
+    template<typename T>
+    T* findGameObject(const std::string& objectName)
+    {
+        return dynamic_cast<T*>(findGameObject(objectName));
     }
 
     static nlohmann::json serialize(const GameObject& entity);

@@ -4,7 +4,6 @@
 
 #include "FPSGame.h"
 #include <iostream>
-#include "../engine/Util.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "../engine/Geometry.h"
 #include <imgui.h>
@@ -18,14 +17,10 @@
 #include "../engine/RayCast.h"
 #include "Player.h"
 #include "../engine/ParticleEmitter.h"
-#include "../engine/Terrain.h"
-#include "../engine/LoadingScreen.h"
+#include "../engine/Renderer.h"
 
 
 using namespace std::chrono_literals;
-
-
-static float speed = 30.0f;
 
 
 FPSGame& FPSGame::instance() {
@@ -71,22 +66,22 @@ FPSGame::FPSGame(GLFWwindow* window, std::unique_ptr<AudioSource> theme)
 
     // Switch drawing mode when R is pressed
     InputManager::instance().keyPressHandlers[GLFW_KEY_M] = [this]() {
-        switch (mDrawMode)
+        switch (Renderer::drawMode)
         {
             case GL_TRIANGLES:
-                mDrawMode = GL_LINES;
+                Renderer::drawMode = GL_LINES;
                 break;
             case GL_LINES:
-                mDrawMode = GL_LINE_STRIP;
+                Renderer::drawMode = GL_LINE_STRIP;
                 break;
             case GL_LINE_STRIP:
-                mDrawMode = GL_LINE_LOOP;
+                Renderer::drawMode = GL_LINE_LOOP;
                 break;
             case GL_LINE_LOOP:
-                mDrawMode = GL_POINTS;
+                Renderer::drawMode = GL_POINTS;
                 break;
             case GL_POINTS:
-                mDrawMode = GL_TRIANGLES;
+                Renderer::drawMode = GL_TRIANGLES;
         }
     };
 
@@ -225,9 +220,8 @@ void FPSGame::render()
     Shader& shader = ResourceManager::instance().getShader(mUseColorShader ? "color" : "model");
     Shader& colorShader = ResourceManager::instance().getShader("color");
 
-    glm::mat4 projection(1);
     glm::mat4 view = mUseDebugCamera ? mDebugCamera.getViewMatrix() : mCamera.getViewMatrix();
-    projection = glm::perspective(glm::radians(45.0f), (float)mWidth / (float)mHeight, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)mWidth / (float)mHeight, 0.1f, 400.0f);
 
     ResourceManager::instance().view = view;
     ResourceManager::instance().projection = projection;
@@ -286,10 +280,6 @@ void FPSGame::render()
 
     // Draw scene
     {
-        auto normalFromModel = [](const glm::mat4& model) {
-            return glm::transpose(glm::inverse(model));
-        };
-
         shader.use();
         shader.setMat4("view", view);
         shader.setMat4("projection", projection);
@@ -323,7 +313,7 @@ void FPSGame::run()
     });
 
     float targetFps = 144;
-    Duration targetDeltaTime = Duration{1} / targetFps;
+    Duration targetDeltaTime = Duration{1s} / targetFps;
     while (!glfwWindowShouldClose(mWindow))
     {
         const auto dt = mTimer.tick();

@@ -11,7 +11,7 @@ static constexpr int gridHeight{100};
 
 Terrain::Terrain()
 :   mPerlin(gridWidth + 1, gridHeight + 1, 1),
-    mTerrainScale(30, 20, 30)
+    mTerrainScale(40, 20, 40)
 {
     model = new Model();
     model->meshes.push_back(Geometry::makePerlinTerrain(
@@ -39,7 +39,6 @@ float Terrain::height(const glm::vec3 &pos)
     }
 }
 
-
 void Terrain::render(Shader &shader, const glm::mat4 &parentTransform)
 {
     const auto& modelMatrix = parentTransform * transform.modelMatrix();
@@ -47,7 +46,6 @@ void Terrain::render(Shader &shader, const glm::mat4 &parentTransform)
     shader.setMat3("normalMatrix", glm::transpose(glm::inverse(modelMatrix)));
     model->draw(shader);
 }
-
 
 void Terrain::loadTerrain(glm::vec3 scale)
 {
