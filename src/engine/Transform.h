@@ -8,41 +8,40 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <nlohmann/json_fwd.hpp>
+
 
 
 static constexpr glm::vec3 worldUp{0.0f, 1.0f, 0.0f};
 static constexpr float yawFix{glm::radians(-90.f)};
 
+// Transform defines a coordinate system
 struct Transform
 {
     glm::vec3 position{};
-    float yaw{};
-    float pitch{};
+    glm::quat rotation{};
     float scale{1.0f};
 
     Transform() = default;
 
-    Transform(const glm::vec3& position, float yaw, float pitch, float scale)
-    : position{position}, yaw{yaw}, pitch{pitch}, scale{scale}
+    Transform(const glm::vec3& position, const glm::vec3& rotation, float scale)
+    : position{position}, rotation{rotation}, scale{scale}
     {}
 
     explicit Transform(const glm::mat4& matrix)
     : position{matrix[3]}
     {
-        glm::vec3 rotation = glm::eulerAngles(glm::quat_cast(matrix));
-        yaw = rotation.y;
-        pitch = rotation.x;
+        rotation = glm::quat_cast(matrix);
         scale = glm::length(glm::vec3(matrix[0]));
     }
 
     [[nodiscard]] glm::mat4 modelMatrix() const
     {
-        auto m = glm::translate(glm::mat4{1.0f}, position);
-        m = glm::rotate(m, -yaw, glm::vec3(0.f, 1.f, 0.f));
-        m = glm::rotate(m, pitch, glm::vec3(1.f, 0.f, 0.f));
-        m = glm::scale(m, glm::vec3{scale});
-        return m;
+        auto transMat= glm::translate(glm::mat4{1.0f}, position);
+        auto rotMat= glm::toMat4(rotation);
+        auto scaleMat = glm::scale(glm::mat4{1.0f}, glm::vec3{scale});
+        return transMat * rotMat * scaleMat;
     }
 
     [[nodiscard]] glm::vec3 front() const
