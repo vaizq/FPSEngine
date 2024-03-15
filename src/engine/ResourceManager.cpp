@@ -65,6 +65,7 @@ void ResourceManager::loadModels()
     //mModels.emplace("backpack", modelPath("Backpack/backpack.obj"));
     mModels.emplace("eyeBall", modelPath("Eye/eyeball.obj"));
     mModels.emplace("skull", modelPath("Skull/skull.obj"));
+    mModels.emplace("skeleton", modelPath("Skeleton/skeleton.obj"));
 }
 
 void ResourceManager::loadShaders()

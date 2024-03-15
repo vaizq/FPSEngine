@@ -380,10 +380,15 @@ void FPSGame::buildScene()
     terrain->name = "terrain";
     terrain->parent = mScene.get();
 
+    auto skeleton = std::make_unique<GameObject>();
+    skeleton->name = "skeleton";
+    skeleton->model = &ResourceManager::instance().getModel("skeleton");
+
     mScene->children.push_back(std::move(skullWithEyes));
     mScene->children.push_back(std::move(player));
     mScene->children.push_back(std::move(light));
     mScene->children.push_back(std::move(terrain));
+    mScene->children.push_back(std::move(skeleton));
 }
 
 

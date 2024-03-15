@@ -11,7 +11,7 @@ static constexpr int gridHeight{100};
 
 Terrain::Terrain()
 :   mPerlin(gridWidth + 1, gridHeight + 1, 1),
-    mTerrainScale(40, 20, 40)
+    mTerrainScale(40, 50, 40)
 {
     model = new Model();
     model->meshes.push_back(Geometry::makePerlinTerrain(
