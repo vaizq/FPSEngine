@@ -10,6 +10,7 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <nlohmann/json_fwd.hpp>
 
 namespace Util
 {
@@ -28,6 +29,12 @@ namespace Util
     constexpr glm::vec3 red{1.0f, 0.0f, 0.0f};
     constexpr glm::vec3 green{0.0f, 1.0f, 0.0f};
     constexpr glm::vec3 blue{0.0f, 0.0f, 1.0f};
+
+    nlohmann::json serialize(const glm::vec3& v);
+    namespace glm::vec3
+    {
+        ::glm::vec3 deserialize(const nlohmann::json &j);
+    }
 }
 
 #endif //FPSFROMSCRATCH_UTIL_H

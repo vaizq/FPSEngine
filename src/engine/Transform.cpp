@@ -3,21 +3,20 @@
 //
 #include "Transform.h"
 #include <nlohmann/json.hpp>
+#include "Util.h"
 
 nlohmann::json Transform::serialize(const Transform &transform)
 {
     return nlohmann::json {
-            {"position", nlohmann::json{{"x", transform.position.x}, {"y", transform.position.y}, {"z", transform.position.z}}},
-            {"yaw", transform.yaw},
-            {"pitch", transform.pitch},
-            {"scale", transform.scale}
-    };
+            {"position", Util::serialize(transform.position)},
+            {"rotation", Util::serialize(transform.rotation)},
+            {"scale", transform.scale}};
 }
 
 Transform Transform::deserialize(const nlohmann::json &j)
 {
-    return Transform{glm::vec3{j["position"]["x"], j["position"]["y"], j["position"]["z"]},
-                     j["yaw"],
-                     j["pitch"],
-                     j["scale"]};
+    return Transform {
+        Util::glm::vec3::deserialize(j["position"]),
+        Util::glm::vec3::deserialize(j["rotation"]),
+        j["scale"]};
 }

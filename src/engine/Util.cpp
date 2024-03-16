@@ -6,6 +6,7 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_glfw.h"
 #include <stdexcept>
+#include <nlohmann/json.hpp>
 
 #ifndef SRC_DIR
 #define SRC_DIR "."
@@ -78,3 +79,15 @@ void Util::initImgui(GLFWwindow* window)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 150");
 }
+
+nlohmann::json Util::serialize(const ::glm::vec3& v)
+{
+    return nlohmann::json{{"x", v.x}, {"y", v.y}, {"z", v.z}};
+}
+
+glm::vec3 Util::glm::vec3::deserialize(const nlohmann::json& j)
+{
+    return ::glm::vec3{j["x"], j["y"], j["z"]};
+}
+
+

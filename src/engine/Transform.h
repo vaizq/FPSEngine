@@ -20,7 +20,7 @@ static constexpr float yawFix{glm::radians(-90.f)};
 struct Transform
 {
     glm::vec3 position{};
-    glm::quat rotation{};
+    glm::vec3 rotation{};
     float scale{1.0f};
 
     Transform() = default;
@@ -32,31 +32,36 @@ struct Transform
     explicit Transform(const glm::mat4& matrix)
     : position{matrix[3]}
     {
-        rotation = glm::quat_cast(matrix);
+        rotation = glm::eulerAngles(glm::quat_cast(matrix));
         scale = glm::length(glm::vec3(matrix[0]));
+    }
+
+    [[nodiscard]] glm::mat4 rotationMatrix() const
+    {
+        return glm::toMat4(glm::quat(rotation));
     }
 
     [[nodiscard]] glm::mat4 modelMatrix() const
     {
         auto transMat= glm::translate(glm::mat4{1.0f}, position);
-        auto rotMat= glm::toMat4(rotation);
+        auto rotMat = glm::toMat4(glm::quat(rotation));
         auto scaleMat = glm::scale(glm::mat4{1.0f}, glm::vec3{scale});
         return transMat * rotMat * scaleMat;
     }
 
     [[nodiscard]] glm::vec3 front() const
     {
-        return glm::normalize(glm::vec3(std::cos(yaw + yawFix) * std::cos(pitch), std::sin(pitch), std::sin(yaw + yawFix) * std::cos(pitch)));
+        return rotationMatrix() * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
     }
 
     [[nodiscard]] glm::vec3 right() const
     {
-        return glm::normalize(glm::cross(front(), worldUp));
+        return rotationMatrix() * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     }
 
     [[nodiscard]] glm::vec3 up() const
     {
-        return glm::normalize(glm::cross(right(), front()));
+        return rotationMatrix() * glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
     }
 
     static nlohmann::json serialize(const Transform& transform);
@@ -65,7 +70,7 @@ struct Transform
 
 static Transform operator+(const Transform& lhs, const Transform& rhs)
 {
-    return Transform{lhs.position + rhs.position, lhs.yaw + rhs.yaw, lhs.pitch + rhs.pitch, lhs.scale + rhs.scale};
+    return Transform{lhs.position + rhs.position, lhs.rotation + rhs.rotation, lhs.scale + rhs.scale};
 }
 
 
