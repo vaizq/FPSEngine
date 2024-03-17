@@ -33,19 +33,19 @@ void Camera::rotatePitch(float amount)
 {
     constexpr float maxAngle = glm::radians(89.f);
 
-    mTransform.pitch += amount;
-    if (mTransform.pitch > maxAngle) {
-        mTransform.pitch = maxAngle;
+    mTransform.rotation.x += amount;
+    if (mTransform.rotation.x> maxAngle) {
+        mTransform.rotation.x = maxAngle;
     }
-    else if (mTransform.pitch < -maxAngle) {
-        mTransform.pitch = -maxAngle;
+    else if (mTransform.rotation.x < -maxAngle) {
+        mTransform.rotation.x = -maxAngle;
     }
     updateVectors();
 }
 
 void Camera::rotateYaw(float amount)
 {
-    mTransform.yaw += amount;
+    mTransform.rotation.y += amount;
     updateVectors();
 }
 

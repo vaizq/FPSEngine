@@ -38,11 +38,11 @@ public:
     }
     [[nodiscard]] float getYaw() const
     {
-        return mTransform.yaw;
+        return mTransform.rotation.y;
     }
     [[nodiscard]] float getPitch() const
     {
-        return mTransform.pitch;
+        return mTransform.rotation.x;
     }
     [[nodiscard]] const glm::vec3& getFront() const
     {

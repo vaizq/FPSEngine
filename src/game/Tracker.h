@@ -14,8 +14,8 @@
 void alignTo(const glm::vec3& target, Transform& transform)
 {
     auto v = glm::normalize(target - transform.position);
-    transform.yaw = atan2(v.x, v.z) + glm::radians(180.0f);
-    transform.pitch = asin(v.y);
+    transform.rotation.y = atan2(v.x, v.z) + glm::radians(180.0f);
+    transform.rotation.z = asin(v.y);
 }
 
 void alignTo(const glm::vec3& target, GameObject& entity, const glm::mat4& parentTransform = glm::mat4{1.f})

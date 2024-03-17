@@ -10,7 +10,7 @@ nlohmann::json Transform::serialize(const Transform &transform)
     return nlohmann::json {
             {"position", Util::serialize(transform.position)},
             {"rotation", Util::serialize(transform.rotation)},
-            {"scale", transform.scale}};
+            {"scale", Util::serialize(transform.scale)}};
 }
 
 Transform Transform::deserialize(const nlohmann::json &j)
@@ -18,5 +18,10 @@ Transform Transform::deserialize(const nlohmann::json &j)
     return Transform {
         Util::glm::vec3::deserialize(j["position"]),
         Util::glm::vec3::deserialize(j["rotation"]),
-        j["scale"]};
+        Util::glm::vec3::deserialize(j["scale"])};
+}
+
+Transform operator+(const Transform& lhs, const Transform& rhs)
+{
+    return Transform{lhs.position + rhs.position, lhs.rotation + rhs.rotation, lhs.scale + rhs.scale};
 }

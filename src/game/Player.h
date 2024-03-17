@@ -88,7 +88,15 @@ public:
 
     void update(std::chrono::duration<float> dt) override
     {
-        mGroundLevel = mTerrain->height(transform.position);
+        mGroundLevel = [this]() {
+            auto result = mTerrain->height(transform.position);
+            if (result) {
+                return *result;
+            }
+            else {
+                return std::numeric_limits<float>::min();
+            }
+        }();
 
         if (enableInput) {
             updatePosition(dt);
@@ -102,6 +110,7 @@ public:
         GameObject::onGUI();
 
         ImGui::DragFloat3("Gravity", &gravity[0], 0.1f);
+        ImGui::DragFloat("Sensitivity", &mSensitivity, 0.0001f);
     }
 
     bool enableInput{true};
@@ -162,10 +171,10 @@ private:
         float dy = -(mousePos.y - mPrevMousePos.y);
 
         if (enableInput) {
-            transform.yaw += mSensitivity * dx;
-            transform.pitch += mSensitivity * dy;
+            transform.rotation.y -= mSensitivity * dx;
+            transform.rotation.x += mSensitivity * dy;
             constexpr float pitchLimit = glm::radians(89.9);
-            transform.pitch = std::clamp(transform.pitch, -pitchLimit, pitchLimit);
+            transform.rotation.x = std::clamp(transform.rotation.x, -pitchLimit, pitchLimit);
         }
 
         mPrevMousePos = mousePos;
@@ -176,7 +185,7 @@ private:
     float mSpeed{30.0f};
     glm::vec2 mPrevMousePos{};
     float mSensitivity{0.001f};
-    const Transform mWeaponAimTransform{glm::vec3{0.0f, -0.2f, -0.6f}, 0.0f, glm::radians(1.0f), 3.6f};
+    const Transform mWeaponAimTransform{glm::vec3{0.0f, -0.2f, -0.6f}, glm::vec3{glm::radians(1.0f), 0.0f, 0.0f}, glm::vec3{3.6f}};
     Transform mWeaponRegularTransform{};
     Weapon* mWeapon;
     float mGroundLevel{4.0f};

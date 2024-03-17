@@ -27,7 +27,7 @@ Terrain::~Terrain()
     delete model;
 }
 
-float Terrain::height(const glm::vec3 &pos)
+std::optional<float> Terrain::height(const glm::vec3 &pos)
 {
     float x = pos.x / mTerrainScale.x;
     float z = pos.z / mTerrainScale.z;
@@ -35,7 +35,7 @@ float Terrain::height(const glm::vec3 &pos)
         return mPerlin(glm::vec2(x, z)) * mTerrainScale.y;
     }
     else {
-        return 0.0f;
+        return {};
     }
 }
 
@@ -68,15 +68,3 @@ void Terrain::onGUI()
         loadTerrain(tscale);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
