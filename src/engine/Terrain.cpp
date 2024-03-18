@@ -68,3 +68,13 @@ void Terrain::onGUI()
         loadTerrain(tscale);
     }
 }
+
+float Terrain::width() const
+{
+    return gridWidth * mTerrainScale.x;
+}
+
+float Terrain::depth() const
+{
+    return gridHeight * mTerrainScale.z;
+}

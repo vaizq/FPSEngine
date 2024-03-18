@@ -133,6 +133,15 @@ struct GameObject
         return dynamic_cast<T*>(findGameObject(objectName));
     }
 
+    GameObject* getScene()
+    {
+        auto scene = this;
+        while (scene->parent != nullptr) {
+            scene = scene->parent;
+        }
+        return scene;
+    }
+
     static nlohmann::json serialize(const GameObject& entity);
     static void deserialize(const nlohmann::json& j, GameObject& obj);
 };

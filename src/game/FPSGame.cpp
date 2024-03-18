@@ -200,13 +200,24 @@ void FPSGame::update(Duration dt)
     auto closest = glm::vec3{std::numeric_limits<float>::max()};
     // Find closest object intersecting with a raycast fired from main camera
     mScene->forEach([this, &ray, &closest](GameObject& entity, const glm::mat4& parentTransform) {
-        // Transform local entity bounds into world coordinates
-        BoundingVolume bounds{Transform{parentTransform * entity.transform.modelMatrix() * entity.bounds.transform.modelMatrix()}, entity.bounds.shape};
+        if (entity.name == "terrain") {
+            auto intersectionPoint = intersects(ray, dynamic_cast<Terrain&>(entity));
+            if (intersectionPoint) {
 
-        auto intersectionPoint = intersects(ray, bounds);
-        if (intersectionPoint != std::nullopt && glm::length(*intersectionPoint - ray.startPosition) < glm::length(closest - ray.startPosition)) {
-            mTarget = &entity;
-            closest = *intersectionPoint;
+            }
+        }
+        else {
+            // Transform local entity bounds into world coordinates
+            BoundingVolume bounds{
+                    Transform{parentTransform * entity.transform.modelMatrix() * entity.bounds.transform.modelMatrix()},
+                    entity.bounds.shape};
+
+            auto intersectionPoint = intersects(ray, bounds);
+            if (intersectionPoint != std::nullopt &&
+                glm::length(*intersectionPoint - ray.startPosition) < glm::length(closest - ray.startPosition)) {
+                mTarget = &entity;
+                closest = *intersectionPoint;
+            }
         }
     });
 
@@ -383,6 +394,7 @@ void FPSGame::buildScene()
     auto skeleton = std::make_unique<GameObject>();
     skeleton->name = "skeleton";
     skeleton->model = &ResourceManager::instance().getModel("skeleton");
+    skeleton->parent = mScene.get();
 
     mScene->children.push_back(std::move(skullWithEyes));
     mScene->children.push_back(std::move(player));

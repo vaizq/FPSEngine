@@ -54,11 +54,11 @@ public:
         return interpolate(ix0, ix1, sy);
     }
 
-    int getWidth() {
+    int getWidth() const {
         return mWidth;
     }
 
-    int getHeight() {
+    int getHeight() const {
         return mHeight;
     }
 

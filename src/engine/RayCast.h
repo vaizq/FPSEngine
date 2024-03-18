@@ -16,33 +16,10 @@ struct RayCast
     glm::vec3 direction;
 };
 
-std::optional<glm::vec3> intersects(const RayCast& ray, const BoundingVolume& boundingVolume)
-{
-    return std::visit([&](auto&& shape) -> std::optional<glm::vec3> {
-        using T = std::decay_t<decltype(shape)>;
-        if constexpr (std::is_same_v<T, Sphere>) {
-            const auto& sphereCenter= boundingVolume.transform.position;
-            auto diff = sphereCenter - ray.startPosition;
-            const float r = shape.radius;
-            glm::vec3 p = ray.startPosition + glm::normalize(ray.direction) * glm::length(diff);
-            if (glm::length(sphereCenter - p) < r) {
-                return sphereCenter - glm::normalize(ray.direction) * r;
-            }
-            else {
-                return std::nullopt;
-            }
-        }
-        else if constexpr (std::is_same_v<T, Cuboid>) {
-            return std::nullopt;
-        }
-    }, boundingVolume.shape);
-}
+std::optional<glm::vec3> intersects(const RayCast& ray, const BoundingVolume& boundingVolume);
+std::optional<glm::vec3> intersects(const RayCast& ray, Terrain& terrain);
 
-// TODO modify terrain so that Terrain::height() is const function
-std::optional<glm::vec3> intersects(const RayCast& ray, Terrain& terrain)
-{
-    return {};
-}
+
 
 
 #endif //FPSFROMSCRATCH_RAYCAST_H

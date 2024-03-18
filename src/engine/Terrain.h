@@ -16,6 +16,8 @@ public:
     ~Terrain() override;
     void onGUI() override;
     std::optional<float> height(const glm::vec3& pos);
+    [[nodiscard]] float width() const;
+    [[nodiscard]] float depth() const;
     void render(Shader& shader, const glm::mat4& parentTransform) override;
 private:
     void loadTerrain(glm::vec3 scale);

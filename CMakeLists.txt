@@ -40,6 +40,7 @@ set(SRC_FILES
         src/engine/Terrain.cpp
         src/engine/Renderer.cpp
         src/engine/Math.cpp
+        src/engine/RayCast.cpp
 )
 
 add_executable(FPSFromScratch src/main.cpp ${SRC_FILES})

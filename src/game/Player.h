@@ -17,6 +17,8 @@
 #include "Weapon.h"
 #include "../engine/ResourceManager.h"
 #include "../engine/Terrain.h"
+#include "../engine/RayCast.h"
+#include "../engine/Renderer.h"
 
 static glm::vec3 gravity{0.0f, -90.0f, 0.0f};
 
@@ -51,6 +53,17 @@ public:
         InputManager::instance().buttonPressHandlers[GLFW_MOUSE_BUTTON_LEFT] = [this] ()
         {
             mWeapon->pressTrigger();
+            auto t = worldTransform();
+            RayCast ray(t.position, t.front());
+            if (auto iPoint = intersects(ray, *mTerrain)) {
+                auto bulletHit = std::make_unique<GameObject>();
+                static int nameIndex{0};
+                bulletHit->name = "bullethit" + std::to_string(nameIndex++);
+                bulletHit->transform.position = *iPoint;
+                bulletHit->parent = mTerrain;
+                bulletHit->model = &ResourceManager::instance().getModel("eyeBall");
+                getScene()->children.push_back(std::move(bulletHit));
+            }
         };
         InputManager::instance().buttonReleaseHandlers[GLFW_MOUSE_BUTTON_LEFT] = [this] ()
         {
@@ -103,6 +116,8 @@ public:
         }
         updateRotation(dt);
         mCamera.getTransform() = transform;
+
+        Renderer::instance().activeCamera = mCamera;
     }
 
     void onGUI() override
