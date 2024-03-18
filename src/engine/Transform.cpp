@@ -9,7 +9,7 @@ nlohmann::json Transform::serialize(const Transform &transform)
 {
     return nlohmann::json {
             {"position", Util::serialize(transform.position)},
-            {"rotation", Util::serialize(transform.rotation)},
+            {"rotation", Util::serialize(glm::eulerAngles(transform.rotation))},
             {"scale", Util::serialize(transform.scale)}};
 }
 
@@ -23,5 +23,5 @@ Transform Transform::deserialize(const nlohmann::json &j)
 
 Transform operator+(const Transform& lhs, const Transform& rhs)
 {
-    return Transform{lhs.position + rhs.position, lhs.rotation + rhs.rotation, lhs.scale + rhs.scale};
+    return Transform{lhs.position + rhs.position, glm::eulerAngles(lhs.rotation) + glm::eulerAngles(rhs.rotation), lhs.scale + rhs.scale};
 }

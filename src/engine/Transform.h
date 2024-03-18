@@ -8,6 +8,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/matrix_decompose.hpp>
 #include <nlohmann/json_fwd.hpp>
 
 
@@ -19,7 +21,7 @@ static constexpr glm::vec3 worldUp{0.0f, 1.0f, 0.0f};
 struct Transform
 {
     glm::vec3 position{};
-    glm::vec3 rotation{};
+    glm::quat rotation{1.0f, 0.0f, 0.0f, 0.0f};
     glm::vec3 scale{1.0f};
 
     Transform() = default;
@@ -28,13 +30,11 @@ struct Transform
     : position{position}, rotation{rotation}, scale{scale}
     {}
 
-    explicit Transform(const glm::mat4& matrix)
-    : position{matrix[3]}
+    explicit Transform(const glm::mat4& modelMatrix)
     {
-        rotation = glm::eulerAngles(glm::quat_cast(matrix));
-        scale.x = glm::length(glm::vec3(matrix[0]));
-        scale.y = glm::length(glm::vec3(matrix[1]));
-        scale.z = glm::length(glm::vec3(matrix[2]));
+        glm::vec3 skew{};
+        glm::vec4 perspective{};
+        glm::decompose(modelMatrix, scale, rotation, position, skew, perspective);
     }
 
     [[nodiscard]] glm::mat4 rotationMatrix() const
@@ -44,25 +44,24 @@ struct Transform
 
     [[nodiscard]] glm::mat4 modelMatrix() const
     {
-        auto transMat = glm::translate(glm::mat4{1.0f}, position);
-        auto rotMat = glm::mat4_cast(glm::quat(rotation));
-        auto scaleMat = glm::scale(glm::mat4{1.0f}, glm::vec3{scale});
-        return transMat * rotMat * scaleMat;
+        auto m = glm::translate(glm::mat4{1.0f}, position);
+        m *= glm::mat4_cast(glm::quat(rotation));
+        return glm::scale(m, glm::vec3{scale});
     }
 
     [[nodiscard]] glm::vec3 front() const
     {
-        return rotationMatrix() * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
+        return rotation * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
     }
 
     [[nodiscard]] glm::vec3 right() const
     {
-        return rotationMatrix() * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+        return rotation * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     }
 
     [[nodiscard]] glm::vec3 up() const
     {
-        return rotationMatrix() * glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+        return rotation * glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
     }
 
     static nlohmann::json serialize(const Transform& transform);

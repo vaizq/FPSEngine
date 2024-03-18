@@ -23,7 +23,7 @@ std::optional<glm::vec3> intersects(const RayCast& ray, const BoundingVolume& bo
         if constexpr (std::is_same_v<T, Sphere>) {
             const auto& sphereCenter= boundingVolume.transform.position;
             auto diff = sphereCenter - ray.startPosition;
-            const float r = glm::length(boundingVolume.transform.scale) * shape.radius;
+            const float r = shape.radius;
             glm::vec3 p = ray.startPosition + glm::normalize(ray.direction) * glm::length(diff);
             if (glm::length(sphereCenter - p) < r) {
                 return sphereCenter - glm::normalize(ray.direction) * r;

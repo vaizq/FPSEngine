@@ -168,13 +168,13 @@ private:
     {
         auto mousePos = InputManager::instance().mousePos();
         float dx = mousePos.x - mPrevMousePos.x;
-        float dy = -(mousePos.y - mPrevMousePos.y);
+        float dy = mousePos.y - mPrevMousePos.y;
 
         if (enableInput) {
-            transform.rotation.y -= mSensitivity * dx;
-            transform.rotation.x += mSensitivity * dy;
-            constexpr float pitchLimit = glm::radians(89.9);
-            transform.rotation.x = std::clamp(transform.rotation.x, -pitchLimit, pitchLimit);
+            auto yaw = glm::angleAxis(-mSensitivity * dx, glm::vec3(0.0f, 1.0f, 0.0f));
+            transform.rotation = yaw * transform.rotation;
+            auto pitch = glm::angleAxis(-mSensitivity * dy, transform.right());
+            transform.rotation = pitch * transform.rotation;
         }
 
         mPrevMousePos = mousePos;
