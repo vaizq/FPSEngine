@@ -10,12 +10,12 @@ nlohmann::json GameObject::serialize(const GameObject &entity)
 {
     return nlohmann::json {
             {"transform", Transform::serialize(entity.transform)},
-            {"boundsTransform", Transform::serialize(entity.bounds.transform)}
+            {"boundingVolume", BoundingVolume::serialize(entity.bounds)}
     };
 }
 
 void GameObject::deserialize(const nlohmann::json &j, GameObject& obj)
 {
     obj.transform = Transform::deserialize(j["transform"]);
-    obj.bounds.transform = Transform::deserialize(j["boundsTransform"]);
+    obj.bounds = BoundingVolume::deserialize(j["boundingVolume"]);
 }

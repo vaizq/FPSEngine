@@ -41,6 +41,8 @@ set(SRC_FILES
         src/engine/Renderer.cpp
         src/engine/Math.cpp
         src/engine/RayCast.cpp
+        src/engine/BoundingVolume.cpp
+        src/game/Enemy.cpp
 )
 
 add_executable(FPSFromScratch src/main.cpp ${SRC_FILES})

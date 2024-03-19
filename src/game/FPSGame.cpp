@@ -200,24 +200,16 @@ void FPSGame::update(Duration dt)
     auto closest = glm::vec3{std::numeric_limits<float>::max()};
     // Find closest object intersecting with a raycast fired from main camera
     mScene->forEach([this, &ray, &closest](GameObject& entity, const glm::mat4& parentTransform) {
-        if (entity.name == "terrain") {
-            auto intersectionPoint = intersects(ray, dynamic_cast<Terrain&>(entity));
-            if (intersectionPoint) {
+        // Transform local entity bounds into world coordinates
+        BoundingVolume bounds{
+                Transform{parentTransform * entity.transform.modelMatrix() * entity.bounds.transform.modelMatrix()},
+                entity.bounds.shape};
 
-            }
-        }
-        else {
-            // Transform local entity bounds into world coordinates
-            BoundingVolume bounds{
-                    Transform{parentTransform * entity.transform.modelMatrix() * entity.bounds.transform.modelMatrix()},
-                    entity.bounds.shape};
-
-            auto intersectionPoint = intersects(ray, bounds);
-            if (intersectionPoint != std::nullopt &&
-                glm::length(*intersectionPoint - ray.startPosition) < glm::length(closest - ray.startPosition)) {
-                mTarget = &entity;
-                closest = *intersectionPoint;
-            }
+        auto intersectionPoint = intersects(ray, bounds);
+        if (intersectionPoint != std::nullopt &&
+            glm::length(*intersectionPoint - ray.startPosition) < glm::length(closest - ray.startPosition)) {
+            mTarget = &entity;
+            closest = *intersectionPoint;
         }
     });
 
@@ -396,11 +388,15 @@ void FPSGame::buildScene()
     skeleton->model = &ResourceManager::instance().getModel("skeleton");
     skeleton->parent = mScene.get();
 
+    auto enemy = std::make_unique<Enemy>("enemy");
+    enemy->parent = mScene.get();
+
     mScene->children.push_back(std::move(skullWithEyes));
     mScene->children.push_back(std::move(player));
     mScene->children.push_back(std::move(light));
     mScene->children.push_back(std::move(terrain));
     mScene->children.push_back(std::move(skeleton));
+    mScene->children.push_back(std::move(enemy));
 }
 
 

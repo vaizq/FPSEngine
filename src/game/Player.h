@@ -61,7 +61,7 @@ public:
                 bulletHit->name = "bullethit" + std::to_string(nameIndex++);
                 bulletHit->transform.position = *iPoint;
                 bulletHit->parent = mTerrain;
-                bulletHit->model = &ResourceManager::instance().getModel("eyeBall");
+                bulletHit->model = &ResourceManager::instance().getModel("ak47");
                 getScene()->children.push_back(std::move(bulletHit));
             }
         };
@@ -87,6 +87,15 @@ public:
             transform.position.y += 3.0f;
             mPlayerHeight = 6.0f;
         };
+
+        InputManager::instance().keyPressHandlers[GLFW_KEY_LEFT_CONTROL] = [this] ()
+        {
+            mSliding = true;
+        };
+        InputManager::instance().keyReleaseHandlers[GLFW_KEY_LEFT_CONTROL] = [this] ()
+        {
+            mSliding = false;
+        };
     }
 
     ~Player() override
@@ -101,16 +110,6 @@ public:
 
     void update(std::chrono::duration<float> dt) override
     {
-        mGroundLevel = [this]() {
-            auto result = mTerrain->height(transform.position);
-            if (result) {
-                return *result;
-            }
-            else {
-                return std::numeric_limits<float>::min();
-            }
-        }();
-
         if (enableInput) {
             updatePosition(dt);
         }
@@ -133,50 +132,107 @@ public:
 private:
     void updatePosition(std::chrono::duration<float> dt)
     {
-        mVelocity.x = 0.f;
-        mVelocity.z = 0.f;
+        mGroundLevel = [this]() {
+            auto result = mTerrain->height(transform.position);
+            if (result) {
+                return *result;
+            }
+            else {
+                return std::numeric_limits<float>::min();
+            }
+        }();
+
+        const bool flying = transform.position.y > (mGroundLevel + mPlayerHeight);
+
+        if (!flying) { // Under ground
+            transform.position.y = mGroundLevel + mPlayerHeight;
+        }
+
+        if (flying) {
+            mVelocity += velocityFlying(dt);
+        }
+        else if (mSliding) {
+            mVelocity = velocitySliding(dt);
+        }
+        else { // walking
+            mVelocity = velocityWalking(dt);
+        }
+
+        transform.position += mVelocity * dt.count();
+
+        AudioManager::instance().setTransform(transform);
+    }
+
+    glm::vec3 velocityWalking(Duration dt)
+    {
+        glm::vec3 result{};
 
         if (InputManager::instance().keyPressed(GLFW_KEY_W)) {
             auto front = transform.front();
-            mVelocity.x += front.x;
-            mVelocity.z += front.z;
+            result.x += front.x;
+            result.z += front.z;
         }
         else if (InputManager::instance().keyPressed(GLFW_KEY_S)) {
             auto front = transform.front();
-            mVelocity.x -= front.x;
-            mVelocity.z -= front.z;
+            result.x -= front.x;
+            result.z -= front.z;
         }
 
         if (InputManager::instance().keyPressed(GLFW_KEY_A)) {
             auto right = transform.right();
-            mVelocity.x -= right.x;
-            mVelocity.z -= right.z;
+            result.x -= right.x;
+            result.z -= right.z;
         }
         else if (InputManager::instance().keyPressed(GLFW_KEY_D)) {
             auto right = transform.right();
-            mVelocity.x += right.x;
-            mVelocity.z += right.z;
+            result.x += right.x;
+            result.z += right.z;
         }
 
-        if (transform.position.y > mGroundLevel + mPlayerHeight) {
-            mVelocity += gravity * dt.count();
-            transform.position.y += mVelocity.y * dt.count();
+        if (glm::length(result) > std::numeric_limits<float>::epsilon()) {
+            return mSpeed * glm::normalize(result);
         }
         else {
-            mVelocity.y = 0.0f;
-            transform.position.y = mGroundLevel + mPlayerHeight;
+            return {};
         }
+    }
 
+    glm::vec3 velocitySliding(Duration dt)
+    {
+        const glm::vec3 slope = [this]()
+        {
+            const float delta{0.05f};
+            const auto p0 = [&, this]() {
+                const auto& pos = transform.position;
+                const auto height = mTerrain->height(transform.position);
+                if (height) {
+                    return glm::vec3(pos.x, *height, pos.z);
+                }
+                else {
+                    return pos;
+                }
+            }();
+            const auto p1 = [&, this]() {
+                const glm::vec3 direction = glm::normalize(transform.front());
+                auto pos = p0 + delta * direction;
+                auto height = mTerrain->height(pos);
+                if (height) {
+                    return glm::vec3(pos.x, *height, pos.z);
+                }
+                else {
+                    return p0;
+                }
+            }();
 
-        auto xzVelocity = glm::vec3(mVelocity.x, 0.0f, mVelocity.z);
+            return glm::normalize(p1 - p0);
+        }();
 
+        return glm::dot(gravity, slope) * slope;
+    }
 
-        if (glm::length(xzVelocity) > std::numeric_limits<float>::epsilon()) {
-            transform.position += mSpeed * glm::normalize(xzVelocity) * dt.count();
-        }
-
-
-        AudioManager::instance().setTransform(transform);
+    glm::vec3 velocityFlying(Duration dt)
+    {
+        return gravity * dt.count();
     }
 
     void updateRotation(std::chrono::duration<float> dt)
@@ -200,12 +256,13 @@ private:
     float mSpeed{30.0f};
     glm::vec2 mPrevMousePos{};
     float mSensitivity{0.001f};
-    const Transform mWeaponAimTransform{glm::vec3{0.0f, -0.2f, -0.6f}, glm::vec3{glm::radians(1.0f), 0.0f, 0.0f}, glm::vec3{3.6f}};
+    const Transform mWeaponAimTransform{glm::vec3{0.0f, -0.8f, -2.7f}, glm::vec3{glm::radians(1.0f), 0.0f, 0.0f}, glm::vec3{3.6f}};
     Transform mWeaponRegularTransform{};
     Weapon* mWeapon;
     float mGroundLevel{4.0f};
     Terrain* mTerrain;
     float mPlayerHeight{6};
+    bool mSliding{false};
 };
 
 #endif //FPSFROMSCRATCH_PLAYER_H

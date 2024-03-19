@@ -20,6 +20,7 @@
 #include "../engine/Util.h"
 #include "../engine/Model.h"
 #include "Player.h"
+#include "Enemy.h"
 #include "../engine/GameObject.h"
 #include "../engine/Light.h"
 

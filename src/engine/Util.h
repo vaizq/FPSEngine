@@ -14,6 +14,10 @@
 
 namespace Util
 {
+
+    template<class>
+    inline constexpr bool always_false_v = false;
+
     std::string getShaderPath(const std::string& shaderName);
     std::string getAssetPath(const std::string& assetName);
 
