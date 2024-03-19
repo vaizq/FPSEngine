@@ -4,6 +4,7 @@
 
 #include "Enemy.h"
 #include "../engine/ResourceManager.h"
+#include <boost/signals2.hpp>
 
 
 Enemy::Enemy(const std::string& name)
@@ -13,7 +14,7 @@ Enemy::Enemy(const std::string& name)
     model = &ResourceManager::instance().getModel("skeleton");
     bounds.transform.position.y = 3.0f;
     auto& shape = std::get<Sphere>(bounds.shape);
-    shape.radius = 1.0f;
+    shape.radius = 0.7f;
 }
 
 
@@ -26,10 +27,30 @@ void Enemy::ready()
 
 void Enemy::update(Duration dt)
 {
-    auto diff = mPlayer->transform.position - transform.position;
-    diff.y = 0.0f;
+    const auto diff = [this]() {
+        auto result = mPlayer->transform.position - transform.position;
+        result.y = 0;
+        return result;
+    }();
+
+    const auto diffDir = glm::normalize(diff);
+    const auto front = [this]() {
+        auto result = transform.front();
+        result.y = 0;
+        return glm::normalize(result);
+    }();
+
+    // Rotate and then move forward and apply gravity
+
+    const auto rotationAxis = glm::cross(front, diffDir);
+    const float rotationAngle = glm::asin(glm::length(rotationAxis));
+
+    if (rotationAngle > glm::epsilon<float>()) {
+        transform.rotation = glm::rotate(transform.rotation, rotationAngle, glm::normalize(rotationAxis));
+    }
+
     if (glm::length(diff) > 3.0f) {
-        transform.position += mSpeed * glm::normalize(diff) * dt.count();
+        transform.position += mSpeed * glm::normalize(transform.front()) * dt.count();
     }
 
     auto groundHeight = mTerrain->height(transform.position);

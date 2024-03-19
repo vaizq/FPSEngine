@@ -43,6 +43,8 @@ set(SRC_FILES
         src/engine/RayCast.cpp
         src/engine/BoundingVolume.cpp
         src/game/Enemy.cpp
+        src/game/EnemyManager.cpp
+        src/engine/Random.cpp
 )
 
 add_executable(FPSFromScratch src/main.cpp ${SRC_FILES})

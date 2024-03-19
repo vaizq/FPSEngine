@@ -18,6 +18,7 @@
 #include "Player.h"
 #include "../engine/ParticleEmitter.h"
 #include "../engine/Renderer.h"
+#include "EnemyManager.h"
 
 
 using namespace std::chrono_literals;
@@ -29,13 +30,13 @@ FPSGame& FPSGame::instance() {
         auto window = Util::initGraphics(800, 600, "FPS Game");
         AudioManager::instance();
 
-        auto themesong = std::make_unique<AudioSource>();
-//        themesong->playAudio("theme", true);
+        auto theme = std::make_unique<AudioSource>();
+        theme->playAudio("theme", true);
 
         // This takes forever
         ResourceManager::instance().loadAll();
 
-        self = std::unique_ptr<FPSGame>(new FPSGame(window, std::move(themesong)));
+        self = std::unique_ptr<FPSGame>(new FPSGame(window, std::move(theme)));
     }
     return *self;
 }
@@ -388,15 +389,17 @@ void FPSGame::buildScene()
     skeleton->model = &ResourceManager::instance().getModel("skeleton");
     skeleton->parent = mScene.get();
 
-    auto enemy = std::make_unique<Enemy>("enemy");
-    enemy->parent = mScene.get();
+
+    auto enemyManager = std::make_unique<EnemyManager>();
+    enemyManager->name = "EnemyArmy";
+    enemyManager->parent = mScene.get();
 
     mScene->children.push_back(std::move(skullWithEyes));
     mScene->children.push_back(std::move(player));
     mScene->children.push_back(std::move(light));
     mScene->children.push_back(std::move(terrain));
     mScene->children.push_back(std::move(skeleton));
-    mScene->children.push_back(std::move(enemy));
+    mScene->children.push_back(std::move(enemyManager));
 }
 
 

@@ -19,6 +19,7 @@
 #include "../engine/Terrain.h"
 #include "../engine/RayCast.h"
 #include "../engine/Renderer.h"
+#include <boost/signals2.hpp>
 
 static glm::vec3 gravity{0.0f, -90.0f, 0.0f};
 
@@ -55,15 +56,7 @@ public:
             mWeapon->pressTrigger();
             auto t = worldTransform();
             RayCast ray(t.position, t.front());
-            if (auto iPoint = intersects(ray, *mTerrain)) {
-                auto bulletHit = std::make_unique<GameObject>();
-                static int nameIndex{0};
-                bulletHit->name = "bullethit" + std::to_string(nameIndex++);
-                bulletHit->transform.position = *iPoint;
-                bulletHit->parent = mTerrain;
-                bulletHit->model = &ResourceManager::instance().getModel("ak47");
-                getScene()->children.push_back(std::move(bulletHit));
-            }
+            shootSignal(ray);
         };
         InputManager::instance().buttonReleaseHandlers[GLFW_MOUSE_BUTTON_LEFT] = [this] ()
         {
@@ -128,6 +121,8 @@ public:
     }
 
     bool enableInput{true};
+
+    boost::signals2::signal<void(RayCast ray)> shootSignal;
 
 private:
     void updatePosition(std::chrono::duration<float> dt)
