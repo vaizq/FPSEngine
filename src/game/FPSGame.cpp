@@ -19,6 +19,7 @@
 #include "../engine/ParticleEmitter.h"
 #include "../engine/Renderer.h"
 #include "EnemyManager.h"
+#include "../engine/Speaker.h"
 
 
 using namespace std::chrono_literals;
@@ -31,7 +32,7 @@ FPSGame& FPSGame::instance() {
         AudioManager::instance();
 
         auto theme = std::make_unique<AudioSource>();
-        theme->playAudio("theme", true);
+//        theme->playAudio("theme", true);
 
         // This takes forever
         ResourceManager::instance().loadAll();
@@ -372,12 +373,17 @@ void FPSGame::buildScene()
     enemyManager->name = "EnemyArmy";
     enemyManager->parent = mScene.get();
 
+    auto speaker = std::make_unique<Speaker>();
+    speaker->name = "Speaker";
+    speaker->parent = mScene.get();
+
     mScene->children.push_back(std::move(skullWithEyes));
     mScene->children.push_back(std::move(player));
     mScene->children.push_back(std::move(light));
     mScene->children.push_back(std::move(terrain));
     mScene->children.push_back(std::move(skeleton));
     mScene->children.push_back(std::move(enemyManager));
+    mScene->children.push_back(std::move(speaker));
 }
 
 

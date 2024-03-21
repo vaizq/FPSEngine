@@ -83,8 +83,9 @@ void ResourceManager::reloadShaders()
 
 Shader &ResourceManager::useShader(const string &name)
 {
-    auto shader = getShader(name);
+    auto& shader = getShader(name);
     shader.use();
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
+    return shader;
 }

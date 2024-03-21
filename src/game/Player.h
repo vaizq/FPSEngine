@@ -159,12 +159,21 @@ private:
 
         if (flying) {
             mVelocity += velocityFlying(dt);
+            mRunningAudio.stopAudio();
         }
         else if (mSliding) {
             mVelocity = velocitySliding(dt);
+            mRunningAudio.stopAudio();
         }
         else { // walking
             mVelocity = velocityWalking(dt);
+            const float velo = glm::length(mVelocity);
+            if (velo > 0 && !mRunningAudio.isPlaying()) {
+                mRunningAudio.playAudio("run-gravel", true);
+            }
+            else if (velo == 0 && mRunningAudio.isPlaying()) {
+                mRunningAudio.stopAudio();
+            }
         }
 
         transform.position += mVelocity * dt.count();
@@ -273,6 +282,7 @@ private:
     float mPlayerHeight{6};
     bool mSliding{false};
     bool mDoRecoil{false};
+    AudioSource mRunningAudio;
 };
 
 #endif //FPSFROMSCRATCH_PLAYER_H

@@ -22,6 +22,8 @@ void Enemy::ready()
 {
     mPlayer = findGameObject<Player>("Player");
     mTerrain = findGameObject<Terrain>("terrain");
+
+    mBreathAudio.playAudio("enemy-breathing", true);
 }
 
 
@@ -33,6 +35,9 @@ void Enemy::update(Duration dt)
     else {
         updateMovement(dt);
     }
+
+    mBreathAudio.setTransform(worldTransform());
+    mScreamAudio.setTransform(worldTransform());
 }
 
 void Enemy::doDead()
@@ -45,6 +50,8 @@ void Enemy::doDead()
         return result;
     }();
     mDeadAnimation.duration = 1s;
+
+    mScreamAudio.playAudio("enemy-scream");
 }
 
 void Enemy::updateMovement(Duration dt)

@@ -67,6 +67,11 @@ private:
     {
         mAudioBuffers["ak47Fire"] = alutCreateBufferFromFile(Util::getAssetPath("audio/ak47.wav").c_str());
         mAudioBuffers["theme"] = alutCreateBufferFromFile(Util::getAssetPath("audio/halloween-theme.wav").c_str());
+        mAudioBuffers["enemy-breathing"] = alutCreateBufferFromFile(Util::getAssetPath("audio/enemy-breathing.wav").c_str());
+        mAudioBuffers["enemy-scream"] = alutCreateBufferFromFile(Util::getAssetPath("audio/enemy-scream.wav").c_str());
+        mAudioBuffers["bullet-hit-ground"] = alutCreateBufferFromFile(Util::getAssetPath("audio/bullet-hit-ground.wav").c_str());
+        mAudioBuffers["run-gravel"] = alutCreateBufferFromFile(Util::getAssetPath("audio/run-gravel.wav").c_str());
+        mAudioBuffers["wave-horn"] = alutCreateBufferFromFile(Util::getAssetPath("audio/wave-horn.wav").c_str());
 
         ALenum error = alGetError();
         if (error != ALUT_ERROR_NO_ERROR) {

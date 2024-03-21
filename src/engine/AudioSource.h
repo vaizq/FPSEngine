@@ -8,6 +8,7 @@
 #include "AudioManager.h"
 #include "Transform.h"
 
+
 class AudioSource
 {
 public:
@@ -30,17 +31,25 @@ public:
 
     void stopAudio() const
     {
-        alSourceStop(mID);
+        if (isPlaying()) {
+            alSourceStop(mID);
+        }
     }
 
 
     void setTransform(const Transform& transform) const
     {
+        alGetError();
         alSourcefv(mID, AL_POSITION, &transform.position[0]);
         glm::vec3 orientation[2];
         orientation[0] = transform.front();
         orientation[1] = transform.right();
         alSourcefv(mID, AL_ORIENTATION, &orientation[0][0]);
+
+        ALenum error = alGetError();
+        if (error != AL_NO_ERROR) {
+            displayAlError("Unable set transform", error);
+        }
     }
 
     [[nodiscard]] bool isPlaying() const
@@ -51,6 +60,11 @@ public:
     }
 
 private:
+    static void displayAlError(const std::string_view message, ALenum error)
+    {
+        std::cerr << message << " : " << alGetString(error) << '\n';
+    }
+
     ALuint mID{};
 };
 
