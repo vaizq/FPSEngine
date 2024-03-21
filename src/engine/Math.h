@@ -6,5 +6,4 @@
 #define FPSFROMSCRATCH_MATH_H
 
 
-
 #endif //FPSFROMSCRATCH_MATH_H

@@ -41,7 +41,7 @@ public:
         return mAudioBuffers.at(name);
     }
 
-    void setTransform(const Transform& transform)
+    static void setTransform(const Transform& transform)
     {
         alListenerfv(AL_POSITION, &transform.position[0]);
         glm::vec3 orientation[2];
@@ -75,7 +75,7 @@ private:
     }
 
     std::map<std::string, ALuint> mAudioBuffers;
-    ALuint mSource;
+    ALuint mSource{};
 };
 
 

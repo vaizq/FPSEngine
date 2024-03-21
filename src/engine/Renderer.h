@@ -14,32 +14,50 @@
 #include "Util.h"
 
 
-struct Perspective
+class Renderer
 {
-    float fow{45.f};
-    float width{666.f};
-    float height{420.f};
-    float near{0.1f};
-    float far{100.f};
+public:
+    static GLenum drawMode;
 };
 
-// Easy drawing of primitives for development
-// Centralizing rendering
-// Separating rendering from game logic
-class Renderer : public Singleton<Renderer>
+
+// Draw primitives in world space for debugging and prototyping
+class DebugRenderer
 {
-    friend class Singleton<Renderer>;
 public:
-    using Color = glm::vec3;
-    static unsigned int drawMode;
-    Perspective activePerspective{};
-    Camera activeCamera;
-    Shader& activeShader;
-    void drawRay(const RayCast& ray, const Color& color = Util::red);
-    void drawSphere(const glm::vec3& position, float radius = 1.0f, const Color& color = Util::red);
+    DebugRenderer(const DebugRenderer&) = delete;
+    DebugRenderer(DebugRenderer&&) = delete;
+    DebugRenderer& operator=(const DebugRenderer&) = delete;
+    DebugRenderer& operator=(DebugRenderer&&) = delete;
+
+    static DebugRenderer& instance();
+
+    static constexpr auto defColor = Util::blue;
+
+    void drawPoint(const glm::vec3& pos, const glm::vec3& color = defColor);
+    void drawLine(const glm::vec3& point, const glm::vec3& direction, const glm::vec3& color = defColor);
+    void drawVector(const glm::vec3& pos, const glm::vec3& vector, const glm::vec3& color = defColor);
+    void drawTransform(const Transform& transform);
+
+    void render();
+
 private:
-    Renderer();
-    Mesh mSphereMesh;
+    DebugRenderer() = default;
+
+    struct Line {
+        glm::vec3 point;
+        glm::vec3 direction;
+    };
+
+    struct Vector {
+        glm::vec3 tail;
+        glm::vec3 vec;
+    };
+
+    std::vector<glm::vec3> mPoints;
+    std::vector<Line> mLines;
+    std::vector<Vector> mVectors;
+    std::vector<Transform> mTransforms;
 };
 
 

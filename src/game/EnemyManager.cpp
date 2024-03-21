@@ -10,7 +10,7 @@ EnemyManager::EnemyManager()
 {
     auto skeletonModel = &ResourceManager::instance().getModel("skeleton");
 
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 10; ++i) {
         auto enemy = std::make_unique<Enemy>("enemy" + std::to_string(i));
         enemy->parent = this;
         enemy->model = skeletonModel;
@@ -46,11 +46,14 @@ void EnemyManager::ready()
         }
 
         if (shotEnemy != nullptr) {
-            mQueueToHeaven.push(shotEnemy);
+            shotEnemy->signalDead.connect([this](Enemy* enemy) {
+                mQueueToHeaven.push(enemy);
+            });
+            shotEnemy->doDead();
         }
     };
 
-    mPlayer->shootSignal.connect(handleShot);
+    mPlayer->signalShoot.connect(handleShot);
 
     for (auto& obj : children) {
         auto enemy = dynamic_cast<Enemy*>(obj.get());

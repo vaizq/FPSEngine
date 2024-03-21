@@ -8,7 +8,7 @@
 
 #include "../engine/GameObject.h"
 #include "../engine/AudioSource.h"
-
+#include "../boost/signals2.hpp"
 
 class Weapon : public GameObject
 {
@@ -21,21 +21,39 @@ public:
 
     void pressTrigger()
     {
-        mAudioSource->playAudio("ak47Fire", true);
+        mTriggerPressed = true;
+        fire();
     }
 
     void releaseTrigger()
     {
-        mAudioSource->stopAudio();
+        mTriggerPressed = false;
     }
 
     void update(Duration dt) override
     {
         mAudioSource->setTransform(worldTransform());
+
+        if (mTriggerPressed && (mFromLastFire += dt) > mFiringInterval) {
+            fire();
+        }
     }
 
+    boost::signals2::signal<void()> signalFire;
+
 private:
+    void fire()
+    {
+        signalFire();
+        mAudioSource->playAudio("ak47Fire", false);
+        mFromLastFire = Duration{0.0f};
+    }
+
     std::unique_ptr<AudioSource> mAudioSource;
+    bool mTriggerPressed{false};
+    float mFireRate{400}; // rounds / min
+    Duration mFiringInterval{1.0f / mFireRate * 60.0f};
+    Duration mFromLastFire{};
 };
 
 #endif //FPSFROMSCRATCH_WEAPON_H

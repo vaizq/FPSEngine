@@ -27,14 +27,38 @@ void Enemy::ready()
 
 void Enemy::update(Duration dt)
 {
-    const auto diff = [this]() {
+    if (mDoDeadAnimation && !mDeadAnimation.isDone()) {
+        updateDeadAnimation(dt);
+    }
+    else {
+        updateMovement(dt);
+    }
+}
+
+void Enemy::doDead()
+{
+    mDoDeadAnimation = true;
+    mDeadAnimation.startPose = transform;
+    mDeadAnimation.endPose = [this]() {
+        Transform result{transform};
+        result.position += glm::vec3{0.0f, -8.0f, 0.0f};
+        return result;
+    }();
+    mDeadAnimation.duration = 1s;
+}
+
+void Enemy::updateMovement(Duration dt)
+{
+    const auto diff = [this]()
+    {
         auto result = mPlayer->transform.position - transform.position;
         result.y = 0;
         return result;
     }();
 
     const auto diffDir = glm::normalize(diff);
-    const auto front = [this]() {
+    const auto front = [this]()
+    {
         auto result = transform.front();
         result.y = 0;
         return glm::normalize(result);
@@ -61,5 +85,14 @@ void Enemy::update(Duration dt)
         if (transform.position.y < *groundHeight + mHeight) {
             transform.position.y = *groundHeight + mHeight;
         }
+    }
+}
+
+void Enemy::updateDeadAnimation(Duration dt)
+{
+    mDeadAnimation.update(dt);
+    transform = mDeadAnimation.currentPose();
+    if (mDeadAnimation.isDone()) {
+        signalDead(this);
     }
 }

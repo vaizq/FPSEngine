@@ -17,6 +17,7 @@
 
 struct GameObject
 {
+    using Clock = std::chrono::steady_clock;
     using Duration = std::chrono::duration<float>;
 
     std::string name{};

@@ -70,7 +70,7 @@ struct Transform
 
 Transform operator+(const Transform& lhs, const Transform& rhs);
 
-
+Transform lerp(const Transform& x, const Transform& y, float a);
 
 
 #endif //FPSFROMSCRATCH_TRANSFORM_H

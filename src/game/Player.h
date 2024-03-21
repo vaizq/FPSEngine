@@ -53,14 +53,15 @@ public:
         // Shooting audio
         InputManager::instance().buttonPressHandlers[GLFW_MOUSE_BUTTON_LEFT] = [this] ()
         {
-            mWeapon->pressTrigger();
-            auto t = worldTransform();
-            RayCast ray(t.position, t.front());
-            shootSignal(ray);
+            if (enableInput) {
+                mWeapon->pressTrigger();
+            }
         };
         InputManager::instance().buttonReleaseHandlers[GLFW_MOUSE_BUTTON_LEFT] = [this] ()
         {
-            mWeapon->releaseTrigger();
+            if (enableInput) {
+                mWeapon->releaseTrigger();
+            }
         };
 
         InputManager::instance().keyPressHandlers[GLFW_KEY_SPACE] = [this] ()
@@ -99,6 +100,15 @@ public:
     void ready() override
     {
         mTerrain = findGameObject<Terrain>("terrain");
+
+        mWeapon->signalFire.connect([this]() {
+            auto t = worldTransform();
+            RayCast ray(t.position, t.front());
+            signalShoot(ray);
+
+            // Simple recoil animation
+            mDoRecoil = true;
+        });
     }
 
     void update(std::chrono::duration<float> dt) override
@@ -107,9 +117,13 @@ public:
             updatePosition(dt);
         }
         updateRotation(dt);
-        mCamera.getTransform() = transform;
 
-        Renderer::instance().activeCamera = mCamera;
+        if (mDoRecoil) {
+            transform.rotation = glm::angleAxis(glm::radians(3.0f), transform.right()) * transform.rotation;
+            mDoRecoil = false;
+        }
+
+        mCamera.getTransform() = transform;
     }
 
     void onGUI() override
@@ -122,7 +136,7 @@ public:
 
     bool enableInput{true};
 
-    boost::signals2::signal<void(RayCast ray)> shootSignal;
+    boost::signals2::signal<void(RayCast ray)> signalShoot;
 
 private:
     void updatePosition(std::chrono::duration<float> dt)
@@ -258,6 +272,7 @@ private:
     Terrain* mTerrain;
     float mPlayerHeight{6};
     bool mSliding{false};
+    bool mDoRecoil{false};
 };
 
 #endif //FPSFROMSCRATCH_PLAYER_H

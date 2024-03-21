@@ -25,3 +25,12 @@ Transform operator+(const Transform& lhs, const Transform& rhs)
 {
     return Transform{lhs.position + rhs.position, glm::eulerAngles(lhs.rotation) + glm::eulerAngles(rhs.rotation), lhs.scale + rhs.scale};
 }
+
+Transform lerp(const Transform& x, const Transform& y, float a)
+{
+    Transform result;
+    result.position = x.position + (y.position - x.position) * a;
+    result.scale = x.scale + (y.scale - x.scale) * a;
+    result.rotation = glm::lerp(x.rotation, y.rotation, a);
+    return result;
+}

@@ -192,30 +192,8 @@ void FPSGame::update(Duration dt)
     ImGui::End();
 
     if (useTracking) {
-        alignTo(mPlayer->transform.position, *mLeftEye, mSkull->transform.modelMatrix());
+       // alignTo(mPlayer->transform.position, *mLeftEye, mSkull->transform.modelMatrix());
         alignTo(mPlayer->transform.position, *mRightEye, mSkull->transform.modelMatrix());
-    }
-
-    const RayCast ray{mCamera.getPosition(), mCamera.getFront()};
-    mTarget = nullptr;
-    auto closest = glm::vec3{std::numeric_limits<float>::max()};
-    // Find closest object intersecting with a raycast fired from main camera
-    mScene->forEach([this, &ray, &closest](GameObject& entity, const glm::mat4& parentTransform) {
-        // Transform local entity bounds into world coordinates
-        BoundingVolume bounds{
-                Transform{parentTransform * entity.transform.modelMatrix() * entity.bounds.transform.modelMatrix()},
-                entity.bounds.shape};
-
-        auto intersectionPoint = intersects(ray, bounds);
-        if (intersectionPoint != std::nullopt &&
-            glm::length(*intersectionPoint - ray.startPosition) < glm::length(closest - ray.startPosition)) {
-            mTarget = &entity;
-            closest = *intersectionPoint;
-        }
-    });
-
-    if (mTarget != nullptr) {
-        // Kill the fucker
     }
 }
 

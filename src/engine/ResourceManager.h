@@ -37,6 +37,8 @@ public:
     Texture& getTexture(const std::string& name);
     Model& getModel(const std::string& name);
     Shader& getShader(const std::string& name);
+    // Get shader with view and projection already setup
+    Shader& useShader(const std::string& name);
     void reloadShaders();
 
     glm::mat4 view{1.0f};

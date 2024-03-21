@@ -34,7 +34,7 @@ public:
     }
 
 
-    void setTransform(const Transform& transform)
+    void setTransform(const Transform& transform) const
     {
         alSourcefv(mID, AL_POSITION, &transform.position[0]);
         glm::vec3 orientation[2];

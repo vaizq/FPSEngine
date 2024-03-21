@@ -27,6 +27,8 @@ std::optional<glm::vec3> intersects(const RayCast& ray, const BoundingVolume& bo
 }
 
 // TODO modify terrain so that Terrain::height() is const function
+// Linearly iterates if the ray gets under the terrain
+// First it uses larder delta to find a rough estimate and then a finer one
 std::optional<glm::vec3> intersects(const RayCast& ray, Terrain& terrain)
 {
     // Assume that the ray starts above the terrain
@@ -39,16 +41,26 @@ std::optional<glm::vec3> intersects(const RayCast& ray, Terrain& terrain)
         return {};
     }
 
-    const float delta = 0.1f;
+    auto findIntersection = [](const RayCast& ray, Terrain& terrain, const float delta) -> std::optional<glm::vec3> {
+        for (float x{delta}; ; x += delta) {
+            auto pos = ray.startPosition + x * ray.direction;
+            auto height = terrain.height(pos);
+            if (height == std::nullopt) {
+                return std::nullopt;
+            }
+            if (pos.y < terrain.height(pos)) {
+                return pos;
+            }
+        }
+    };
 
-    for (float x{delta}; ; x += delta) {
-        auto pos = ray.startPosition + x * ray.direction;
-        auto height = terrain.height(pos);
-        if (height == std::nullopt) {
-            return {};
-        }
-        if (pos.y < terrain.height(pos)) {
-            return pos;
-        }
+    float delta = 2.f;
+    auto intersectionPoint = findIntersection(ray, terrain, delta);
+    if (intersectionPoint) {
+        RayCast fineRay{*intersectionPoint - ray.direction * delta, ray.direction};
+        return findIntersection(ray, terrain, 0.1f);
+    }
+    else {
+        return {};
     }
 }
