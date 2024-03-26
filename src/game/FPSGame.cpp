@@ -32,7 +32,7 @@ FPSGame& FPSGame::instance() {
         AudioManager::instance();
 
         auto theme = std::make_unique<AudioSource>();
-//        theme->playAudio("theme", true);
+        theme->playAudio("theme", true);
 
         // This takes forever
         ResourceManager::instance().loadAll();

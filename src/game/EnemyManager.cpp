@@ -10,7 +10,7 @@ EnemyManager::EnemyManager()
 {
     auto skeletonModel = &ResourceManager::instance().getModel("skeleton");
 
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 50; ++i) {
         auto enemy = std::make_unique<Enemy>("enemy" + std::to_string(i));
         enemy->parent = this;
         enemy->model = skeletonModel;
@@ -45,7 +45,7 @@ void EnemyManager::ready()
             }
         }
 
-        if (shotEnemy != nullptr) {
+        if (shotEnemy != nullptr && !shotEnemy->isDying()) {
             shotEnemy->signalDead.connect([this](Enemy* enemy) {
                 mQueueToHeaven.push(enemy);
             });

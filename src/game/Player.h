@@ -19,6 +19,7 @@
 #include "../engine/Terrain.h"
 #include "../engine/RayCast.h"
 #include "../engine/Renderer.h"
+#include "../engine/Animation.h"
 #include <boost/signals2.hpp>
 
 static glm::vec3 gravity{0.0f, -90.0f, 0.0f};
@@ -42,12 +43,20 @@ public:
         // Aiming "animation"
         InputManager::instance().buttonPressHandlers[GLFW_MOUSE_BUTTON_RIGHT] = [this] ()
         {
-            mWeaponRegularTransform = mWeapon->transform;
-            mWeapon->transform = mWeaponAimTransform;
+            if (!mAimAnimation.isRunning()) {
+                mWeaponRegularTransform = mWeapon->transform;
+            }
+            mAimAnimation.duration = 300ms;
+            mAimAnimation.startPose = mWeapon->transform;
+            mAimAnimation.endPose = aimTransform;
+            mAimAnimation.start();
         };
         InputManager::instance().buttonReleaseHandlers[GLFW_MOUSE_BUTTON_RIGHT] = [this] ()
         {
-            mWeapon->transform = mWeaponRegularTransform;
+            mAimAnimation.duration = 300ms;
+            mAimAnimation.startPose = mWeapon->transform;
+            mAimAnimation.endPose = mWeaponRegularTransform;
+            mAimAnimation.start();
         };
 
         // Shooting audio
@@ -69,6 +78,7 @@ public:
             if (transform.position.y <= mGroundLevel + mPlayerHeight) {
                 mVelocity.y = 40.0f;
                 transform.position.y += 0.1f;
+                mRunningAudio.stopAudio();
             }
         };
         InputManager::instance().keyPressHandlers[GLFW_KEY_LEFT_SHIFT] = [this] ()
@@ -111,7 +121,7 @@ public:
         });
     }
 
-    void update(std::chrono::duration<float> dt) override
+    void update(Duration dt) override
     {
         if (enableInput) {
             updatePosition(dt);
@@ -124,6 +134,11 @@ public:
         }
 
         mCamera.getTransform() = transform;
+
+        if (mAimAnimation.isRunning() && !mAimAnimation.isDone()) {
+            mAimAnimation.update(dt);
+            mWeapon->transform = mAimAnimation.currentPose();
+        }
     }
 
     void onGUI() override
@@ -152,18 +167,17 @@ private:
         }();
 
         const bool flying = transform.position.y > (mGroundLevel + mPlayerHeight);
+        const bool underGround = transform.position.y < (mGroundLevel + mPlayerHeight);
 
-        if (!flying) { // Under ground
+        if (underGround) { // Under ground
             transform.position.y = mGroundLevel + mPlayerHeight;
         }
 
         if (flying) {
             mVelocity += velocityFlying(dt);
-            mRunningAudio.stopAudio();
         }
         else if (mSliding) {
             mVelocity = velocitySliding(dt);
-            mRunningAudio.stopAudio();
         }
         else { // walking
             mVelocity = velocityWalking(dt);
@@ -274,15 +288,16 @@ private:
     float mSpeed{30.0f};
     glm::vec2 mPrevMousePos{};
     float mSensitivity{0.001f};
-    const Transform mWeaponAimTransform{glm::vec3{0.0f, -0.8f, -2.7f}, glm::vec3{glm::radians(1.0f), 0.0f, 0.0f}, glm::vec3{3.6f}};
+    const Transform aimTransform{glm::vec3{0.0f, -0.8f, -2.7f}, glm::vec3{glm::radians(1.0f), 0.0f, 0.0f}, glm::vec3{3.6f}};
     Transform mWeaponRegularTransform{};
     Weapon* mWeapon;
     float mGroundLevel{4.0f};
     Terrain* mTerrain;
-    float mPlayerHeight{6};
+    float mPlayerHeight{8};
     bool mSliding{false};
     bool mDoRecoil{false};
     AudioSource mRunningAudio;
+    Animation mAimAnimation;
 };
 
 #endif //FPSFROMSCRATCH_PLAYER_H

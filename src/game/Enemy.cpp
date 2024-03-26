@@ -6,9 +6,29 @@
 #include "../engine/ResourceManager.h"
 #include <boost/signals2.hpp>
 
+AnimationSequence createWalkAnimation()
+{
+    Transform defaultPose{};
+
+    Transform leftPose = []() {
+        Transform result{};
+        result.rotation = glm::angleAxis(glm::radians(45.f), glm::vec3{0.0f, 1.0f, 0.0f});
+        return result;
+    }();
+
+    Transform rightPose = []() {
+        Transform result{};
+        result.rotation = glm::angleAxis(glm::radians(-45.f), glm::vec3{0.0f, 1.0f, 0.0f});
+        return result;
+    }();
+
+    return AnimationSequence{{defaultPose, leftPose, rightPose}, {1s, 2s, 1s}};
+}
+
 
 Enemy::Enemy(const std::string& name)
-: GameObject{}
+:   GameObject{},
+    mWalkAnimation(createWalkAnimation())
 {
     this->name = name;
     model = &ResourceManager::instance().getModel("skeleton");
@@ -24,12 +44,13 @@ void Enemy::ready()
     mTerrain = findGameObject<Terrain>("terrain");
 
     mBreathAudio.playAudio("enemy-breathing", true);
+    mWalkAnimation.start();
 }
 
 
 void Enemy::update(Duration dt)
 {
-    if (mDoDeadAnimation && !mDeadAnimation.isDone()) {
+    if (mDying && !mDeadAnimation.isDone()) {
         updateDeadAnimation(dt);
     }
     else {
@@ -42,11 +63,13 @@ void Enemy::update(Duration dt)
 
 void Enemy::doDead()
 {
-    mDoDeadAnimation = true;
+    mDying = true;
     mDeadAnimation.startPose = transform;
+    // fall back
     mDeadAnimation.endPose = [this]() {
         Transform result{transform};
-        result.position += glm::vec3{0.0f, -8.0f, 0.0f};
+        result.position += -glm::vec3{0.0f, mHeight, 0.0f} - transform.front() * mHeight;
+        result.rotation = glm::angleAxis(glm::radians(90.0f), transform.right()) * result.rotation;
         return result;
     }();
     mDeadAnimation.duration = 1s;
@@ -102,4 +125,9 @@ void Enemy::updateDeadAnimation(Duration dt)
     if (mDeadAnimation.isDone()) {
         signalDead(this);
     }
+}
+
+bool Enemy::isDying() const
+{
+    return mDying;
 }

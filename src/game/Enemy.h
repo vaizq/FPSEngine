@@ -18,6 +18,7 @@ public:
     void ready() override;
     void update(Duration dt) override;
     void doDead();
+    bool isDying() const;
 
     boost::signals2::signal<void(Enemy*)> signalDead;
 private:
@@ -27,10 +28,11 @@ private:
     Terrain* mTerrain{};
     float mSpeed{10.0f};
     static constexpr float mHeight{5.0f};
-    bool mDoDeadAnimation{false};
+    bool mDying{false};
     Animation mDeadAnimation{};
     AudioSource mBreathAudio{};
     AudioSource mScreamAudio{};
+    AnimationSequence mWalkAnimation;
 };
 
 
