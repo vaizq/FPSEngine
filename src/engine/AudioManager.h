@@ -13,6 +13,7 @@
 #include <AL/alc.h>
 #include <AL/alut.h>
 #include "Util.h"
+#include "Transform.h"
 
 class AudioManager
 {

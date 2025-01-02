@@ -1,1 +1,6 @@
 cmake-build*
+vcpkg
+vcpkg_installed
+*cache*
+imgui.ini
+build

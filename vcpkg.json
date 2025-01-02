@@ -1,0 +1,15 @@
+{
+  "dependencies": [
+    "asio",
+    "assimp",
+    "catch2",
+    "freealut",
+    "glfw3",
+    "glm",
+    "imgui",
+    "nlohmann-json",
+    "openal-soft",
+    "stb",
+    "boost-signals2"
+  ]
+}

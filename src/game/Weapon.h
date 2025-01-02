@@ -8,7 +8,7 @@
 
 #include "../engine/GameObject.h"
 #include "../engine/AudioSource.h"
-#include "../boost/signals2.hpp"
+#include <boost/signals2.hpp>
 
 class Weapon : public GameObject
 {
