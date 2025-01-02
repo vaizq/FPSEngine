@@ -5,7 +5,7 @@
 #include "FPSGame.h"
 #include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
-#include "../engine/Geometry.h"
+#include "engine/Geometry.h"
 #include <imgui.h>
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_glfw.h"
@@ -14,12 +14,12 @@
 #include <thread>
 #include <nlohmann/json.hpp>
 #include "Tracker.h"
-#include "../engine/RayCast.h"
+#include "engine/RayCast.h"
 #include "Player.h"
-#include "../engine/ParticleEmitter.h"
-#include "../engine/Renderer.h"
+#include "engine/ParticleEmitter.h"
+#include "engine/Renderer.h"
 #include "EnemyManager.h"
-#include "../engine/Speaker.h"
+#include "engine/Speaker.h"
 
 
 using namespace std::chrono_literals;

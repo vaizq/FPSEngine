@@ -3,7 +3,7 @@
 //
 
 #include "Enemy.h"
-#include "../engine/ResourceManager.h"
+#include "engine/ResourceManager.h"
 #include <boost/signals2.hpp>
 
 AnimationSequence createWalkAnimation()

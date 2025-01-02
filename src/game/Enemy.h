@@ -5,9 +5,9 @@
 #ifndef FPSFROMSCRATCH_ENEMY_H
 #define FPSFROMSCRATCH_ENEMY_H
 
-#include "../engine/GameObject.h"
-#include "../engine/Animation.h"
-#include "../engine/AudioSource.h"
+#include "engine/GameObject.h"
+#include "engine/Animation.h"
+#include "engine/AudioSource.h"
 #include "Player.h"
 #include <boost/signals2.hpp>
 

@@ -9,20 +9,20 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 #include <glm/vec3.hpp>
-#include "../engine/Shader.h"
-#include "../engine/Mesh.h"
+#include "engine/Shader.h"
+#include "engine/Mesh.h"
 #include <memory>
 #include <functional>
 #include <map>
-#include "../engine/Camera.h"
+#include "engine/Camera.h"
 #include <chrono>
-#include "../engine/DeltaTimer.hpp"
-#include "../engine/Util.h"
-#include "../engine/Model.h"
+#include "engine/DeltaTimer.hpp"
+#include "engine/Util.h"
+#include "engine/Model.h"
 #include "Player.h"
 #include "Enemy.h"
-#include "../engine/GameObject.h"
-#include "../engine/Light.h"
+#include "engine/GameObject.h"
+#include "engine/Light.h"
 
 
 class FPSGame

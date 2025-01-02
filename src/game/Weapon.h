@@ -6,8 +6,8 @@
 #define FPSFROMSCRATCH_WEAPON_H
 
 
-#include "../engine/GameObject.h"
-#include "../engine/AudioSource.h"
+#include "engine/GameObject.h"
+#include "engine/AudioSource.h"
 #include <boost/signals2.hpp>
 
 class Weapon : public GameObject

@@ -3,8 +3,8 @@
 //
 
 #include <catch2/catch_test_macros.hpp>
-#include "../src/engine/Util.h"
-#include "../src/engine/Perlin.h"
+#include "engine/Util.h"
+#include "engine/Perlin.h"
 #include <iostream>
 
 

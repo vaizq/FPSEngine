@@ -12,7 +12,6 @@
 #include <nlohmann/json.hpp>
 #include "BoundingVolume.h"
 #include "MyGui.h"
-#include "Camera.h"
 
 
 struct GameObject

@@ -6,20 +6,20 @@
 #define FPSFROMSCRATCH_PLAYER_H
 
 
-#include "../engine/Model.h"
-#include "../engine/Shader.h"
-#include "../engine/Camera.h"
-#include "../engine/Util.h"
-#include "../engine/GameObject.h"
+#include "engine/Model.h"
+#include "engine/Shader.h"
+#include "engine/Camera.h"
+#include "engine/Util.h"
+#include "engine/GameObject.h"
 #include <imgui.h>
-#include "../engine/InputManager.h"
-#include "../engine/AudioSource.h"
+#include "engine/InputManager.h"
+#include "engine/AudioSource.h"
 #include "Weapon.h"
-#include "../engine/ResourceManager.h"
-#include "../engine/Terrain.h"
-#include "../engine/RayCast.h"
-#include "../engine/Renderer.h"
-#include "../engine/Animation.h"
+#include "engine/ResourceManager.h"
+#include "engine/Terrain.h"
+#include "engine/RayCast.h"
+#include "engine/Renderer.h"
+#include "engine/Animation.h"
 #include <boost/signals2.hpp>
 
 static glm::vec3 gravity{0.0f, -90.0f, 0.0f};
