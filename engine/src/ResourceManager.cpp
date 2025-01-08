@@ -29,7 +29,6 @@ std::string shaderPath(const std::string& shaderName)
     return shadersDir + '/' + shaderName;
 }
 
-
 void ResourceManager::loadAll()
 {
     loadTextures();
@@ -61,11 +60,11 @@ void ResourceManager::loadTextures()
 
 void ResourceManager::loadModels()
 {
-    mModels.emplace("ak47", modelPath("ak47/ak47.obj"));
+    //mModels.emplace("ak47", modelPath("ak47/ak47.obj"));
     //mModels.emplace("backpack", modelPath("Backpack/backpack.obj"));
-    mModels.emplace("eyeBall", modelPath("Eye/eyeball.obj"));
-    mModels.emplace("skull", modelPath("Skull/skull.obj"));
-    mModels.emplace("skeleton", modelPath("Skeleton/skeleton.obj"));
+    //mModels.emplace("eyeBall", modelPath("Eye/eyeball.obj"));
+    //mModels.emplace("skull", modelPath("Skull/skull.obj"));
+    mModels.emplace("soldier", modelPath("Soldier/soldier.fbx"));
 }
 
 void ResourceManager::loadShaders()

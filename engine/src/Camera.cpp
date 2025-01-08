@@ -14,7 +14,7 @@ Camera::Camera()
 glm::mat4 Camera::getViewMatrix()
 {
     updateVectors();
-    return glm::lookAt(mTransform.position, mTransform.position + mFront, mUp);
+    return glm::lookAt(mTransform.position, mTransform.position + mTransform.front(), mTransform.up());
 }
 
 void Camera::updateVectors()

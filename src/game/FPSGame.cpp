@@ -1,4 +1,4 @@
-//
+///
 // Created by vaige on 19.2.2024.
 //
 
@@ -55,16 +55,6 @@ FPSGame::FPSGame(GLFWwindow* window, std::unique_ptr<AudioSource> theme)
     Util::initImgui(mWindow); // Initialize ImGui after my callbacks are installed
 
     loadScene();
-
-    // Get some entities from scene
-    mSkull = mScene->findChildren("Skull");
-    mLeftEye = mScene->findChildren("leftEye");
-    mRightEye = mScene->findChildren("rightEye");
-
-    if (mSkull == nullptr || mLeftEye == nullptr || mRightEye == nullptr) {
-        std::cerr << "Unable to find all game objects" << std::endl;
-    }
-
 
     // Switch drawing mode when R is pressed
     InputManager::instance().keyPressHandlers[GLFW_KEY_M] = [this]() {
@@ -191,11 +181,6 @@ void FPSGame::update(Duration dt)
         ImGui::PopID();
     });
     ImGui::End();
-
-    if (useTracking) {
-       // alignTo(mPlayer->transform.position, *mLeftEye, mSkull->transform.modelMatrix());
-        alignTo(mPlayer->transform.position, *mRightEye, mSkull->transform.modelMatrix());
-    }
 }
 
 void FPSGame::render()
@@ -368,10 +353,22 @@ void FPSGame::buildScene()
     skeleton->model = &ResourceManager::instance().getModel("skeleton");
     skeleton->parent = mScene.get();
 
+    auto soldier = std::make_unique<GameObject>();
+    soldier->name = "soldier";
+    soldier->model = &ResourceManager::instance().getModel("soldier");
+    soldier->parent = mScene.get();
 
+    auto tero = std::make_unique<GameObject>();
+    tero->name = "terrorist";
+    tero->model = &ResourceManager::instance().getModel("terrorist");
+    tero->parent = mScene.get();
+
+
+    /*
     auto enemyManager = std::make_unique<EnemyManager>();
     enemyManager->name = "EnemyArmy";
     enemyManager->parent = mScene.get();
+    */
 
     auto speaker = std::make_unique<Speaker>();
     speaker->name = "Speaker";
@@ -382,7 +379,9 @@ void FPSGame::buildScene()
     mScene->children.push_back(std::move(light));
     mScene->children.push_back(std::move(terrain));
     mScene->children.push_back(std::move(skeleton));
-    mScene->children.push_back(std::move(enemyManager));
+    //mScene->children.push_back(std::move(enemyManager));
+    mScene->children.push_back(std::move(soldier));
+    mScene->children.push_back(std::move(tero));
     mScene->children.push_back(std::move(speaker));
 }
 

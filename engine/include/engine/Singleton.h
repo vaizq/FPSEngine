@@ -5,6 +5,7 @@
 #ifndef FPSFROMSCRATCH_SINGLETON_H
 #define FPSFROMSCRATCH_SINGLETON_H
 
+#include <memory>
 
 template <typename Derived>
 class Singleton

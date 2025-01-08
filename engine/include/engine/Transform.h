@@ -39,13 +39,13 @@ struct Transform
 
     [[nodiscard]] glm::mat4 rotationMatrix() const
     {
-        return glm::mat4_cast(glm::quat(rotation));
+        return glm::mat4_cast(rotation);
     }
 
     [[nodiscard]] glm::mat4 modelMatrix() const
     {
         auto m = glm::translate(glm::mat4{1.0f}, position);
-        m *= glm::mat4_cast(glm::quat(rotation));
+        m *= glm::mat4_cast(rotation);
         return glm::scale(m, glm::vec3{scale});
     }
 

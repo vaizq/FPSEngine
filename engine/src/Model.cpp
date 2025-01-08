@@ -3,6 +3,8 @@
 //
 
 #include "Model.h"
+#include <assimp/Exporter.hpp>
+#include <assimp/postprocess.h>
 
 
 void Model::loadModel(string const &path)
@@ -10,7 +12,13 @@ void Model::loadModel(string const &path)
     std::cout << "Load model from " << path << std::endl;
     // read file via ASSIMP
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+    //aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace
+    const aiScene* scene = importer.ReadFile(path, 
+                                             aiProcess_Triangulate | 
+//                                             aiProcess_JoinIdenticalVertices |
+                                             aiProcess_GenSmoothNormals | 
+                                             aiProcess_FlipUVs |
+                                             aiProcess_CalcTangentSpace);
 
     // check for errors
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
@@ -34,8 +42,12 @@ void Model::processNode(aiNode *node, const aiScene *scene)
         // the node object only contains indices to index the actual objects in the scene.
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+
+        printf("mesh %d has %d bones\n", i, mesh->mNumBones);
+
         meshes.push_back(processMesh(mesh, scene));
     }
+
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for(unsigned int i = 0; i < node->mNumChildren; i++)
     {
@@ -129,13 +141,14 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
     vector<Texture> textures;
     for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
     {
-        aiString str;
-        mat->GetTexture(type, i, &str);
+        aiString path;
+        mat->GetTexture(type, i, &path);
+        printf("texture: %s\n", path.C_Str());
         // check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
         bool skip = false;
         for(auto& loadedTexture : textures_loaded)
         {
-            if(std::strcmp(loadedTexture.path.data(), str.C_Str()) == 0)
+            if(std::strcmp(loadedTexture.path.data(), path.C_Str()) == 0)
             {
                 textures.push_back(loadedTexture);
                 skip = true; // a texture with the same filepath has already been loaded, continue to next one. (optimization)
@@ -144,9 +157,9 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
         }
         if(!skip)
         {   // if texture hasn't been loaded already, load it
-            Texture texture{Texture::loadFromFile(this->directory + '/' + str.C_Str())};
+            Texture texture{Texture::loadFromFile(this->directory + '/' + path.C_Str())};
             texture.type = typeName;
-            texture.path = str.C_Str();
+            texture.path = path.C_Str();
             textures.push_back(texture);
             textures_loaded.push_back(texture);  // store it as texture loaded for entire model, to ensure we won't unnecessary load duplicate textures.
         }
