@@ -5,3 +5,4 @@ vcpkg_installed
 imgui.ini
 build
 assets
+scene.json
