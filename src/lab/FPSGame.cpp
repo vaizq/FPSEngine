@@ -134,6 +134,7 @@ void FPSGame::update(Duration dt)
 
         if (ImGui::Button("Reload shaders")) {
             ResourceManager::instance().reloadShaders();
+            printf("shaders reloaded\n");
         }
 
         static int width{100};

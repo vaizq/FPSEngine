@@ -7,8 +7,8 @@
 #include "Renderer.h"
 
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
-: mVertices(std::move(vertices)), mIndices(std::move(indices)), mTextures(std::move(textures))
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures, std::vector<Bone> bones)
+: mVertices(std::move(vertices)), mIndices(std::move(indices)), mTextures(std::move(textures)), mBones(std::move(bones))
 {
     glGenVertexArrays(1, &mVAO);
     glGenBuffers(1, &mVBO);
@@ -24,25 +24,37 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
     // position
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
     glEnableVertexAttribArray(0);
+
     // normal
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal));
     glEnableVertexAttribArray(1);
+
     // textureCoordinate
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoord));
     glEnableVertexAttribArray(2);
 
+    // tangent
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, tangent));
     glEnableVertexAttribArray(3);
 
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, bitangent));
+    // bitangent
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, bitangent));
     glEnableVertexAttribArray(4);
+
+    // boneids
+    glVertexAttribPointer(5, 4, GL_INT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, boneIDs));
+    glEnableVertexAttribArray(5);
+
+    // boneweights
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, boneWeights));
+    glEnableVertexAttribArray(6);
+
 }
 
 Mesh::~Mesh()
 {
     deleteBuffers();
 }
-
 
 /*
  * uniform sampler2D diffuse0;

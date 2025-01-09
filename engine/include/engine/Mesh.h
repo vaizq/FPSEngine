@@ -9,8 +9,10 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <vector>
+#include <map>
 #include "Texture.h"
 
+constexpr size_t maxBoneInfluences = 4;
 
 struct Vertex
 {
@@ -19,14 +21,20 @@ struct Vertex
     glm::vec2 texCoord{};
     glm::vec3 tangent{};
     glm::vec3 bitangent{};
+    int boneIDs[maxBoneInfluences];
+    float boneWeights[maxBoneInfluences];
+    uint8_t numBones{0};
 };
 
-// Disable copying
-//
+struct Bone {
+    std::string name;
+    glm::mat4 transformMatrix;
+};
+
 class Mesh
 {
 public:
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::vector<Texture> textures);
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::vector<Texture> textures, std::vector<Bone> bones = {});
     ~Mesh();
     Mesh(Mesh&& other) noexcept;
     Mesh& operator=(Mesh&& other) noexcept;
@@ -41,6 +49,7 @@ private:
     std::vector<Vertex> mVertices;
     std::vector<unsigned> mIndices;
     std::vector<Texture> mTextures;
+    std::vector<Bone> mBones;
     unsigned mVAO{};
     unsigned mVBO{};
     unsigned mEBO{};

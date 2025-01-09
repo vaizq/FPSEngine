@@ -3,8 +3,11 @@
 //
 
 #include "Model.h"
+#include "Mesh.h"
 #include <assimp/Exporter.hpp>
+#include <assimp/mesh.h>
 #include <assimp/postprocess.h>
+#include <assimp/matrix4x4.h>
 
 
 void Model::loadModel(string const &path)
@@ -33,6 +36,16 @@ void Model::loadModel(string const &path)
     processNode(scene->mRootNode, scene);
 }
 
+glm::mat4 aiToGlmMat(const aiMatrix4x4& mat) {
+    glm::mat4 res;
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            res[i][j] = mat[j][i];
+        }
+    }
+    return res;
+}
+
 // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
 void Model::processNode(aiNode *node, const aiScene *scene)
 {
@@ -42,9 +55,6 @@ void Model::processNode(aiNode *node, const aiScene *scene)
         // the node object only contains indices to index the actual objects in the scene.
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-
-        printf("mesh %d has %d bones\n", i, mesh->mNumBones);
-
         meshes.push_back(processMesh(mesh, scene));
     }
 
@@ -61,11 +71,16 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     vector<Vertex> vertices;
     vector<unsigned int> indices;
     vector<Texture> textures;
+    vector<Bone> bones;
 
     // walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
         Vertex vertex{};
+        vertex.boneIDs[0] = 99999;
+        for (int bi = 1; bi < maxBoneInfluences; bi++) {
+            vertex.boneIDs[bi] = -1;
+        }
         // positions
         vertex.position.x = mesh->mVertices[i].x;
         vertex.position.y = mesh->mVertices[i].y;
@@ -100,6 +115,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 
         vertices.push_back(vertex);
     }
+
     // now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
     for(unsigned int i = 0; i < mesh->mNumFaces; i++)
     {
@@ -108,6 +124,19 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
         for(unsigned int j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
     }
+
+    for(unsigned int i = 0; i < mesh->mNumBones; ++i) {
+        aiBone* bone = mesh->mBones[i];
+        bones.emplace_back(bone->mName.C_Str(), aiToGlmMat(bone->mOffsetMatrix));
+        for (unsigned int j = 0; j < bone->mNumWeights; j++) {
+            aiVertexWeight weight = bone->mWeights[j];
+            assert(weight.mVertexId < vertices.size());
+            Vertex& v = vertices[weight.mVertexId];
+            v.boneIDs[v.numBones] = i;
+            v.boneWeights[v.numBones++] = weight.mWeight;
+        }
+    }
+
     // process materials
     aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
     // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
@@ -131,7 +160,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
     // return a mesh object created from the extracted mesh data
-    return {vertices, indices, textures};
+    return {vertices, indices, textures, bones};
 }
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.
