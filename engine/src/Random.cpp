@@ -3,7 +3,7 @@
 //
 
 #include <random>
-#include "Random.h"
+#include "Random.hpp"
 
 float randomFloat()
 {

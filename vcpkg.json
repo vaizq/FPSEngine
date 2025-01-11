@@ -1,8 +1,8 @@
 {
   "dependencies": [
     "asio",
-    "assimp",
     "catch2",
+    "assimp",
     "freealut",
     "glfw3",
     "glm",
@@ -10,6 +10,7 @@
     "nlohmann-json",
     "openal-soft",
     "stb",
-    "boost-signals2"
+    "boost-signals2",
+    "freetype"
   ]
 }

@@ -2,14 +2,18 @@
 // Created by vaige on 19.2.2024.
 //
 
-#include "Mesh.h"
+#include "Mesh.hpp"
+#include "DebugRenderer.hpp"
 #include "glad/glad.h"
-#include "Renderer.h"
+#include "engine/ResourceManager.hpp"
+#include "engine/DebugRenderer.hpp"
+#include "Util.hpp"
 
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures, std::vector<Bone> bones)
 : mVertices(std::move(vertices)), mIndices(std::move(indices)), mTextures(std::move(textures)), mBones(std::move(bones))
 {
+    printf("mesh created with %ld bones\n", mBones.size());
     glGenVertexArrays(1, &mVAO);
     glGenBuffers(1, &mVBO);
     glGenBuffers(1, &mEBO);
@@ -48,43 +52,11 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
     // boneweights
     glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, boneWeights));
     glEnableVertexAttribArray(6);
-
 }
 
 Mesh::~Mesh()
 {
     deleteBuffers();
-}
-
-/*
- * uniform sampler2D diffuse0;
- * uniform sampler2D diffuse1;
- * uniform sampler2D specular0;
- */
-void Mesh::draw(Shader &shader)
-{
-    shader.use();
-
-    int diffuseID{0};
-    int specularID{0};
-
-    for (int i = 0; i < mTextures.size(); i++) {
-
-        glActiveTexture(GL_TEXTURE0 + i);
-
-        const Texture& tex = mTextures[i];
-        if (tex.type == "texture_diffuse") {
-            shader.setInt("texture_diffuse" + std::to_string(diffuseID++), i);
-        }
-        else if (tex.type == "texture_specular") {
-            shader.setInt("texture_specular" + std::to_string(specularID++), i);
-        }
-
-        glBindTexture(GL_TEXTURE_2D, tex.id);
-    }
-
-    glBindVertexArray(mVAO);
-    glDrawElements(Renderer::drawMode, mIndices.size(), GL_UNSIGNED_INT, 0);
 }
 
 Mesh::Mesh(Mesh &&other) noexcept
@@ -99,6 +71,8 @@ Mesh &Mesh::operator=(Mesh &&other) noexcept
         mVertices = std::move(other.mVertices);
         mIndices = std::move(other.mIndices);
         mTextures = std::move(other.mTextures);
+        mBones = std::move(other.mBones);
+
         mVAO = other.mVAO;
         mVBO = other.mVBO;
         mEBO = other.mEBO;
@@ -120,7 +94,18 @@ void Mesh::deleteBuffers()
 
 void Mesh::draw(Shader &shader, GLenum mode)
 {
+    glm::mat4 boneMatrices[maxBones];
+    size_t n = std::min(maxBones, mBones.size());
+    for (int i = 0; i < n; i++) {
+        boneMatrices[i] = mBones[i].transformMatrix;
+        gDebugRenderer.addSphere(Transform{shader.getUniformMat4("model") * boneMatrices[i]}, 0.1f, Util::red, 10ms);
+    }
+
     shader.use();
+
+    for (int i = 0; i < n; i++) {
+        shader.setMat4(std::format("finalBoneMatrices[{}]", i), boneMatrices[i]);
+    }
 
     int diffuseID{0};
     int specularID{0};

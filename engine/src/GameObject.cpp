@@ -2,7 +2,7 @@
 // Created by vaige on 4.3.2024.
 //
 
-#include "GameObject.h"
+#include "GameObject.hpp"
 #include <nlohmann/json.hpp>
 
 

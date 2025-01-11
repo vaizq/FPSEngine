@@ -2,7 +2,7 @@
 // Created by vaige on 24.2.2024.
 //
 
-#include "Camera.h"
+#include "Camera.hpp"
 #include <iostream>
 
 

@@ -1,7 +1,7 @@
 //
 // Created by vaige on 4.3.2024.
 //
-#include "RayCast.h"
+#include "RayCast.hpp"
 
 std::optional<glm::vec3> intersects(const RayCast& ray, const BoundingVolume& boundingVolume)
 {

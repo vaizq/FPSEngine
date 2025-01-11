@@ -2,9 +2,9 @@
 // Created by vaige on 19.3.2024.
 //
 
-#include "BoundingVolume.h"
+#include "BoundingVolume.hpp"
 #include <nlohmann/json.hpp>
-#include "Util.h"
+#include "Util.hpp"
 
 nlohmann::json BoundingVolume::serialize(const BoundingVolume &bounds)
 {

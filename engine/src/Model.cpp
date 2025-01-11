@@ -2,13 +2,22 @@
 // Created by vaige on 19.2.2024.
 //
 
-#include "Model.h"
-#include "Mesh.h"
+#include "Model.hpp"
+#include "Mesh.hpp"
 #include <assimp/Exporter.hpp>
 #include <assimp/mesh.h>
 #include <assimp/postprocess.h>
 #include <assimp/matrix4x4.h>
+#include <assimp/vector3.h>
 
+
+aiVector3D extractScale(const aiMatrix4x4& mat) {
+    aiVector3D translation;
+    aiQuaternion rotation;
+    aiVector3D scale;
+    mat.Decompose(scale, rotation, translation);
+    return scale;
+}
 
 void Model::loadModel(string const &path)
 {
@@ -18,7 +27,7 @@ void Model::loadModel(string const &path)
     //aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace
     const aiScene* scene = importer.ReadFile(path, 
                                              aiProcess_Triangulate | 
-//                                             aiProcess_JoinIdenticalVertices |
+                                             aiProcess_JoinIdenticalVertices |
                                              aiProcess_GenSmoothNormals | 
                                              aiProcess_FlipUVs |
                                              aiProcess_CalcTangentSpace);
@@ -29,43 +38,54 @@ void Model::loadModel(string const &path)
         cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
         return;
     }
+
+
     // retrieve the directory path of the filepath
     directory = path.substr(0, path.find_last_of('/'));
 
     // process ASSIMP's root node recursively
-    processNode(scene->mRootNode, scene);
+    processNode(scene->mRootNode, scene, aiMatrix4x4{
+        1.f, 0.f, 0.f, 0.f, 
+        0.f, 1.f, 0.f, 0.f, 
+        0.f, 0.f, 1.f, 0.f, 
+        0.f, 0.f, 0.f, 1.f
+    });
 }
 
-glm::mat4 aiToGlmMat(const aiMatrix4x4& mat) {
-    glm::mat4 res;
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            res[i][j] = mat[j][i];
-        }
-    }
-    return res;
+glm::mat4 aiToGlmMat(const aiMatrix4x4& from) {
+    glm::mat4 to;
+
+
+    to[0][0] = (GLfloat)from.a1; to[0][1] = (GLfloat)from.b1;  to[0][2] = (GLfloat)from.c1; to[0][3] = (GLfloat)from.d1;
+    to[1][0] = (GLfloat)from.a2; to[1][1] = (GLfloat)from.b2;  to[1][2] = (GLfloat)from.c2; to[1][3] = (GLfloat)from.d2;
+    to[2][0] = (GLfloat)from.a3; to[2][1] = (GLfloat)from.b3;  to[2][2] = (GLfloat)from.c3; to[2][3] = (GLfloat)from.d3;
+    to[3][0] = (GLfloat)from.a4; to[3][1] = (GLfloat)from.b4;  to[3][2] = (GLfloat)from.c4; to[3][3] = (GLfloat)from.d4;
+
+    return to;
 }
 
 // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
-void Model::processNode(aiNode *node, const aiScene *scene)
+void Model::processNode(aiNode *node, const aiScene *scene, const aiMatrix4x4& accTransform)
 {
+    aiMatrix4x4 transformation = node->mTransformation * accTransform;
+
     // process each mesh located at the current node
     for(unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         // the node object only contains indices to index the actual objects in the scene.
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        meshes.push_back(processMesh(mesh, scene));
+        meshes.push_back(processMesh(mesh, scene, transformation));
     }
 
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for(unsigned int i = 0; i < node->mNumChildren; i++)
     {
-        processNode(node->mChildren[i], scene);
+        processNode(node->mChildren[i], scene, transformation);
     }
 }
 
-Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
+Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene, const aiMatrix4x4& transformation)
 {
     // data to fill
     vector<Vertex> vertices;
@@ -77,23 +97,21 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
         Vertex vertex{};
-        vertex.boneIDs[0] = 99999;
-        for (int bi = 1; bi < maxBoneInfluences; bi++) {
-            vertex.boneIDs[bi] = -1;
-        }
-        // positions
-        vertex.position.x = mesh->mVertices[i].x;
-        vertex.position.y = mesh->mVertices[i].y;
-        vertex.position.z = mesh->mVertices[i].z;
-        // normals
+
+        auto pos = transformation * mesh->mVertices[i];
+        vertex.position.x = pos.x;
+        vertex.position.y = pos.y;
+        vertex.position.z = pos.z;
+
         if (mesh->HasNormals())
         {
-            vertex.normal.x = mesh->mNormals[i].x;
-            vertex.normal.y = mesh->mNormals[i].y;
-            vertex.normal.z = mesh->mNormals[i].z;
+            auto normal = transformation * mesh->mNormals[i];
+            vertex.normal.x = normal.x;
+            vertex.normal.y = normal.y;
+            vertex.normal.z = normal.z;
         }
-        // texture coordinates
-        if(mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
+
+        if(mesh->mTextureCoords[0])
         {
             glm::vec2 vec;
             // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
@@ -132,8 +150,10 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
             aiVertexWeight weight = bone->mWeights[j];
             assert(weight.mVertexId < vertices.size());
             Vertex& v = vertices[weight.mVertexId];
-            v.boneIDs[v.numBones] = i;
-            v.boneWeights[v.numBones++] = weight.mWeight;
+            if (v.numBones < maxBoneInfluences) {
+                v.boneIDs[v.numBones] = i;
+                v.boneWeights[v.numBones++] = weight.mWeight;
+            }
         }
     }
 
@@ -159,6 +179,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
+    printf("Create mesh with %ld bones\n", bones.size());
     // return a mesh object created from the extracted mesh data
     return {vertices, indices, textures, bones};
 }
@@ -172,7 +193,6 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
     {
         aiString path;
         mat->GetTexture(type, i, &path);
-        printf("texture: %s\n", path.C_Str());
         // check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
         bool skip = false;
         for(auto& loadedTexture : textures_loaded)

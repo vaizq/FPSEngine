@@ -23,15 +23,15 @@ out vec3 normal;
 
 void main()
 {
-/*
     vec4 totalPos = vec4(0);
     vec3 totalNorm = vec3(0);
+
     for(int i = 0; i < MAX_BONE_INFLUENCES; i++) {
         int boneID = inBoneIDs[i];
 
         if (boneID == -1) {
             continue;
-        } else if (boneID > MAX_BONES) {
+        } else if (boneID >= MAX_BONES) {
             totalPos = vec4(inPosition, 1.0);
             totalNorm = inNormal;
             break;
@@ -42,12 +42,10 @@ void main()
         vec3 localNorm = mat3(finalBoneMatrices[boneID]) * inNormal;
         totalNorm += localNorm * inBoneWeights[i];
     }
-*/
-    vec4 totalPos = vec4(inPosition, 1.0);
 
     vec4 worldPos = model * totalPos;
     gl_Position = projection * view * worldPos;
     texCoord = inTexCoord;
     fragPosition = worldPos.xyz;
-    normal = normalize(normalMatrix * inNormal);
+    normal = normalize(normalMatrix * totalNorm);
 }

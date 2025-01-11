@@ -9,7 +9,7 @@ set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 add_definitions(-DSRC_DIR="${SRC_DIR}")
 
 add_subdirectory(engine)
-add_subdirectory(src/game)
+#add_subdirectory(src/game)
 add_subdirectory(src/lab)
 
 add_executable(Tests 
