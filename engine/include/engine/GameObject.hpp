@@ -67,7 +67,13 @@ struct GameObject
     {
         const auto modelMatrix = parentTransform * transform.modelMatrix();
         const auto normalMatrix = glm::transpose(glm::inverse(modelMatrix));
-        shader.setMat4("model", modelMatrix);
+
+        if (model != nullptr) {
+            shader.setMat4("model", modelMatrix * model->rootTransform);
+        } else {
+            shader.setMat4("model", modelMatrix);
+        }
+
         shader.setMat3("normalMatrix", normalMatrix);
 
         if (model != nullptr) {

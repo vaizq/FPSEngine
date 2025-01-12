@@ -9,48 +9,8 @@
 #include <assimp/postprocess.h>
 #include <assimp/matrix4x4.h>
 #include <assimp/vector3.h>
+#include "engine/Util.hpp"
 
-
-aiVector3D extractScale(const aiMatrix4x4& mat) {
-    aiVector3D translation;
-    aiQuaternion rotation;
-    aiVector3D scale;
-    mat.Decompose(scale, rotation, translation);
-    return scale;
-}
-
-void Model::loadModel(string const &path)
-{
-    std::cout << "Load model from " << path << std::endl;
-    // read file via ASSIMP
-    Assimp::Importer importer;
-    //aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace
-    const aiScene* scene = importer.ReadFile(path, 
-                                             aiProcess_Triangulate | 
-                                             aiProcess_JoinIdenticalVertices |
-                                             aiProcess_GenSmoothNormals | 
-                                             aiProcess_FlipUVs |
-                                             aiProcess_CalcTangentSpace);
-
-    // check for errors
-    if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
-    {
-        cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
-        return;
-    }
-
-
-    // retrieve the directory path of the filepath
-    directory = path.substr(0, path.find_last_of('/'));
-
-    // process ASSIMP's root node recursively
-    processNode(scene->mRootNode, scene, aiMatrix4x4{
-        1.f, 0.f, 0.f, 0.f, 
-        0.f, 1.f, 0.f, 0.f, 
-        0.f, 0.f, 1.f, 0.f, 
-        0.f, 0.f, 0.f, 1.f
-    });
-}
 
 glm::mat4 aiToGlmMat(const aiMatrix4x4& from) {
     glm::mat4 to;
@@ -62,6 +22,153 @@ glm::mat4 aiToGlmMat(const aiMatrix4x4& from) {
     to[3][0] = (GLfloat)from.a4; to[3][1] = (GLfloat)from.b4;  to[3][2] = (GLfloat)from.c4; to[3][3] = (GLfloat)from.d4;
 
     return to;
+}
+
+aiVector3D extractScale(const aiMatrix4x4& mat) {
+    aiVector3D translation;
+    aiQuaternion rotation;
+    aiVector3D scale;
+    mat.Decompose(scale, rotation, translation);
+    return scale;
+}
+
+void printSkeleton(const std::vector<Joint>& skeleton, size_t index = 0, int numParents = 0) {
+    std::string msg;
+    for (int i = 0; i < numParents; i++) {
+        msg += " ";
+    }
+    msg += skeleton[index].name;
+
+    printf("%s\n", msg.c_str());
+
+    for (int i = 0; i < skeleton.size(); i++) {
+        if (skeleton[i].parent == index) {
+            printSkeleton(skeleton, i, numParents + 1);
+        }
+    }
+}
+
+glm::mat4 Model::jointTransform(unsigned index) {
+    const Joint& j = skeleton[index];
+    if (index == 0) {
+        return j.transformation;
+    } else {
+        return jointTransform(j.parent) * j.transformation;
+    }
+}
+
+void Model::loadModel(string const &path)
+{
+    std::cout << "Load model from " << path << std::endl;
+    // read file via ASSIMP
+    Assimp::Importer importer;
+    //aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace
+    const aiScene* scene = importer.ReadFile(path, 
+                                             aiProcess_LimitBoneWeights |
+                                             aiProcess_Triangulate | 
+                                             aiProcess_GenSmoothNormals | 
+                                             aiProcess_FlipUVs |
+                                             aiProcess_JoinIdenticalVertices |
+                                             aiProcess_CalcTangentSpace |
+                                             aiProcess_PopulateArmatureData);
+
+    // check for errors
+    if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
+    {
+        cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
+        return;
+    }
+
+    // retrieve the directory path of the filepath
+    directory = path.substr(0, path.find_last_of('/'));
+
+
+    // Find necessary nodes for the skeleton
+    findNecessaryNodes(scene->mRootNode, scene);
+
+    collectBones(scene);
+
+    rootTransform = Util::aiMatrix4x4ToGlmMat4(scene->mRootNode->mTransformation);
+
+    if (!necessaryNodes.contains(scene->mRootNode->mName.C_Str())) {
+        processSkeleton(scene->mRootNode->mChildren[0], scene, 0xFF);
+    } else {
+        processSkeleton(scene->mRootNode, scene, 0xFF);
+    }
+
+    // process ASSIMP's root node recursively
+    processNode(scene->mRootNode, scene, aiMatrix4x4{
+        1.f, 0.f, 0.f, 0.f, 
+        0.f, 1.f, 0.f, 0.f, 
+        0.f, 0.f, 1.f, 0.f, 
+        0.f, 0.f, 0.f, 1.f
+    });
+
+    printf("scene %s has %ld nodes, %d meshes, %ld bones, %d skeletons, %d animations\n", 
+           scene->mName.C_Str(), 
+           necessaryNodes.size(), 
+           scene->mNumMeshes, 
+           bones.size(),
+           scene->mNumSkeletons,
+           scene->mNumAnimations);
+
+    printf("\n#### SKELETON ####\n");
+    printSkeleton(skeleton);
+    printf("\n#### BONES ####\n");
+    for (const auto& [name, id] : boneIDs) {
+        printf("%s : %d\n", name.c_str(), id);
+    }
+}
+
+// Algorithm suggested in the documentation of assimp
+void Model::findNecessaryNodes(aiNode *node, const aiScene *scene) {
+    for(unsigned int i = 0; i < node->mNumMeshes; i++)
+    {
+        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+        for (int j = 0; j < mesh->mNumBones; j++) {
+            aiBone* bone = mesh->mBones[j];
+            for(aiNode* tmpNode = mesh->mBones[j]->mNode; 
+                tmpNode->mParent != nullptr && tmpNode != node && tmpNode != node->mParent; 
+                tmpNode = tmpNode->mParent) {
+                necessaryNodes[tmpNode->mName.C_Str()] = true;
+            }
+        }
+    }
+
+    for(unsigned int i = 0; i < node->mNumChildren; i++)
+    {
+        findNecessaryNodes(node->mChildren[i], scene);
+    }
+}
+
+void Model::collectBones(const aiScene *scene) {
+    for (unsigned i = 0; i < scene->mNumMeshes; i++) {
+        aiMesh* mesh = scene->mMeshes[i];
+        for (unsigned j = 0; j < mesh->mNumBones; j++) {
+            aiBone* bone = mesh->mBones[j];
+            bones.emplace_back(bone->mName.C_Str(), Util::aiMatrix4x4ToGlmMat4(bone->mOffsetMatrix));
+            unsigned index = bones.size() - 1;
+            boneIDs[bone->mName.C_Str()] = index;
+        }
+    }
+}
+
+void Model::processSkeleton(aiNode *node, const aiScene *scene, unsigned parentIndex) {
+    if (!necessaryNodes.contains(node->mName.C_Str())) {
+        printf("ERROR: process skeleton called with an unnecessary node %s\n", node->mName.C_Str());
+    }
+
+    Joint j{node->mName.C_Str(), parentIndex, Util::aiMatrix4x4ToGlmMat4(node->mTransformation)};
+    skeleton.push_back(j);
+    parentIndex = skeleton.size() - 1;
+
+    for(unsigned i = 0; i < node->mNumChildren; i++)
+    {
+        aiNode* child = node->mChildren[i];
+        if (necessaryNodes[child->mName.C_Str()]) {
+            processSkeleton(child, scene, parentIndex);
+        }
+    }
 }
 
 // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
@@ -78,7 +185,6 @@ void Model::processNode(aiNode *node, const aiScene *scene, const aiMatrix4x4& a
         meshes.push_back(processMesh(mesh, scene, transformation));
     }
 
-    // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for(unsigned int i = 0; i < node->mNumChildren; i++)
     {
         processNode(node->mChildren[i], scene, transformation);
@@ -91,21 +197,20 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene, const aiMatrix4x4& t
     vector<Vertex> vertices;
     vector<unsigned int> indices;
     vector<Texture> textures;
-    vector<Bone> bones;
 
     // walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
         Vertex vertex{};
 
-        auto pos = transformation * mesh->mVertices[i];
+        auto pos = mesh->mVertices[i];
         vertex.position.x = pos.x;
         vertex.position.y = pos.y;
         vertex.position.z = pos.z;
 
         if (mesh->HasNormals())
         {
-            auto normal = transformation * mesh->mNormals[i];
+            auto normal = mesh->mNormals[i];
             vertex.normal.x = normal.x;
             vertex.normal.y = normal.y;
             vertex.normal.z = normal.z;
@@ -145,14 +250,26 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene, const aiMatrix4x4& t
 
     for(unsigned int i = 0; i < mesh->mNumBones; ++i) {
         aiBone* bone = mesh->mBones[i];
-        bones.emplace_back(bone->mName.C_Str(), aiToGlmMat(bone->mOffsetMatrix));
-        for (unsigned int j = 0; j < bone->mNumWeights; j++) {
-            aiVertexWeight weight = bone->mWeights[j];
-            assert(weight.mVertexId < vertices.size());
-            Vertex& v = vertices[weight.mVertexId];
-            if (v.numBones < maxBoneInfluences) {
-                v.boneIDs[v.numBones] = i;
-                v.boneWeights[v.numBones++] = weight.mWeight;
+        const unsigned boneId = boneIDs[bone->mName.C_Str()];
+
+        for (unsigned j = 0; j < bone->mNumWeights; j++) {
+            const aiVertexWeight& vertexWeight = bone->mWeights[j];
+            Vertex& v = vertices[vertexWeight.mVertexId];
+
+            if (v.boneIDs.x == -1) {
+                v.boneIDs.x = boneId;
+                v.boneWeights.x = vertexWeight.mWeight;
+            } else if (v.boneIDs.y == -1) {
+                v.boneIDs.y = boneId;
+                v.boneWeights.y = vertexWeight.mWeight;
+            } else if (v.boneIDs.z == -1) {
+                v.boneIDs.z = boneId;
+                v.boneWeights.z = vertexWeight.mWeight;
+            } else if (v.boneIDs.w == -1) {
+                v.boneIDs.w = boneId;
+                v.boneWeights.w = vertexWeight.mWeight;
+            } else {
+                break;
             }
         }
     }
@@ -179,9 +296,8 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene, const aiMatrix4x4& t
     std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
-    printf("Create mesh with %ld bones\n", bones.size());
     // return a mesh object created from the extracted mesh data
-    return {vertices, indices, textures, bones};
+    return {vertices, indices, textures};
 }
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.

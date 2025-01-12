@@ -8,12 +8,12 @@
 #include "engine/ResourceManager.hpp"
 #include "engine/DebugRenderer.hpp"
 #include "Util.hpp"
+#include <limits>
 
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures, std::vector<Bone> bones)
-: mVertices(std::move(vertices)), mIndices(std::move(indices)), mTextures(std::move(textures)), mBones(std::move(bones))
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
+: mVertices(std::move(vertices)), mIndices(std::move(indices)), mTextures(std::move(textures))
 {
-    printf("mesh created with %ld bones\n", mBones.size());
     glGenVertexArrays(1, &mVAO);
     glGenBuffers(1, &mVBO);
     glGenBuffers(1, &mEBO);
@@ -46,7 +46,7 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
     glEnableVertexAttribArray(4);
 
     // boneids
-    glVertexAttribPointer(5, 4, GL_INT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, boneIDs));
+    glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex), (void*) offsetof(Vertex, boneIDs));
     glEnableVertexAttribArray(5);
 
     // boneweights
@@ -71,7 +71,6 @@ Mesh &Mesh::operator=(Mesh &&other) noexcept
         mVertices = std::move(other.mVertices);
         mIndices = std::move(other.mIndices);
         mTextures = std::move(other.mTextures);
-        mBones = std::move(other.mBones);
 
         mVAO = other.mVAO;
         mVBO = other.mVBO;
@@ -94,19 +93,6 @@ void Mesh::deleteBuffers()
 
 void Mesh::draw(Shader &shader, GLenum mode)
 {
-    glm::mat4 boneMatrices[maxBones];
-    size_t n = std::min(maxBones, mBones.size());
-    for (int i = 0; i < n; i++) {
-        boneMatrices[i] = mBones[i].transformMatrix;
-        gDebugRenderer.addSphere(Transform{shader.getUniformMat4("model") * boneMatrices[i]}, 0.1f, Util::red, 10ms);
-    }
-
-    shader.use();
-
-    for (int i = 0; i < n; i++) {
-        shader.setMat4(std::format("finalBoneMatrices[{}]", i), boneMatrices[i]);
-    }
-
     int diffuseID{0};
     int specularID{0};
 

@@ -12,32 +12,20 @@
 #include <map>
 #include "Texture.hpp"
 
-constexpr size_t maxBoneInfluences = 4;
-constexpr size_t maxBones = 100;
-
-struct Vertex
-{
+struct Vertex {
     glm::vec3 position{};
     glm::vec3 normal{};
     glm::vec2 texCoord{};
     glm::vec3 tangent{};
     glm::vec3 bitangent{};
-    glm::ivec4 boneIDs{maxBones, -1, -1, -1};
-    glm::vec4 boneWeights{};
-    uint8_t numBones{0};
-};
-
-
-
-struct Bone {
-    std::string name;
-    glm::mat4 transformMatrix;
+    glm::ivec4 boneIDs{-1, -1, -1, -1};
+    glm::vec4 boneWeights{0, 0, 0, 0};
 };
 
 class Mesh
 {
 public:
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::vector<Texture> textures, std::vector<Bone> bones = {});
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::vector<Texture> textures);
     ~Mesh();
     Mesh(Mesh&& other) noexcept;
     Mesh& operator=(Mesh&& other) noexcept;
@@ -51,7 +39,6 @@ private:
     std::vector<Vertex> mVertices;
     std::vector<unsigned> mIndices;
     std::vector<Texture> mTextures;
-    std::vector<Bone> mBones;
     unsigned mVAO{};
     unsigned mVBO{};
     unsigned mEBO{};

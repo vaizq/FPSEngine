@@ -8,13 +8,13 @@ layout(location = 4) in vec3 inBitangent;
 layout(location = 5) in ivec4 inBoneIDs;
 layout(location = 6) in vec4 inBoneWeights;
 
+const int MAX_BONES=200;
+const int MAX_BONE_INFLUENCES=4;
+
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 uniform mat3 normalMatrix;
-
-const int MAX_BONES=100;
-const int MAX_BONE_INFLUENCES=4;
 uniform mat4 finalBoneMatrices[MAX_BONES];
 
 out vec2 texCoord;
@@ -27,21 +27,21 @@ void main()
     vec3 totalNorm = vec3(0);
 
     for(int i = 0; i < MAX_BONE_INFLUENCES; i++) {
-        int boneID = inBoneIDs[i];
+        int boneID = inBoneIDs.x;
+        float weight = inBoneWeights.x;
 
-        if (boneID == -1) {
-            continue;
-        } else if (boneID >= MAX_BONES) {
-            totalPos = vec4(inPosition, 1.0);
-            totalNorm = inNormal;
+        if (boneID == -1 || weight <= 0.0) {
             break;
         }
 
         vec4 localPos = finalBoneMatrices[boneID] * vec4(inPosition, 1.0);
-        totalPos += localPos * inBoneWeights[i];
         vec3 localNorm = mat3(finalBoneMatrices[boneID]) * inNormal;
-        totalNorm += localNorm * inBoneWeights[i];
+
+        totalPos += weight * localPos;
+        totalNorm += weight * localNorm;
     }
+
+
 
     vec4 worldPos = model * totalPos;
     gl_Position = projection * view * worldPos;

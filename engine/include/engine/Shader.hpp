@@ -48,17 +48,12 @@ public:
     void setMat4(const std::string &name, const glm::mat4 &mat);
     void setMat4(const std::string &name, const glm::mat4 &mats, size_t len);
 
-    const glm::mat4& getUniformMat4(const std::string& name) {
-            return mUniforms[name].value;
-    }
-
 private:
     GLuint loadShader(const char* vertexFilePath, const char* fragmentFilePath, const char* geometryFilePath = nullptr);
     void checkCompileErrors(GLuint shader, std::string type);
     GLint getUniformLocation(const std::string& name);
 
     std::unordered_map<std::string, GLint> mUniformLocations;
-    std::unordered_map<std::string, UniformMat4> mUniforms;
     unsigned int mID;
     const std::string mVertexPath;
     const std::string mFragmentPath;
