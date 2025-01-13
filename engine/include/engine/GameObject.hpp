@@ -13,6 +13,11 @@
 #include "BoundingVolume.hpp"
 #include "MyGui.hpp"
 
+enum class AnimationState {
+    BindPose,
+    Animate,
+    Manual
+};
 
 struct GameObject
 {
@@ -25,6 +30,7 @@ struct GameObject
     Transform transform;
     BoundingVolume bounds;
     std::vector<std::unique_ptr<GameObject>> children;
+    AnimationState animState{AnimationState::BindPose};
 
     virtual ~GameObject() = default;
 
@@ -52,6 +58,19 @@ struct GameObject
         MyGui::InputTransform("LocalTransform", transform);
         MyGui::InputTransform("BoundsTransform", bounds.transform);
 
+        if (ImGui::Button("toggleAnimation")) {
+            animState = (animState == AnimationState::Animate) ? AnimationState::Manual : AnimationState::Animate;
+        }
+        if (ImGui::Button("toBindPose")) {
+            animState = AnimationState::BindPose;
+        }
+
+        if (model && !model->animations.empty()) {
+            float t = model->animations[0].time;
+            ImGui::SliderFloat("animation (t)", &t, 0, model->animations[0].duration);
+            model->animations[0].time = t;
+        }
+
         std::visit([this](auto&& shape) {
             using T = std::decay_t<decltype(shape)>;
             if constexpr (std::is_same_v<T, Sphere>) {
@@ -61,7 +80,11 @@ struct GameObject
         }, bounds.shape);
     }
 
-    virtual void update(std::chrono::duration<float> dt) {}
+    virtual void update(std::chrono::duration<float> dt) {
+        if (animState == AnimationState::Animate && model != nullptr && !model->animations.empty()) {
+            model->animations[0].update(dt.count());
+        }
+    }
 
     virtual void render(Shader& shader, const glm::mat4& parentTransform = glm::mat4{1.0f})
     {
@@ -77,7 +100,7 @@ struct GameObject
         shader.setMat3("normalMatrix", normalMatrix);
 
         if (model != nullptr) {
-            model->draw(shader);
+            model->draw(shader, animState != AnimationState::BindPose);
         }
 
         for (auto& child : children) {

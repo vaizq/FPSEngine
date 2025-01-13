@@ -5,114 +5,51 @@
 #ifndef FPSFROMSCRATCH_ANIMATION_H
 #define FPSFROMSCRATCH_ANIMATION_H
 
-#include "Transform.hpp"
 #include "Clock.hpp"
+#include <map>
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <string>
 
-
-struct Animation
-{
-    void start(float loop = false)
-    {
-        doneDuration = Duration{};
-        mRunning = true;
-    }
-
-    void update(Duration dt)
-    {
-        doneDuration += dt;
-    }
-
-    [[nodiscard]] Transform currentPose()
-    {
-        if (duration == Duration{}) {
-            return startPose;
-        }
-        float t = doneDuration.count() / duration.count();
-
-        if (t >= 1) {
-            t = 1;
-            mRunning = false;
-        }
-
-        return lerp(startPose, endPose, t);
-    }
-
-    [[nodiscard]] bool isRunning() const
-    {
-        return mRunning;
-    }
-
-    [[nodiscard]] bool isDone() const
-    {
-        return doneDuration.count() / duration.count() >= 1.0f;
-    }
-
-    Transform startPose{};
-    Transform endPose{};
-    Duration duration{};
-
-private:
-    bool mRunning{false};
-    Duration doneDuration{};
+struct Joint {
+    std::string name; // node name?
+    unsigned parent;
+    glm::mat4 transformation;
+    glm::mat4 finalTransform;
 };
 
+using Skeleton = std::vector<Joint>;
 
-struct AnimationSequence
-{
-    AnimationSequence(const std::vector<Transform>& poses, const std::vector<Duration>& durations)
-    {
-        assert(poses.size() == durations.size());
-
-        auto pose = poses.begin();
-        auto duration = durations.begin();
-
-        while (pose != poses.end()) {
-            Animation anim;
-            anim.startPose = *pose++;
-            anim.endPose = *pose;
-            anim.duration = *duration++;
-            mAnimations.push_back(anim);
-        }
-        Animation anim;
-        anim.startPose = poses.back();
-        anim.endPose = poses.front();
-        anim.duration = *duration;
-        mAnimations.push_back(anim);
-    }
-
-    void start()
-    {
-        mCurrent = mAnimations.begin();
-        mCurrent->start();
-    }
-
-    void update(Duration dt) {
-        if (mCurrent->isDone()) {
-            ++mCurrent;
-            if (mCurrent == mAnimations.end()) {
-                mCurrent = mAnimations.begin();
-            }
-            mCurrent->start();
-        }
-
-        mCurrent->update(dt);
-    }
-
-    Transform currentPose() {
-        return mCurrent->currentPose();
-    }
-
-private:
-    std::vector<Animation> mAnimations;
-    std::vector<Animation>::iterator mCurrent;
+struct BoneInfo {
+    std::string name;
+    glm::mat4 offsetMatrix;
 };
 
+template<typename T>
+struct KeyFrame {
+    double time;
+    T key;
+};
 
+struct AnimationChannel {
+    std::vector<KeyFrame<glm::vec3>> positionKeys;
+    std::vector<KeyFrame<glm::quat>> rotationKeys;
+    std::vector<KeyFrame<glm::vec3>> scalingKeys;
 
+    glm::mat4 getTransform(double t) const;
+};
 
+struct Animation {
+    using Duration = std::chrono::duration<double>;
+    using Time = Clock::time_point;
 
+    void update(double dt);
 
+    void update(Skeleton& skeleton);
 
-
+    double duration;
+    double time{0.0};
+    std::map<std::string, AnimationChannel> channels;
+};
 
 #endif //FPSFROMSCRATCH_ANIMATION_H

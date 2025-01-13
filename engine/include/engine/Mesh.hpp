@@ -18,8 +18,8 @@ struct Vertex {
     glm::vec2 texCoord{};
     glm::vec3 tangent{};
     glm::vec3 bitangent{};
-    glm::ivec4 boneIDs{-1, -1, -1, -1};
-    glm::vec4 boneWeights{0, 0, 0, 0};
+    glm::ivec4 boneIDs{0};
+    glm::vec4 boneWeights{0.0f};
 };
 
 class Mesh

@@ -39,6 +39,8 @@ namespace Util
         return to;
     }
 
+    
+
     nlohmann::json serialize(const glm::vec3& v);
     namespace glm::vec3
     {

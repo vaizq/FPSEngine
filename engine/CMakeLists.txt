@@ -47,6 +47,7 @@ set(ENGINE_SRC
     src/BoundingVolume.cpp
     src/Random.cpp
     src/Renderer.cpp
+    src/Animation.cpp
 )
 
 target_sources(Engine PRIVATE ${ENGINE_SRC})

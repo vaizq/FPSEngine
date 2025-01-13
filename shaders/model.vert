@@ -27,24 +27,21 @@ void main()
     vec3 totalNorm = vec3(0);
 
     for(int i = 0; i < MAX_BONE_INFLUENCES; i++) {
-        int boneID = inBoneIDs.x;
-        float weight = inBoneWeights.x;
+        int boneID = inBoneIDs[i];
+        float weight = inBoneWeights[i];
 
-        if (boneID == -1 || weight <= 0.0) {
-            break;
+        if (weight > 0.0) {
+            mat4 boneMatrix = finalBoneMatrices[boneID];
+
+            totalPos += weight * (boneMatrix * vec4(inPosition, 1.0));
+            totalNorm += weight * (mat3(boneMatrix) * inNormal);
         }
-
-        vec4 localPos = finalBoneMatrices[boneID] * vec4(inPosition, 1.0);
-        vec3 localNorm = mat3(finalBoneMatrices[boneID]) * inNormal;
-
-        totalPos += weight * localPos;
-        totalNorm += weight * localNorm;
     }
-
 
 
     vec4 worldPos = model * totalPos;
     gl_Position = projection * view * worldPos;
+
     texCoord = inTexCoord;
     fragPosition = worldPos.xyz;
     normal = normalize(normalMatrix * totalNorm);

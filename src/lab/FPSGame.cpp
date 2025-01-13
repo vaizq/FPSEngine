@@ -216,10 +216,12 @@ void FPSGame::buildScene()
     monster->model = &ResourceManager::instance().getModel("monster");
     monster->parent = mScene.get();
 
+    /*
     auto soldier = std::make_unique<GameObject>();
     soldier->name = "soldier";
     soldier->model = &ResourceManager::instance().getModel("soldier");
     soldier->parent = mScene.get();
+    */
 
     auto light = std::make_unique<Light>();
     light->name = "light";
@@ -227,7 +229,7 @@ void FPSGame::buildScene()
 
     mScene->children.push_back(std::move(drone));
     mScene->children.push_back(std::move(monster));
-    mScene->children.push_back(std::move(soldier));
+//    mScene->children.push_back(std::move(soldier));
     mScene->children.push_back(std::move(light));
 }
 
