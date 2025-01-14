@@ -1,73 +1,44 @@
-//
-// Created by vaige on 13.3.2024.
-//
-#include "Renderer.h"
-#include "ResourceManager.h"
+#include "Renderer.hpp"
+#include <glm/glm.hpp>
+#include <stdexcept>
+#include "imgui_impl_opengl3.h"
+#include "imgui_impl_glfw.h"
+#include <glm/ext/matrix_clip_space.hpp>
 
-GLenum Renderer::drawMode{GL_TRIANGLES};
 
+void Renderer::startup(const char* windowName) {
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-DebugRenderer &DebugRenderer::instance()
-{
-    static DebugRenderer self;
-    return self;
+    window = glfwCreateWindow(windowSize.x, windowSize.y, windowName, nullptr, nullptr);
+    if (!window) {
+        throw std::runtime_error("Failed to create window");
+    }
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(0); // Unlimited FPS
+
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+        throw std::runtime_error("Failed to initialize glad");
+    }
+
+    glEnable(GL_DEPTH_TEST);
+
+    glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
+    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 }
 
-void DebugRenderer::drawPoint(const glm::vec3 &pos, const glm::vec3 &color)
-{
-    mPoints.push_back(pos);
+void Renderer::shutdown() {
+    glfwTerminate();
 }
 
-void DebugRenderer::drawLine(const glm::vec3 &point, const glm::vec3 &direction, const glm::vec3 &color)
-{
-    mLines.push_back(Line{point, direction});
+void Renderer::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+    glViewport(0, 0, width, height);
+    gRenderer.windowSize = {width, height};
 }
 
-void DebugRenderer::drawVector(const glm::vec3 &pos, const glm::vec3 &vector, const glm::vec3 &color)
-{
-
+glm::mat4 Renderer::getProjection() const {
+    return glm::perspective(glm::radians(45.0f), (float)windowSize.x / (float)windowSize.y, 0.1f, 400.0f);
 }
 
-void DebugRenderer::drawTransform(const Transform &transform)
-{
-
-}
-
-void DebugRenderer::render()
-{
-    auto pointMesh = [this]() {
-        std::vector<Vertex> vertices;
-        std::vector<unsigned int> indices;
-
-        unsigned int index{0};
-        for (const auto& point : mPoints) {
-            vertices.push_back(Vertex{point});
-            indices.push_back(index++);
-        }
-        return Mesh{std::move(vertices), std::move(indices), {}};
-    }();
-
-    auto lineMesh = [this]() {
-        std::vector<Vertex> vertices;
-        std::vector<unsigned int> indices;
-
-        unsigned int index{0};
-        for (const auto& line : mLines) {
-            Vertex a{line.point - line.direction * 100000.0f};
-            Vertex b{line.point + line.direction * 100000.0f};
-            vertices.push_back(a);
-            vertices.push_back(b);
-            indices.push_back(index++);
-            indices.push_back(index++);
-        }
-        return Mesh{std::move(vertices), std::move(indices), {}};
-    }();
-
-    auto shader = ResourceManager::instance().useShader("color");
-    shader.setVec3("color", Util::red);
-    pointMesh.draw(shader, GL_POINT);
-    lineMesh.draw(shader, GL_LINE);
-
-    mPoints.clear();
-    mLines.clear();
-}

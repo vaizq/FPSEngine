@@ -2,7 +2,7 @@
 // Created by vaige on 4.3.2024.
 //
 
-#include "MyGui.h"
+#include "MyGui.hpp"
 #include <imgui.h>
 
 

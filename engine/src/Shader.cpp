@@ -2,7 +2,7 @@
 // Created by vaige on 12.3.2024.
 //
 
-#include "Shader.h"
+#include "Shader.hpp"
 
 
 Shader::Shader(const char* vertexFilePath, const char* fragmentFilePath, const char* geometryFilePath)
@@ -85,6 +85,11 @@ void Shader::setMat3(const std::string &name, const glm::mat3 &mat)
 void Shader::setMat4(const std::string &name, const glm::mat4 &mat)
 {
     glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
+}
+
+void Shader::setMat4(const std::string &name, const glm::mat4& mats, size_t len)
+{
+    glUniformMatrix4fv(getUniformLocation(name), len, GL_FALSE, &mats[0][0]);
 }
 
 void Shader::checkCompileErrors(GLuint shader, std::string type)

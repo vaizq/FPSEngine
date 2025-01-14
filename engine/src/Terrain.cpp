@@ -2,9 +2,9 @@
 // Created by vaige on 13.3.2024.
 //
 
-#include "Terrain.h"
-#include "Geometry.h"
-#include "ResourceManager.h"
+#include "Terrain.hpp"
+#include "Geometry.hpp"
+#include "ResourceManager.hpp"
 
 static constexpr int gridWidth{100};
 static constexpr int gridHeight{100};

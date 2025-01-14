@@ -1,9 +1,9 @@
 //
 // Created by vaige on 4.3.2024.
 //
-#include "Transform.h"
+#include "Transform.hpp"
 #include <nlohmann/json.hpp>
-#include "Util.h"
+#include "Util.hpp"
 
 nlohmann::json Transform::serialize(const Transform &transform)
 {

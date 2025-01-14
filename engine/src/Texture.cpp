@@ -2,7 +2,7 @@
 // Created by vaige on 23.2.2024.
 //
 
-#include "Texture.h"
+#include "Texture.hpp"
 #include "glad/glad.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>

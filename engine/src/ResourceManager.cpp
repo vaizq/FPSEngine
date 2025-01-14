@@ -2,7 +2,7 @@
 // Created by vaige on 27.2.2024.
 //
 
-#include "ResourceManager.h"
+#include "ResourceManager.hpp"
 #include <stdexcept>
 
 
@@ -46,6 +46,12 @@ Model &ResourceManager::getModel(const string &name)
     return mModels.at(name);
 }
 
+std::unique_ptr<SkinnedModel> ResourceManager::getSkinnedModel(const string &name)
+{
+    Model& model = mModels.at(name);
+    return std::make_unique<SkinnedModel>(0.0, model.skeleton, model);
+}
+
 Shader &ResourceManager::getShader(const string &name)
 {
     return mShaders.at(name);
@@ -60,17 +66,14 @@ void ResourceManager::loadTextures()
 
 void ResourceManager::loadModels()
 {
-    //mModels.emplace("ak47", modelPath("ak47/ak47.obj"));
-    //mModels.emplace("backpack", modelPath("Backpack/backpack.obj"));
-    //mModels.emplace("eyeBall", modelPath("Eye/eyeball.obj"));
-    //mModels.emplace("skull", modelPath("Skull/skull.obj"));
-    mModels.emplace("soldier", modelPath("Soldier/soldier.fbx"));
+    mModels.emplace("soldier", modelPath("Soldier/Soldier.dae"));
+    mModels.emplace("monster", modelPath("Capoeira/Capoeira.dae"));
 }
 
 void ResourceManager::loadShaders()
 {
     mShaders.insert({"model", Shader{shaderPath("model.vert").c_str(), shaderPath("model.frag").c_str()}});
-    mShaders.insert({"color", Shader{shaderPath("model.vert").c_str(), shaderPath("color.frag").c_str()}});
+    mShaders.insert({"color", Shader{shaderPath("color.vert").c_str(), shaderPath("color.frag").c_str()}});
 }
 
 void ResourceManager::reloadShaders()
@@ -78,13 +81,4 @@ void ResourceManager::reloadShaders()
     for (auto& [name, shader] : mShaders) {
         shader.reload();
     }
-}
-
-Shader &ResourceManager::useShader(const string &name)
-{
-    auto& shader = getShader(name);
-    shader.use();
-    shader.setMat4("view", view);
-    shader.setMat4("projection", projection);
-    return shader;
 }

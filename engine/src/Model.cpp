@@ -2,35 +2,160 @@
 // Created by vaige on 19.2.2024.
 //
 
-#include "Model.h"
+#include "Model.hpp"
+#include "Mesh.hpp"
 #include <assimp/Exporter.hpp>
+#include <assimp/mesh.h>
 #include <assimp/postprocess.h>
+#include <assimp/matrix4x4.h>
+#include <assimp/vector3.h>
+#include <limits>
+#include "engine/Util.hpp"
 
+
+glm::mat4 aiToGlmMat(const aiMatrix4x4& from) {
+    glm::mat4 to;
+
+
+    to[0][0] = (GLfloat)from.a1; to[0][1] = (GLfloat)from.b1;  to[0][2] = (GLfloat)from.c1; to[0][3] = (GLfloat)from.d1;
+    to[1][0] = (GLfloat)from.a2; to[1][1] = (GLfloat)from.b2;  to[1][2] = (GLfloat)from.c2; to[1][3] = (GLfloat)from.d2;
+    to[2][0] = (GLfloat)from.a3; to[2][1] = (GLfloat)from.b3;  to[2][2] = (GLfloat)from.c3; to[2][3] = (GLfloat)from.d3;
+    to[3][0] = (GLfloat)from.a4; to[3][1] = (GLfloat)from.b4;  to[3][2] = (GLfloat)from.c4; to[3][3] = (GLfloat)from.d4;
+
+    return to;
+}
+
+void printSkeleton(const std::vector<Joint>& skeleton, size_t index = 0, int numParents = 0) {
+    std::string msg;
+    for (int i = 0; i < numParents; i++) {
+        msg += " ";
+    }
+    msg += skeleton[index].name;
+
+    printf("%s\n", msg.c_str());
+
+    for (int i = 0; i < skeleton.size(); i++) {
+        if (skeleton[i].parent == index) {
+            printSkeleton(skeleton, i, numParents + 1);
+        }
+    }
+}
+
+glm::mat4 Model::jointTransform(unsigned index) {
+    const Joint& j = skeleton[index];
+    if (index == 0) {
+        return j.transformation;
+    } else {
+        return jointTransform(j.parent) * j.transformation;
+    }
+}
 
 void Model::loadModel(string const &path)
 {
     std::cout << "Load model from " << path << std::endl;
     // read file via ASSIMP
     Assimp::Importer importer;
+
     //aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace
     const aiScene* scene = importer.ReadFile(path, 
+                                             aiProcess_LimitBoneWeights |
                                              aiProcess_Triangulate | 
-//                                             aiProcess_JoinIdenticalVertices |
                                              aiProcess_GenSmoothNormals | 
                                              aiProcess_FlipUVs |
-                                             aiProcess_CalcTangentSpace);
+                                             aiProcess_JoinIdenticalVertices |
+                                             aiProcess_CalcTangentSpace |
+                                             aiProcess_PopulateArmatureData |
+                                             aiProcess_ValidateDataStructure |
+                                             aiProcess_FindInvalidData);
 
     // check for errors
-    if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
+    if(!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode) // if is Not Zero
     {
         cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
         return;
     }
+
     // retrieve the directory path of the filepath
     directory = path.substr(0, path.find_last_of('/'));
 
+    // Find necessary nodes for the skeleton
+    findNecessaryNodes(scene->mRootNode, scene);
+
+    collectBones(scene);
+
+    rootTransform = Util::aiMatrix4x4ToGlmMat4(scene->mRootNode->mTransformation);
+
+    if (necessaryNodes.contains(scene->mRootNode->mName.C_Str())) {
+        processSkeleton(scene->mRootNode, scene, 0xFF);
+    } else {
+        processSkeleton(scene->mRootNode->mChildren[0], scene, -1);
+    }
+
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
+
+    loadAnimations(scene);
+
+    printf("scene %s has %ld nodes, %d meshes, %ld bones, %d skeletons, %d animations\n", 
+           scene->mName.C_Str(), 
+           necessaryNodes.size(), 
+           scene->mNumMeshes, 
+           bones.size(),
+           scene->mNumSkeletons,
+           scene->mNumAnimations);
+}
+
+// Algorithm suggested in the documentation of assimp
+void Model::findNecessaryNodes(aiNode *node, const aiScene *scene) {
+    for(unsigned int i = 0; i < node->mNumMeshes; i++)
+    {
+        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+        for (int j = 0; j < mesh->mNumBones; j++) {
+            aiBone* bone = mesh->mBones[j];
+            for(aiNode* tmpNode = bone->mNode; 
+                tmpNode != nullptr && tmpNode != node && tmpNode != node->mParent; 
+                tmpNode = tmpNode->mParent) {
+                necessaryNodes[tmpNode->mName.C_Str()] = true;
+            }
+        }
+    }
+
+    for(unsigned int i = 0; i < node->mNumChildren; i++)
+    {
+        findNecessaryNodes(node->mChildren[i], scene);
+    }
+}
+
+void Model::collectBones(const aiScene *scene) {
+    for (unsigned i = 0; i < scene->mNumMeshes; i++) {
+        aiMesh* mesh = scene->mMeshes[i];
+        for (unsigned j = 0; j < mesh->mNumBones; j++) {
+            aiBone* bone = mesh->mBones[j];
+            if (!boneIDs.contains(bone->mName.C_Str())) {
+                bones.emplace_back(bone->mName.C_Str(), Util::aiMatrix4x4ToGlmMat4(bone->mOffsetMatrix));
+                unsigned index = bones.size() - 1;
+                boneIDs[bone->mName.C_Str()] = index;
+            }
+        }
+    }
+}
+
+void Model::processSkeleton(aiNode *node, const aiScene *scene, unsigned parentIndex) {
+    if (!necessaryNodes.contains(node->mName.C_Str())) {
+        printf("ERROR: process skeleton called with an unnecessary node %s\n", node->mName.C_Str());
+    }
+
+    Joint j{node->mName.C_Str(), parentIndex, Util::aiMatrix4x4ToGlmMat4(node->mTransformation)};
+    skeleton.push_back(j);
+    const unsigned newParentIndex = skeleton.size() - 1;
+
+    for(unsigned i = 0; i < node->mNumChildren; i++)
+    {
+        aiNode* child = node->mChildren[i];
+        if (necessaryNodes[child->mName.C_Str()]) {
+            processSkeleton(child, scene, newParentIndex);
+        }
+    }
 }
 
 // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
@@ -42,13 +167,9 @@ void Model::processNode(aiNode *node, const aiScene *scene)
         // the node object only contains indices to index the actual objects in the scene.
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-
-        printf("mesh %d has %d bones\n", i, mesh->mNumBones);
-
         meshes.push_back(processMesh(mesh, scene));
     }
 
-    // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for(unsigned int i = 0; i < node->mNumChildren; i++)
     {
         processNode(node->mChildren[i], scene);
@@ -66,19 +187,21 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
         Vertex vertex{};
-        // positions
-        vertex.position.x = mesh->mVertices[i].x;
-        vertex.position.y = mesh->mVertices[i].y;
-        vertex.position.z = mesh->mVertices[i].z;
-        // normals
+
+        auto pos = mesh->mVertices[i];
+        vertex.position.x = pos.x;
+        vertex.position.y = pos.y;
+        vertex.position.z = pos.z;
+
         if (mesh->HasNormals())
         {
-            vertex.normal.x = mesh->mNormals[i].x;
-            vertex.normal.y = mesh->mNormals[i].y;
-            vertex.normal.z = mesh->mNormals[i].z;
+            auto normal = mesh->mNormals[i];
+            vertex.normal.x = normal.x;
+            vertex.normal.y = normal.y;
+            vertex.normal.z = normal.z;
         }
-        // texture coordinates
-        if(mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
+
+        if(mesh->mTextureCoords[0])
         {
             glm::vec2 vec;
             // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
@@ -100,6 +223,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 
         vertices.push_back(vertex);
     }
+
     // now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
     for(unsigned int i = 0; i < mesh->mNumFaces; i++)
     {
@@ -108,6 +232,54 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
         for(unsigned int j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
     }
+
+    for(unsigned int i = 0; i < mesh->mNumBones; ++i) {
+        aiBone* bone = mesh->mBones[i];
+        const unsigned boneId = boneIDs[bone->mName.C_Str()];
+
+        for (unsigned j = 0; j < bone->mNumWeights; j++) {
+            const unsigned vertexId = bone->mWeights[j].mVertexId;
+            const float weight = bone->mWeights[j].mWeight;
+
+            Vertex& v = vertices[vertexId];
+
+            if (v.boneWeights.x <= 0.0f) {
+                v.boneIDs.x = boneId;
+                v.boneWeights.x = weight;
+            } else if (v.boneWeights.y <= 0.0f) {
+                v.boneIDs.y = boneId;
+                v.boneWeights.y = weight;
+            } else if (v.boneWeights.z <= 0.0f) {
+                v.boneIDs.z = boneId;
+                v.boneWeights.z = weight;
+            } else if (v.boneWeights.w <= 0.0f) {
+                v.boneIDs.w = boneId;
+                v.boneWeights.w = weight;
+            } else {
+                break;
+            }
+        }
+    }
+
+    // Normalize boneweights
+    constexpr float threshold = 0.05f;
+    for (Vertex& v : vertices) {
+
+        float totalWeight = 0.0f;
+
+        for (int i = 0; i < 4; i++) {
+            if (v.boneWeights[i] < threshold) {
+                v.boneWeights[i] = 0.0f;
+            } else {
+                totalWeight += v.boneWeights[i];
+            }
+        }
+
+        if (totalWeight > 0) {
+            v.boneWeights /= totalWeight;
+        }
+    }
+
     // process materials
     aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
     // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
@@ -143,7 +315,6 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
     {
         aiString path;
         mat->GetTexture(type, i, &path);
-        printf("texture: %s\n", path.C_Str());
         // check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
         bool skip = false;
         for(auto& loadedTexture : textures_loaded)
@@ -165,4 +336,52 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
         }
     }
     return textures;
+}
+
+
+void Model::loadAnimations(const aiScene *scene) {
+    for (int i = 0; i < scene->mNumAnimations; i++) {
+
+        aiAnimation* aiAnim = scene->mAnimations[i];
+
+        const double ticksPerSec = (aiAnim->mTicksPerSecond <= std::numeric_limits<double>::epsilon()) ? 1.0 : aiAnim->mTicksPerSecond;
+
+        Animation anim;
+        anim.duration = aiAnim->mDuration / ticksPerSec;
+
+        for (int j = 0; j < aiAnim->mNumChannels; j++) {
+
+            aiNodeAnim* aiChan = aiAnim->mChannels[j];
+            assert(aiChan->mPositionKeys != nullptr && aiChan->mRotationKeys != nullptr && aiChan->mScalingKeys != nullptr);
+            AnimationChannel chan;
+
+            for (int k = 0; k < aiChan->mNumPositionKeys; k++) {
+                aiVectorKey key = aiChan->mPositionKeys[k]; 
+                chan.positionKeys.emplace_back(
+                    key.mTime / ticksPerSec,
+                    glm::vec3{key.mValue.x, key.mValue.y, key.mValue.z}
+                );
+            }
+
+            for (int k = 0; k < aiChan->mNumRotationKeys; k++) {
+                aiQuatKey key = aiChan->mRotationKeys[k]; 
+                chan.rotationKeys.emplace_back(
+                    key.mTime / ticksPerSec,
+                    glm::quat{key.mValue.w, key.mValue.x, key.mValue.y, key.mValue.z}
+                );
+            }
+
+            for (int k = 0; k < aiChan->mNumScalingKeys; k++) {
+                aiVectorKey key = aiChan->mScalingKeys[k]; 
+                chan.scalingKeys.emplace_back(
+                    key.mTime / ticksPerSec,
+                    glm::vec3{key.mValue.x, key.mValue.y, key.mValue.z}
+                );
+            }
+
+            anim.channels[aiChan->mNodeName.C_Str()] = std::move(chan);
+        }
+
+        animations.push_back(anim);
+    }
 }

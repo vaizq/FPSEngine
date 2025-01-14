@@ -6,3 +6,4 @@ imgui.ini
 build
 assets
 scene.json
+engine/extern/assimp

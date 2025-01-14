@@ -5,110 +5,67 @@
 #include "FPSGame.h"
 #include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
-#include "engine/Geometry.h"
+#include "engine/Geometry.hpp"
 #include <imgui.h>
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_glfw.h"
 #include <algorithm>
+#include <memory>
 #include <numeric>
 #include <thread>
 #include <nlohmann/json.hpp>
-#include "Tracker.h"
-#include "engine/RayCast.h"
-#include "Player.h"
-#include "engine/ParticleEmitter.h"
-#include "engine/Renderer.h"
-#include "EnemyManager.h"
-#include "engine/Speaker.h"
-#include "drone.h"
+#include "engine/RayCast.hpp"
+#include "engine/DebugRenderer.hpp"
+#include "engine/ResourceManager.hpp"
+#include "engine/Renderer.hpp"
 
 
 using namespace std::chrono_literals;
 
 
-FPSGame& FPSGame::instance() {
-    static std::unique_ptr<FPSGame> self;
-    if (self == nullptr) {
-        auto window = Util::initGraphics(800, 600, "FPS Game");
-
-        // This takes forever
-        ResourceManager::instance().loadAll();
-
-        self = std::unique_ptr<FPSGame>(new FPSGame(window));
-    }
-    return *self;
+void FPSGame::startup() {
 }
 
+void FPSGame::shutdown() {
+    saveScene();
+    gRenderer.shutdown();
+}
 
-FPSGame::FPSGame(GLFWwindow* window)
-:   mWindow{window},
-    mSphereMesh(Geometry::makeSphere(300))
-{
-    glfwGetWindowSize(mWindow, &mWidth, &mHeight);
-    glfwSetFramebufferSizeCallback(mWindow, framebufferSizeCallback);
-    InputManager::registerCallbacks(mWindow); // Initialize InputManager
-    Util::initImgui(mWindow); // Initialize ImGui after my callbacks are installed
-
+FPSGame::FPSGame() {
     loadScene();
-
-    // Switch drawing mode when R is pressed
-    InputManager::instance().keyPressHandlers[GLFW_KEY_M] = [this]() {
-        switch (Renderer::drawMode)
-        {
-            case GL_TRIANGLES:
-                Renderer::drawMode = GL_LINES;
-                break;
-            case GL_LINES:
-                Renderer::drawMode = GL_LINE_STRIP;
-                break;
-            case GL_LINE_STRIP:
-                Renderer::drawMode = GL_LINE_LOOP;
-                break;
-            case GL_LINE_LOOP:
-                Renderer::drawMode = GL_POINTS;
-                break;
-            case GL_POINTS:
-                Renderer::drawMode = GL_TRIANGLES;
-        }
-    };
-
     InputManager::instance().keyPressHandlers[GLFW_KEY_ESCAPE] = [this]() {
-        int curMode = glfwGetInputMode(mWindow, GLFW_CURSOR);
+        auto window = gRenderer.getWindow();
+        int curMode = glfwGetInputMode(window, GLFW_CURSOR);
         if (curMode == GLFW_CURSOR_NORMAL) {
-            glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             player->enableInput();
         }
         else {
-            glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             player->disableInput();
         }
     };
 }
 
-FPSGame::~FPSGame()
-{
+FPSGame::~FPSGame() {
     saveScene();
-}
-
-void FPSGame::framebufferSizeCallback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-    FPSGame& self = FPSGame::instance();
-    self.mWidth = width;
-    self.mHeight = height;
 }
 
 static void displayFPS(FPSGame::Duration dt)
 {
-    static float fps{1.0f / dt.count()};
+    if (dt.count() <= (1.0f / 1000)) {
+        ImGui::Begin("Status");
+        ImGui::Text("FPS +1000");
+        ImGui::End();
+        return;
+    }
+
+    static double fps{144};
+    fps = 0.1 * (1.0f / dt.count()) + 0.9 * fps;
+
     ImGui::Begin("Status");
-    ImGui::Text("FPS %.0f", fps);
+    ImGui::Text("FPS %f", fps);
     ImGui::End();
-}
-
-void FPSGame::onGUI(Duration dt)
-{
-
 }
 
 void FPSGame::update(Duration dt)
@@ -134,6 +91,7 @@ void FPSGame::update(Duration dt)
 
         if (ImGui::Button("Reload shaders")) {
             ResourceManager::instance().reloadShaders();
+            printf("shaders reloaded\n");
         }
 
         static int width{100};
@@ -156,6 +114,7 @@ void FPSGame::update(Duration dt)
         ImGui::PopID();
     });
     ImGui::End();
+
 }
 
 void FPSGame::render()
@@ -163,17 +122,13 @@ void FPSGame::render()
     Shader& shader = ResourceManager::instance().getShader(mUseColorShader ? "color" : "model");
     Shader& colorShader = ResourceManager::instance().getShader("color");
 
-    glm::mat4 view = mCamera.getViewMatrix();
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)mWidth / (float)mHeight, 0.1f, 400.0f);
-
-    ResourceManager::instance().view = view;
-    ResourceManager::instance().projection = projection;
+    gRenderer.setView(mCamera.getViewMatrix());
 
     // Draw different coordinate systems
     if (mDrawCoordinateSystems) {
         colorShader.use();
-        colorShader.setMat4("view", view);
-        colorShader.setMat4("projection", projection);
+        colorShader.setMat4("view", gRenderer.getView());
+        colorShader.setMat4("projection", gRenderer.getProjection());
 
         mScene->forEach([this, &colorShader](GameObject &entity, const glm::mat4 &parentTransform)
                         {
@@ -201,8 +156,8 @@ void FPSGame::render()
     // Draw scene
     {
         shader.use();
-        shader.setMat4("view", view);
-        shader.setMat4("projection", projection);
+        shader.setMat4("view", gRenderer.getView());
+        shader.setMat4("projection", gRenderer.getProjection());
         shader.setVec3("lightPosition", mScene->findChildren("light")->transform.position);
         shader.setVec3("cameraPosition", mCamera.getPosition());
 
@@ -217,9 +172,13 @@ void FPSGame::run()
         obj.ready();
     });
 
+    for (int i = 0; i < 10; i++) {
+        gDebugRenderer.addSphere(glm::vec3{i, 0, 0}, 1, Util::red, (1 + i) * 1s);
+    }
+
     float targetFps = 144;
     Duration targetDeltaTime = Duration{1s} / targetFps;
-    while (!glfwWindowShouldClose(mWindow))
+    while (!glfwWindowShouldClose(gRenderer.getWindow()))
     {
         const auto dt = mTimer.tick();
 
@@ -228,18 +187,19 @@ void FPSGame::run()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        onGUI(dt);
-
         update(dt);
+        gDebugRenderer.update(dt);
 
         ImGui::Render();
         glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         render();
 
+        gDebugRenderer.render();
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        glfwSwapBuffers(mWindow);
+        glfwSwapBuffers(gRenderer.getWindow());
 
         if (targetDeltaTime > dt) {
             std::this_thread::sleep_for(targetDeltaTime - dt);
@@ -261,17 +221,37 @@ void FPSGame::buildScene()
     drone->parent = mScene.get();
     player = drone.get();
 
-    auto skeleton = std::make_unique<GameObject>();
-    skeleton->name = "skeleton";
-    skeleton->model = &ResourceManager::instance().getModel("soldier");
-    skeleton->parent = mScene.get();
+    /*
+    auto monster = std::make_unique<GameObject>();
+    monster->name = "monster";
+    monster->model = &ResourceManager::instance().getModel("monster");
+    monster->parent = mScene.get();
+
+    auto soldier = std::make_unique<GameObject>();
+    soldier->name = "soldier";
+    soldier->model = &ResourceManager::instance().getModel("soldier");
+    soldier->parent = mScene.get();
+    */
+
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            auto m = std::make_unique<GameObject>();
+            m->name = std::format("monster[{}][{}]", i, j);
+            m->skinnedModel = ResourceManager::instance().getSkinnedModel("monster");
+            m->parent = mScene.get();
+            m->transform.position.x = i * 2;
+            m->transform.position.z = j * 2;
+            mScene->children.push_back(std::move(m));
+        }
+    }
 
     auto light = std::make_unique<Light>();
     light->name = "light";
     light->parent = mScene.get();
 
     mScene->children.push_back(std::move(drone));
-    mScene->children.push_back(std::move(skeleton));
+//    mScene->children.push_back(std::move(monster));
+//    mScene->children.push_back(std::move(soldier));
     mScene->children.push_back(std::move(light));
 }
 

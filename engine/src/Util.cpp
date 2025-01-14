@@ -2,7 +2,7 @@
 // Created by vaige on 25.2.2024.
 //
 
-#include "Util.h"
+#include "Util.hpp"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_glfw.h"
 #include <stdexcept>
@@ -41,43 +41,6 @@ std::string Util::extractFilename(const std::string& filepath)
     }();
 
     return filepath.substr(filenameBegin, filenameEnd - filenameBegin);
-}
-
-GLFWwindow *Util::initGraphics(int windowWidth, int windowHeight, const std::string& windowName)
-{
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    GLFWwindow* window = glfwCreateWindow(800, 600, "FPSGame", nullptr, nullptr);
-    if (!window) {
-        throw std::runtime_error("Failed to create window");
-    }
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(0); // Unlimited FPS
-
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-        throw std::runtime_error("Failed to initialize glad");
-    }
-
-    glEnable(GL_DEPTH_TEST);
-
-    return window;
-}
-
-void Util::shutdownGraphics()
-{
-    glfwTerminate();
-}
-
-void Util::initImgui(GLFWwindow* window)
-{
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 150");
 }
 
 nlohmann::json Util::serialize(const ::glm::vec3& v)

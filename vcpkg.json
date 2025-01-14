@@ -1,7 +1,6 @@
 {
   "dependencies": [
     "asio",
-    "assimp",
     "catch2",
     "freealut",
     "glfw3",
@@ -10,6 +9,7 @@
     "nlohmann-json",
     "openal-soft",
     "stb",
-    "boost-signals2"
+    "boost-signals2",
+    "freetype"
   ]
 }

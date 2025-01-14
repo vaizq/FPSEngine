@@ -2,7 +2,7 @@
 // Created by vaige on 12.3.2024.
 //
 
-#include "Geometry.h"
+#include "Geometry.hpp"
 
 Mesh Geometry::makeSphere(int nVertices)
 {
@@ -24,7 +24,7 @@ Mesh Geometry::makeSphere(int nVertices)
             float x = r * std::cos(angle);
             float z = r * std::sin(angle);
             glm::vec3 pos{x, y, z};
-            vertices.emplace_back(pos, glm::normalize(pos), glm::vec2{});
+            vertices.emplace_back(pos, glm::normalize(pos));
         }
     }
 
