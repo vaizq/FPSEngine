@@ -8,13 +8,17 @@ void Animation::update(double dt) {
 
 void Animation::update(Skeleton& skeleton) {
     Joint& root = skeleton[0];
-    root.finalTransform = channels[root.name].getTransform(time);
+
+    if (auto it = channels.find(root.name); it != channels.end()) {
+        root.finalTransform = it->second.getTransform(time);
+    } else {
+        root.finalTransform = root.transformation;
+    }
 
     for (int i = 1; i < skeleton.size(); i++) {
         Joint& joint = skeleton[i];
         if (auto it = channels.find(joint.name); it != channels.end()) {
-            const AnimationChannel& ch = it->second;
-            joint.finalTransform = skeleton[joint.parent].finalTransform * ch.getTransform(time);
+            joint.finalTransform = skeleton[joint.parent].finalTransform * it->second.getTransform(time);
         } else {
             joint.finalTransform = skeleton[joint.parent].finalTransform * joint.transformation;
         }
@@ -33,6 +37,9 @@ glm::quat interpolate(const KeyFrame<glm::quat>& a, const KeyFrame<glm::quat>& b
 
 template <typename T>
 T linearInterpolate(const std::vector<KeyFrame<T>>& frames, double time) {
+    if (frames.empty()) {
+        throw std::runtime_error("Frames is empty");
+    }
     auto frameIter = frames.begin();
     for(; frameIter != frames.end() && time > frameIter->time; ++frameIter) {}
 
@@ -51,13 +58,4 @@ glm::mat4 AnimationChannel::getTransform(double time) const {
     glm::vec3 scale = linearInterpolate(scalingKeys, time);
 
     return glm::translate(glm::mat4{1.0f}, pos) * glm::mat4(rotation) * glm::scale(glm::mat4{1.0f}, scale);
-    /*
-    size_t idx = (size_t) time;
-
-    glm::vec3 pos = positionKeys[idx].key;//linearInterpolate(positionKeys, time);
-    glm::quat rotation = rotationKeys[idx].key;//linearInterpolate(rotationKeys, time);
-    glm::vec3 scale = scalingKeys[idx].key;//linearInterpolate(scalingKeys, time);
-
-    return glm::translate(glm::mat4{1.0f}, pos) * glm::mat4(rotation) * glm::scale(glm::mat4{1.0f}, scale);
-    */
 }

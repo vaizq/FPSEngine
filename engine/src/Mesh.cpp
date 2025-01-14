@@ -12,7 +12,7 @@
 
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
-: mVertices(std::move(vertices)), mIndices(std::move(indices)), mTextures(std::move(textures))
+: mNumIndices{indices.size()}, mTextures{std::move(textures)}
 {
     glGenVertexArrays(1, &mVAO);
     glGenBuffers(1, &mVBO);
@@ -20,10 +20,10 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
 
     glBindVertexArray(mVAO);
     glBindBuffer(GL_ARRAY_BUFFER, mVBO);
-    glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(Vertex), mVertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndices.size() * sizeof(unsigned int), mIndices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     // position
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
@@ -56,10 +56,13 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
 
 Mesh::~Mesh()
 {
-    deleteBuffers();
+    glDeleteBuffers(1, &mEBO);
+    glDeleteBuffers(1, &mVBO);
+    glDeleteVertexArrays(1, &mVAO);
 }
 
 Mesh::Mesh(Mesh &&other) noexcept
+: mNumIndices{other.mNumIndices}
 {
     *this = std::move(other);
 }
@@ -67,10 +70,8 @@ Mesh::Mesh(Mesh &&other) noexcept
 Mesh &Mesh::operator=(Mesh &&other) noexcept
 {
     if (this != &other) {
-        deleteBuffers();
-        mVertices = std::move(other.mVertices);
-        mIndices = std::move(other.mIndices);
         mTextures = std::move(other.mTextures);
+        mNumIndices = other.mNumIndices;
 
         mVAO = other.mVAO;
         mVBO = other.mVBO;
@@ -84,12 +85,6 @@ Mesh &Mesh::operator=(Mesh &&other) noexcept
     return *this;
 }
 
-void Mesh::deleteBuffers()
-{
-    glDeleteBuffers(1, &mEBO);
-    glDeleteBuffers(1, &mVBO);
-    glDeleteVertexArrays(1, &mVAO);
-}
 
 void Mesh::draw(Shader &shader, GLenum mode)
 {
@@ -112,5 +107,5 @@ void Mesh::draw(Shader &shader, GLenum mode)
     }
 
     glBindVertexArray(mVAO);
-    glDrawElements(mode, mIndices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(mode, mNumIndices, GL_UNSIGNED_INT, 0);
 }

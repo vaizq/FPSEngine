@@ -35,10 +35,8 @@ public:
     void draw(Shader& shader, GLenum mode = GL_TRIANGLES);
 
 private:
-    void deleteBuffers();
-    std::vector<Vertex> mVertices;
-    std::vector<unsigned> mIndices;
     std::vector<Texture> mTextures;
+    size_t mNumIndices;
     unsigned mVAO{};
     unsigned mVBO{};
     unsigned mEBO{};

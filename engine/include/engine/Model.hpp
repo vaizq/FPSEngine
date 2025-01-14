@@ -55,17 +55,19 @@ public:
     {
         glm::mat4 boneMatrices[200];
 
-        animations[0].update(skeleton);
+        if (animate) {
+            animations[0].update(skeleton);
+        }
 
         for (int i = 0; i < skeleton.size(); i++) {
             const Joint& j = skeleton[i];
             if (boneIDs.contains(j.name)) {
                 const unsigned id = boneIDs[j.name];
                 const BoneInfo& bone = bones[id];
-                if (!animate) {
-                    boneMatrices[id] = jointTransform(i) * bone.offsetMatrix;
-                } else {
+                if (animate) {
                     boneMatrices[id] = j.finalTransform * bone.offsetMatrix;
+                } else {
+                    boneMatrices[id] = jointTransform(i) * bone.offsetMatrix;
                 }
             }
         }

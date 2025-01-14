@@ -69,7 +69,7 @@ void Model::loadModel(string const &path)
                                              aiProcess_FindInvalidData);
 
     // check for errors
-    if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
+    if(!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode) // if is Not Zero
     {
         cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
         return;
@@ -355,7 +355,7 @@ void Model::loadAnimations(const aiScene *scene) {
             assert(aiChan->mPositionKeys != nullptr && aiChan->mRotationKeys != nullptr && aiChan->mScalingKeys != nullptr);
             AnimationChannel chan;
 
-            for (int k = 0; k < aiChan->mNumPositionKeys; k += 3) {
+            for (int k = 0; k < aiChan->mNumPositionKeys; k++) {
                 aiVectorKey key = aiChan->mPositionKeys[k]; 
                 chan.positionKeys.emplace_back(
                     key.mTime / ticksPerSec,
@@ -363,7 +363,7 @@ void Model::loadAnimations(const aiScene *scene) {
                 );
             }
 
-            for (int k = 0; k < aiChan->mNumRotationKeys; k += 3) {
+            for (int k = 0; k < aiChan->mNumRotationKeys; k++) {
                 aiQuatKey key = aiChan->mRotationKeys[k]; 
                 chan.rotationKeys.emplace_back(
                     key.mTime / ticksPerSec,
@@ -371,7 +371,7 @@ void Model::loadAnimations(const aiScene *scene) {
                 );
             }
 
-            for (int k = 0; k < aiChan->mNumScalingKeys; k += 3) {
+            for (int k = 0; k < aiChan->mNumScalingKeys; k++) {
                 aiVectorKey key = aiChan->mScalingKeys[k]; 
                 chan.scalingKeys.emplace_back(
                     key.mTime / ticksPerSec,

@@ -10,6 +10,7 @@
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_glfw.h"
 #include <algorithm>
+#include <memory>
 #include <numeric>
 #include <thread>
 #include <nlohmann/json.hpp>
@@ -211,24 +212,36 @@ void FPSGame::buildScene()
     drone->parent = mScene.get();
     player = drone.get();
 
+    /*
     auto monster = std::make_unique<GameObject>();
     monster->name = "monster";
     monster->model = &ResourceManager::instance().getModel("monster");
     monster->parent = mScene.get();
 
-    /*
     auto soldier = std::make_unique<GameObject>();
     soldier->name = "soldier";
     soldier->model = &ResourceManager::instance().getModel("soldier");
     soldier->parent = mScene.get();
     */
 
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            auto m = std::make_unique<GameObject>();
+            m->name = std::format("monster[{}][{}]", i, j);
+            m->model = &ResourceManager::instance().getModel("monster");
+            m->parent = mScene.get();
+            m->transform.position.x = i;
+            m->transform.position.z = j;
+            mScene->children.push_back(std::move(m));
+        }
+    }
+
     auto light = std::make_unique<Light>();
     light->name = "light";
     light->parent = mScene.get();
 
     mScene->children.push_back(std::move(drone));
-    mScene->children.push_back(std::move(monster));
+//    mScene->children.push_back(std::move(monster));
 //    mScene->children.push_back(std::move(soldier));
     mScene->children.push_back(std::move(light));
 }

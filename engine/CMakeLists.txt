@@ -8,7 +8,7 @@ find_package(asio CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(Stb REQUIRED)
-find_package(assimp CONFIG REQUIRED)
+#find_package(assimp CONFIG REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
 find_package(FreeALUT CONFIG REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
@@ -49,6 +49,8 @@ set(ENGINE_SRC
     src/Renderer.cpp
     src/Animation.cpp
 )
+
+add_subdirectory(extern/assimp)
 
 target_sources(Engine PRIVATE ${ENGINE_SRC})
 

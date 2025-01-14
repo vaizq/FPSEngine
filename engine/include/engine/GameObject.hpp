@@ -30,7 +30,7 @@ struct GameObject
     Transform transform;
     BoundingVolume bounds;
     std::vector<std::unique_ptr<GameObject>> children;
-    AnimationState animState{AnimationState::BindPose};
+    AnimationState animState{AnimationState::Animate};
 
     virtual ~GameObject() = default;
 
