@@ -42,7 +42,7 @@ void printSkeleton(const std::vector<Joint>& skeleton, size_t index = 0, int num
 }
 
 glm::mat4 Model::jointTransform(unsigned index) {
-    const Joint& j = skeleton[index];
+    const Joint& j = skeleton.joints[index];
     if (index == 0) {
         return j.transformation;
     } else {
@@ -100,7 +100,7 @@ void Model::loadModel(string const &path)
            scene->mName.C_Str(), 
            necessaryNodes.size(), 
            scene->mNumMeshes, 
-           bones.size(),
+           skeleton.bones.size(),
            scene->mNumSkeletons,
            scene->mNumAnimations);
 }
@@ -131,10 +131,10 @@ void Model::collectBones(const aiScene *scene) {
         aiMesh* mesh = scene->mMeshes[i];
         for (unsigned j = 0; j < mesh->mNumBones; j++) {
             aiBone* bone = mesh->mBones[j];
-            if (!boneIDs.contains(bone->mName.C_Str())) {
-                bones.emplace_back(bone->mName.C_Str(), Util::aiMatrix4x4ToGlmMat4(bone->mOffsetMatrix));
-                unsigned index = bones.size() - 1;
-                boneIDs[bone->mName.C_Str()] = index;
+            if (!skeleton.boneIDs.contains(bone->mName.C_Str())) {
+                skeleton.bones.emplace_back(bone->mName.C_Str(), Util::aiMatrix4x4ToGlmMat4(bone->mOffsetMatrix));
+                unsigned index = skeleton.bones.size() - 1;
+                skeleton.boneIDs[bone->mName.C_Str()] = index;
             }
         }
     }
@@ -142,12 +142,12 @@ void Model::collectBones(const aiScene *scene) {
 
 void Model::processSkeleton(aiNode *node, const aiScene *scene, unsigned parentIndex) {
     if (!necessaryNodes.contains(node->mName.C_Str())) {
-        printf("ERROR: process skeleton called with an unnecessary node %s\n", node->mName.C_Str());
+        throw std::runtime_error("processSkeleton called with an unnecessary node");
     }
 
     Joint j{node->mName.C_Str(), parentIndex, Util::aiMatrix4x4ToGlmMat4(node->mTransformation)};
-    skeleton.push_back(j);
-    const unsigned newParentIndex = skeleton.size() - 1;
+    skeleton.joints.push_back(j);
+    const unsigned newParentIndex = skeleton.joints.size() - 1;
 
     for(unsigned i = 0; i < node->mNumChildren; i++)
     {
@@ -235,7 +235,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 
     for(unsigned int i = 0; i < mesh->mNumBones; ++i) {
         aiBone* bone = mesh->mBones[i];
-        const unsigned boneId = boneIDs[bone->mName.C_Str()];
+        const unsigned boneId = skeleton.boneIDs[bone->mName.C_Str()];
 
         for (unsigned j = 0; j < bone->mNumWeights; j++) {
             const unsigned vertexId = bone->mWeights[j].mVertexId;

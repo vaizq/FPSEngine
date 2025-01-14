@@ -13,19 +13,14 @@ struct SkinnedModel {
     Skeleton skeleton;
     Model& model;
 
-
     void draw(Shader& shader) {
         glm::mat4 boneMatrices[200];
 
         model.animations[0].update(animTime, skeleton);
 
-        for (int i = 0; i < skeleton.size(); i++) {
-            const Joint& j = skeleton[i];
-            if (model.boneIDs.contains(j.name)) {
-                const unsigned id = model.boneIDs[j.name];
-                const BoneInfo& bone = model.bones[id];
-                boneMatrices[id] = j.finalTransform * bone.offsetMatrix;
-            }
+        for (const auto& [_, id] : skeleton.boneIDs) {
+            const auto& bone = skeleton.bones[id];
+            boneMatrices[id] = bone.finalTransform;
         }
 
         shader.setMat4("finalBoneMatrices", boneMatrices[0], 200);

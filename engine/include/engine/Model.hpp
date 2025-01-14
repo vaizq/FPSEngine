@@ -32,10 +32,7 @@ class Model
 {
 public:
     // model data
-    vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     Skeleton skeleton;
-    vector<BoneInfo> bones;
-    map<string, unsigned> boneIDs; // boneName -> boneIDs
     vector<Mesh>    meshes;
     glm::mat4 rootTransform{1.0f};
     std::vector<Animation> animations;
@@ -57,11 +54,11 @@ public:
     {
         glm::mat4 boneMatrices[200];
 
-        for (int i = 0; i < skeleton.size(); i++) {
-            const Joint& j = skeleton[i];
-            if (boneIDs.contains(j.name)) {
-                const unsigned id = boneIDs[j.name];
-                const BoneInfo& bone = bones[id];
+        for (int i = 0; i < skeleton.joints.size(); i++) {
+            const Joint& j = skeleton.joints[i];
+            if (skeleton.boneIDs.contains(j.name)) {
+                const unsigned id = skeleton.boneIDs[j.name];
+                const BoneInfo& bone = skeleton.bones[id];
                 boneMatrices[id] = jointTransform(i) * bone.offsetMatrix;
             }
         }
@@ -74,9 +71,10 @@ public:
     }
 
 private:
+    vector<Texture> textures_loaded;
     map<string, bool> necessaryNodes;
+
     glm::mat4 jointTransform(unsigned index);
-    glm::mat4 jointFinalTransform(unsigned index);
 
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(string const &path);

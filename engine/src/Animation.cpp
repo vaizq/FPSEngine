@@ -7,7 +7,7 @@ double Animation::update(double time, double dt) {
 }
 
 void Animation::update(double time, Skeleton& skeleton) {
-    Joint& root = skeleton[0];
+    Joint& root = skeleton.joints[0];
 
     if (auto it = channels.find(root.name); it != channels.end()) {
         root.finalTransform = it->second.getTransform(time);
@@ -15,12 +15,18 @@ void Animation::update(double time, Skeleton& skeleton) {
         root.finalTransform = root.transformation;
     }
 
-    for (int i = 1; i < skeleton.size(); i++) {
-        Joint& joint = skeleton[i];
+    for (int i = 1; i < skeleton.joints.size(); i++) {
+        Joint& joint = skeleton.joints[i];
+
         if (auto it = channels.find(joint.name); it != channels.end()) {
-            joint.finalTransform = skeleton[joint.parent].finalTransform * it->second.getTransform(time);
+            joint.finalTransform = skeleton.joints[joint.parent].finalTransform * it->second.getTransform(time);
         } else {
-            joint.finalTransform = skeleton[joint.parent].finalTransform * joint.transformation;
+            joint.finalTransform = skeleton.joints[joint.parent].finalTransform * joint.transformation;
+        }
+
+        if (auto it = skeleton.boneIDs.find(joint.name); it != skeleton.boneIDs.end()) {
+                BoneInfo& bone = skeleton.bones[it->second];
+                bone.finalTransform = joint.finalTransform * bone.offsetMatrix;
         }
     }
 }

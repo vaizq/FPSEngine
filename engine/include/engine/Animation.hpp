@@ -7,23 +7,9 @@
 
 #include "Clock.hpp"
 #include <map>
-#include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <string>
+#include "Skeleton.hpp"
 
-struct Joint {
-    std::string name; // node name?
-    unsigned parent;
-    glm::mat4 transformation;
-    glm::mat4 finalTransform;
-};
-
-using Skeleton = std::vector<Joint>;
-
-struct BoneInfo {
-    std::string name;
-    glm::mat4 offsetMatrix;
-};
 
 template<typename T>
 struct KeyFrame {
