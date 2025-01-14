@@ -12,6 +12,7 @@
 #include <nlohmann/json.hpp>
 #include "BoundingVolume.hpp"
 #include "MyGui.hpp"
+#include "SkinnedModel.hpp"
 
 enum class AnimationState {
     BindPose,
@@ -27,6 +28,7 @@ struct GameObject
     std::string name{};
     GameObject* parent;
     Model* model{};
+    std::unique_ptr<SkinnedModel> skinnedModel{};
     Transform transform;
     BoundingVolume bounds;
     std::vector<std::unique_ptr<GameObject>> children;
@@ -65,10 +67,10 @@ struct GameObject
             animState = AnimationState::BindPose;
         }
 
-        if (model && !model->animations.empty()) {
-            float t = model->animations[0].time;
-            ImGui::SliderFloat("animation (t)", &t, 0, model->animations[0].duration);
-            model->animations[0].time = t;
+        if (skinnedModel && !skinnedModel->model.animations.empty()) {
+            float t = skinnedModel->animTime;
+            ImGui::SliderFloat("animation (t)", &t, 0, skinnedModel->model.animations[0].duration + 0.1);
+            skinnedModel->animTime = t;
         }
 
         std::visit([this](auto&& shape) {
@@ -81,8 +83,8 @@ struct GameObject
     }
 
     virtual void update(std::chrono::duration<float> dt) {
-        if (animState == AnimationState::Animate && model != nullptr && !model->animations.empty()) {
-            model->animations[0].update(dt.count());
+        if (animState == AnimationState::Animate && skinnedModel != nullptr && !skinnedModel->model.animations.empty()) {
+            skinnedModel->animTime = skinnedModel->model.animations[0].update(skinnedModel->animTime, dt.count());
         }
     }
 
@@ -93,6 +95,8 @@ struct GameObject
 
         if (model != nullptr) {
             shader.setMat4("model", modelMatrix * model->rootTransform);
+        } else if (skinnedModel != nullptr) {
+            shader.setMat4("model", modelMatrix * skinnedModel->model.rootTransform);
         } else {
             shader.setMat4("model", modelMatrix);
         }
@@ -100,7 +104,11 @@ struct GameObject
         shader.setMat3("normalMatrix", normalMatrix);
 
         if (model != nullptr) {
-            model->draw(shader, animState != AnimationState::BindPose);
+            model->draw(shader);
+        }
+
+        if (skinnedModel != nullptr) {
+            skinnedModel->draw(shader);
         }
 
         for (auto& child : children) {

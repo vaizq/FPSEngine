@@ -11,6 +11,7 @@
 #include <string>
 #include <unordered_map>
 #include "engine/Singleton.hpp"
+#include "SkinnedModel.hpp"
 
 
 class ResourceManager : public Singleton<ResourceManager>
@@ -28,6 +29,8 @@ public:
 
     Texture& getTexture(const std::string& name);
     Model& getModel(const std::string& name);
+    std::unique_ptr<SkinnedModel> getSkinnedModel(const std::string& name);
+
     Shader& getShader(const std::string& name);
     void reloadShaders();
 

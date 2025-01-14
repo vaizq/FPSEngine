@@ -53,9 +53,18 @@ FPSGame::~FPSGame() {
 
 static void displayFPS(FPSGame::Duration dt)
 {
-    static float fps{1.0f / dt.count()};
+    if (dt.count() <= (1.0f / 1000)) {
+        ImGui::Begin("Status");
+        ImGui::Text("FPS +1000");
+        ImGui::End();
+        return;
+    }
+
+    static double fps{144};
+    fps = 0.1 * (1.0f / dt.count()) + 0.9 * fps;
+
     ImGui::Begin("Status");
-    ImGui::Text("FPS %.0f", fps);
+    ImGui::Text("FPS %f", fps);
     ImGui::End();
 }
 
@@ -228,10 +237,10 @@ void FPSGame::buildScene()
         for (int j = 0; j < 10; j++) {
             auto m = std::make_unique<GameObject>();
             m->name = std::format("monster[{}][{}]", i, j);
-            m->model = &ResourceManager::instance().getModel("monster");
+            m->skinnedModel = ResourceManager::instance().getSkinnedModel("monster");
             m->parent = mScene.get();
-            m->transform.position.x = i;
-            m->transform.position.z = j;
+            m->transform.position.x = i * 2;
+            m->transform.position.z = j * 2;
             mScene->children.push_back(std::move(m));
         }
     }

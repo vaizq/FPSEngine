@@ -46,6 +46,12 @@ Model &ResourceManager::getModel(const string &name)
     return mModels.at(name);
 }
 
+std::unique_ptr<SkinnedModel> ResourceManager::getSkinnedModel(const string &name)
+{
+    Model& model = mModels.at(name);
+    return std::make_unique<SkinnedModel>(0.0, model.skeleton, model);
+}
+
 Shader &ResourceManager::getShader(const string &name)
 {
     return mShaders.at(name);

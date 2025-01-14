@@ -37,6 +37,8 @@ public:
     vector<BoneInfo> bones;
     map<string, unsigned> boneIDs; // boneName -> boneIDs
     vector<Mesh>    meshes;
+    glm::mat4 rootTransform{1.0f};
+    std::vector<Animation> animations;
     string directory;
     bool gammaCorrection;
 
@@ -51,24 +53,16 @@ public:
     }
 
     // draws the model, and thus all its meshes
-    void draw(Shader &shader, bool animate = false)
+    void draw(Shader &shader)
     {
         glm::mat4 boneMatrices[200];
-
-        if (animate) {
-            animations[0].update(skeleton);
-        }
 
         for (int i = 0; i < skeleton.size(); i++) {
             const Joint& j = skeleton[i];
             if (boneIDs.contains(j.name)) {
                 const unsigned id = boneIDs[j.name];
                 const BoneInfo& bone = bones[id];
-                if (animate) {
-                    boneMatrices[id] = j.finalTransform * bone.offsetMatrix;
-                } else {
-                    boneMatrices[id] = jointTransform(i) * bone.offsetMatrix;
-                }
+                boneMatrices[id] = jointTransform(i) * bone.offsetMatrix;
             }
         }
 
@@ -79,8 +73,6 @@ public:
         }
     }
 
-    glm::mat4 rootTransform{1.0f};
-    std::vector<Animation> animations;
 private:
     map<string, bool> necessaryNodes;
     glm::mat4 jointTransform(unsigned index);

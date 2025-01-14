@@ -43,12 +43,11 @@ struct Animation {
     using Duration = std::chrono::duration<double>;
     using Time = Clock::time_point;
 
-    void update(double dt);
+    double update(double time, double dt);
 
-    void update(Skeleton& skeleton);
+    void update(double time, Skeleton& skeleton);
 
     double duration;
-    double time{0.0};
     std::map<std::string, AnimationChannel> channels;
 };
 

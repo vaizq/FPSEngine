@@ -2,11 +2,11 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
-void Animation::update(double dt) {
-    time = std::fmod(time + dt, duration);
+double Animation::update(double time, double dt) {
+    return std::fmod(time + dt, duration);
 }
 
-void Animation::update(Skeleton& skeleton) {
+void Animation::update(double time, Skeleton& skeleton) {
     Joint& root = skeleton[0];
 
     if (auto it = channels.find(root.name); it != channels.end()) {
