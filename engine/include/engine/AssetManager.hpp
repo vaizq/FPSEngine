@@ -9,8 +9,7 @@
 
 class AssetManager : public Singleton<AssetManager> {
 public:
-private:
-    SkinnedModel loadSkinnedModel(const char* path);
+    std::vector<Animation> loadAnimations(const aiScene* scene);
 };
 
 static AssetManager& gAssetManager = AssetManager::instance();

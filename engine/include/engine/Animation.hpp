@@ -29,12 +29,12 @@ struct Animation {
     using Duration = std::chrono::duration<double>;
     using Time = Clock::time_point;
 
-    double update(double time, double dt);
-
-    void update(double time, Skeleton& skeleton);
-
+    std::string name;
     double duration;
     std::map<std::string, AnimationChannel> channels;
+
+    double update(double time, double dt);
+    void update(double time, Skeleton& skeleton);
 };
 
 #endif //FPSFROMSCRATCH_ANIMATION_H

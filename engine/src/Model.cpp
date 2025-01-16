@@ -9,6 +9,7 @@
 #include <assimp/postprocess.h>
 #include <assimp/matrix4x4.h>
 #include <assimp/vector3.h>
+#include "AssetImporter.hpp"
 #include <limits>
 #include "engine/Util.hpp"
 
@@ -77,85 +78,9 @@ void Model::loadModel(string const &path)
 
     // retrieve the directory path of the filepath
     directory = path.substr(0, path.find_last_of('/'));
-
-    // Find necessary nodes for the skeleton
-    findNecessaryNodes(scene->mRootNode, scene);
-
-    collectBones(scene);
-
-    rootTransform = Util::aiMatrix4x4ToGlmMat4(scene->mRootNode->mTransformation);
-
-    if (necessaryNodes.contains(scene->mRootNode->mName.C_Str())) {
-        processSkeleton(scene->mRootNode, scene, 0xFF);
-    } else {
-        processSkeleton(scene->mRootNode->mChildren[0], scene, -1);
-    }
-
-    // process ASSIMP's root node recursively
+    skeleton = AssetImporter::loadSkeleton(scene);
     processNode(scene->mRootNode, scene);
-
-    loadAnimations(scene);
-
-    printf("scene %s has %ld nodes, %d meshes, %ld bones, %d skeletons, %d animations\n", 
-           scene->mName.C_Str(), 
-           necessaryNodes.size(), 
-           scene->mNumMeshes, 
-           skeleton.bones.size(),
-           scene->mNumSkeletons,
-           scene->mNumAnimations);
-}
-
-// Algorithm suggested in the documentation of assimp
-void Model::findNecessaryNodes(aiNode *node, const aiScene *scene) {
-    for(unsigned int i = 0; i < node->mNumMeshes; i++)
-    {
-        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        for (int j = 0; j < mesh->mNumBones; j++) {
-            aiBone* bone = mesh->mBones[j];
-            for(aiNode* tmpNode = bone->mNode; 
-                tmpNode != nullptr && tmpNode != node && tmpNode != node->mParent; 
-                tmpNode = tmpNode->mParent) {
-                necessaryNodes[tmpNode->mName.C_Str()] = true;
-            }
-        }
-    }
-
-    for(unsigned int i = 0; i < node->mNumChildren; i++)
-    {
-        findNecessaryNodes(node->mChildren[i], scene);
-    }
-}
-
-void Model::collectBones(const aiScene *scene) {
-    for (unsigned i = 0; i < scene->mNumMeshes; i++) {
-        aiMesh* mesh = scene->mMeshes[i];
-        for (unsigned j = 0; j < mesh->mNumBones; j++) {
-            aiBone* bone = mesh->mBones[j];
-            if (!skeleton.boneIDs.contains(bone->mName.C_Str())) {
-                skeleton.bones.emplace_back(bone->mName.C_Str(), Util::aiMatrix4x4ToGlmMat4(bone->mOffsetMatrix));
-                unsigned index = skeleton.bones.size() - 1;
-                skeleton.boneIDs[bone->mName.C_Str()] = index;
-            }
-        }
-    }
-}
-
-void Model::processSkeleton(aiNode *node, const aiScene *scene, unsigned parentIndex) {
-    if (!necessaryNodes.contains(node->mName.C_Str())) {
-        throw std::runtime_error("processSkeleton called with an unnecessary node");
-    }
-
-    Joint j{node->mName.C_Str(), parentIndex, Util::aiMatrix4x4ToGlmMat4(node->mTransformation)};
-    skeleton.joints.push_back(j);
-    const unsigned newParentIndex = skeleton.joints.size() - 1;
-
-    for(unsigned i = 0; i < node->mNumChildren; i++)
-    {
-        aiNode* child = node->mChildren[i];
-        if (necessaryNodes[child->mName.C_Str()]) {
-            processSkeleton(child, scene, newParentIndex);
-        }
-    }
+    animations = AssetImporter::loadAnimations(scene);
 }
 
 // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
@@ -336,52 +261,4 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
         }
     }
     return textures;
-}
-
-
-void Model::loadAnimations(const aiScene *scene) {
-    for (int i = 0; i < scene->mNumAnimations; i++) {
-
-        aiAnimation* aiAnim = scene->mAnimations[i];
-
-        const double ticksPerSec = (aiAnim->mTicksPerSecond <= std::numeric_limits<double>::epsilon()) ? 1.0 : aiAnim->mTicksPerSecond;
-
-        Animation anim;
-        anim.duration = aiAnim->mDuration / ticksPerSec;
-
-        for (int j = 0; j < aiAnim->mNumChannels; j++) {
-
-            aiNodeAnim* aiChan = aiAnim->mChannels[j];
-            assert(aiChan->mPositionKeys != nullptr && aiChan->mRotationKeys != nullptr && aiChan->mScalingKeys != nullptr);
-            AnimationChannel chan;
-
-            for (int k = 0; k < aiChan->mNumPositionKeys; k++) {
-                aiVectorKey key = aiChan->mPositionKeys[k]; 
-                chan.positionKeys.emplace_back(
-                    key.mTime / ticksPerSec,
-                    glm::vec3{key.mValue.x, key.mValue.y, key.mValue.z}
-                );
-            }
-
-            for (int k = 0; k < aiChan->mNumRotationKeys; k++) {
-                aiQuatKey key = aiChan->mRotationKeys[k]; 
-                chan.rotationKeys.emplace_back(
-                    key.mTime / ticksPerSec,
-                    glm::quat{key.mValue.w, key.mValue.x, key.mValue.y, key.mValue.z}
-                );
-            }
-
-            for (int k = 0; k < aiChan->mNumScalingKeys; k++) {
-                aiVectorKey key = aiChan->mScalingKeys[k]; 
-                chan.scalingKeys.emplace_back(
-                    key.mTime / ticksPerSec,
-                    glm::vec3{key.mValue.x, key.mValue.y, key.mValue.z}
-                );
-            }
-
-            anim.channels[aiChan->mNodeName.C_Str()] = std::move(chan);
-        }
-
-        animations.push_back(anim);
-    }
 }

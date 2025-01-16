@@ -13,10 +13,12 @@ struct SkinnedModel {
     Skeleton skeleton;
     Model& model;
 
+    void updateSkeleton() {
+        model.animations[0].update(animTime, skeleton);
+    }
+
     void draw(Shader& shader) {
         glm::mat4 boneMatrices[200];
-
-        model.animations[0].update(animTime, skeleton);
 
         for (const auto& [_, id] : skeleton.boneIDs) {
             const auto& bone = skeleton.bones[id];

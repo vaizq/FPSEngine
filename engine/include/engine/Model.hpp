@@ -34,16 +34,12 @@ public:
     // model data
     Skeleton skeleton;
     vector<Mesh>    meshes;
-    glm::mat4 rootTransform{1.0f};
     std::vector<Animation> animations;
-    string directory;
-    bool gammaCorrection;
 
     Model() = default;
 
     // constructor, expects a filepath to a 3D model.
     explicit Model(string const &path, bool gamma = false, bool flipVertically = false)
-    : gammaCorrection(gamma)
     {
         stbi_set_flip_vertically_on_load(flipVertically);
         loadModel(path);
@@ -71,8 +67,8 @@ public:
     }
 
 private:
+    string directory;
     vector<Texture> textures_loaded;
-    map<string, bool> necessaryNodes;
 
     glm::mat4 jointTransform(unsigned index);
 

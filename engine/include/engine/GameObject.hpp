@@ -33,6 +33,7 @@ struct GameObject
     BoundingVolume bounds;
     std::vector<std::unique_ptr<GameObject>> children;
     AnimationState animState{AnimationState::Animate};
+    bool renderModel{false};
 
     virtual ~GameObject() = default;
 
@@ -63,8 +64,13 @@ struct GameObject
         if (ImGui::Button("toggleAnimation")) {
             animState = (animState == AnimationState::Animate) ? AnimationState::Manual : AnimationState::Animate;
         }
+
         if (ImGui::Button("toBindPose")) {
             animState = AnimationState::BindPose;
+        }
+
+        if (ImGui::Button(renderModel ? "Dont render" : "Render")) {
+            renderModel = !renderModel;
         }
 
         if (skinnedModel && !skinnedModel->model.animations.empty()) {
@@ -86,6 +92,10 @@ struct GameObject
         if (animState == AnimationState::Animate && skinnedModel != nullptr && !skinnedModel->model.animations.empty()) {
             skinnedModel->animTime = skinnedModel->model.animations[0].update(skinnedModel->animTime, dt.count());
         }
+
+        if (skinnedModel && !skinnedModel->model.animations.empty()) {
+            skinnedModel->updateSkeleton();
+        }
     }
 
     virtual void render(Shader& shader, const glm::mat4& parentTransform = glm::mat4{1.0f})
@@ -93,22 +103,18 @@ struct GameObject
         const auto modelMatrix = parentTransform * transform.modelMatrix();
         const auto normalMatrix = glm::transpose(glm::inverse(modelMatrix));
 
-        if (model != nullptr) {
-            shader.setMat4("model", modelMatrix * model->rootTransform);
-        } else if (skinnedModel != nullptr) {
-            shader.setMat4("model", modelMatrix * skinnedModel->model.rootTransform);
-        } else {
-            shader.setMat4("model", modelMatrix);
-        }
+        shader.setMat4("model", modelMatrix);
 
         shader.setMat3("normalMatrix", normalMatrix);
 
-        if (model != nullptr) {
-            model->draw(shader);
-        }
+        if (renderModel) {
+            if (model != nullptr) {
+                model->draw(shader);
+            }
 
-        if (skinnedModel != nullptr) {
-            skinnedModel->draw(shader);
+            if (skinnedModel != nullptr) {
+                skinnedModel->draw(shader);
+            }
         }
 
         for (auto& child : children) {

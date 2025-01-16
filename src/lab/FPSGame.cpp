@@ -18,6 +18,8 @@
 #include "engine/DebugRenderer.hpp"
 #include "engine/ResourceManager.hpp"
 #include "engine/Renderer.hpp"
+#include "engine/Random.hpp"
+#include <glm/mat4x4.hpp>
 
 
 using namespace std::chrono_literals;
@@ -79,6 +81,23 @@ void FPSGame::update(Duration dt)
     static bool useTracking{false};
     ImGui::Begin("Settings");
     {
+        if (ImGui::Button("Order")) {
+            mScene->forEach([](GameObject& entity) {
+                if (entity.skinnedModel) {
+                    entity.skinnedModel->animTime = 0;
+                }
+            });
+        }
+
+        if (ImGui::Button("Disorder")) {
+            mScene->forEach([](GameObject& entity) {
+                if (entity.skinnedModel) {
+                    entity.skinnedModel->animTime = randomFloat() * entity.skinnedModel->model.animations[0].duration;
+                }
+            });
+        }
+
+
         if (ImGui::Button(mUseColorShader ? "Use Texture shader" : "Use Color shader")) {
             mUseColorShader = !mUseColorShader;
         }
@@ -148,8 +167,19 @@ void FPSGame::render()
                                 zAxis.draw(colorShader, GL_LINES);
                             };
 
-                            colorShader.setMat4("model", parentTransform * entity.transform.modelMatrix());
+                            const auto modelBase = parentTransform * entity.transform.modelMatrix();
+
+                            colorShader.setMat4("model", modelBase);
+
                             drawCoordinates();
+
+                            if (entity.skinnedModel) {
+                                    Transform t{modelBase * 
+                                                entity.skinnedModel->skeleton.joints[0].finalTransform};
+                                    t.scale = glm::vec3{1.0f};
+                                    colorShader.setMat4("model", t.modelMatrix());
+                                    drawCoordinates();
+                            }
                         });
     }
 
@@ -221,37 +251,38 @@ void FPSGame::buildScene()
     drone->parent = mScene.get();
     player = drone.get();
 
-    /*
     auto monster = std::make_unique<GameObject>();
     monster->name = "monster";
-    monster->model = &ResourceManager::instance().getModel("monster");
+    monster->skinnedModel = ResourceManager::instance().getSkinnedModel("monster");
     monster->parent = mScene.get();
 
     auto soldier = std::make_unique<GameObject>();
     soldier->name = "soldier";
-    soldier->model = &ResourceManager::instance().getModel("soldier");
+    soldier->skinnedModel = ResourceManager::instance().getSkinnedModel("soldier");
     soldier->parent = mScene.get();
-    */
 
+    /*
     for (int i = 0; i < 10; i++) {
         for (int j = 0; j < 10; j++) {
             auto m = std::make_unique<GameObject>();
             m->name = std::format("monster[{}][{}]", i, j);
             m->skinnedModel = ResourceManager::instance().getSkinnedModel("monster");
+            m->skinnedModel->animTime = randomFloat() * m->skinnedModel->model.animations[0].duration;
             m->parent = mScene.get();
             m->transform.position.x = i * 2;
             m->transform.position.z = j * 2;
             mScene->children.push_back(std::move(m));
         }
     }
+    */
 
     auto light = std::make_unique<Light>();
     light->name = "light";
     light->parent = mScene.get();
 
     mScene->children.push_back(std::move(drone));
-//    mScene->children.push_back(std::move(monster));
-//    mScene->children.push_back(std::move(soldier));
+    mScene->children.push_back(std::move(monster));
+    mScene->children.push_back(std::move(soldier));
     mScene->children.push_back(std::move(light));
 }
 

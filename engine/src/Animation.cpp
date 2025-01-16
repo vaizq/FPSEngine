@@ -13,6 +13,10 @@ void Animation::update(double time, Skeleton& skeleton) {
         root.finalTransform = it->second.getTransform(time);
     } else {
         root.finalTransform = root.transformation;
+        if (auto it = skeleton.boneIDs.find(root.name); it != skeleton.boneIDs.end()) {
+                BoneInfo& bone = skeleton.bones[it->second];
+                bone.finalTransform = root.finalTransform * bone.offsetMatrix;
+        }
     }
 
     for (int i = 1; i < skeleton.joints.size(); i++) {

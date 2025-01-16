@@ -9,7 +9,6 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <vector>
-#include <map>
 #include "Texture.hpp"
 
 struct Vertex {
@@ -41,6 +40,10 @@ private:
     unsigned mVBO{};
     unsigned mEBO{};
 };
+
+static void test() {
+    Mesh m{{},{},{}};
+}
 
 #endif //FPSFROMSCRATCH_MESH_H
 
