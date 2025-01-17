@@ -174,11 +174,11 @@ void FPSGame::render()
                             drawCoordinates();
 
                             if (entity.skinnedModel) {
-                                    Transform t{modelBase * 
-                                                entity.skinnedModel->skeleton.joints[0].finalTransform};
-                                    t.scale = glm::vec3{1.0f};
-                                    colorShader.setMat4("model", t.modelMatrix());
-                                    drawCoordinates();
+                                Transform t{modelBase * 
+                                            entity.skinnedModel->skeleton.joints[1].finalTransform};
+                                t.scale = glm::vec3{1.0f};
+                                colorShader.setMat4("model", t.modelMatrix());
+                                drawCoordinates();
                             }
                         });
     }

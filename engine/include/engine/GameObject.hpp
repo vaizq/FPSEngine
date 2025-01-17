@@ -100,19 +100,16 @@ struct GameObject
 
     virtual void render(Shader& shader, const glm::mat4& parentTransform = glm::mat4{1.0f})
     {
-        const auto modelMatrix = parentTransform * transform.modelMatrix();
+        auto modelMatrix = parentTransform * transform.modelMatrix();
         const auto normalMatrix = glm::transpose(glm::inverse(modelMatrix));
 
-        shader.setMat4("model", modelMatrix);
-
+         shader.setMat4("model", modelMatrix);
         shader.setMat3("normalMatrix", normalMatrix);
 
         if (renderModel) {
             if (model != nullptr) {
                 model->draw(shader);
-            }
-
-            if (skinnedModel != nullptr) {
+            } else if (skinnedModel != nullptr) {
                 skinnedModel->draw(shader);
             }
         }

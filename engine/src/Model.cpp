@@ -10,8 +10,8 @@
 #include <assimp/matrix4x4.h>
 #include <assimp/vector3.h>
 #include "AssetImporter.hpp"
-#include <limits>
 #include "engine/Util.hpp"
+#include "Transform.hpp"
 
 
 glm::mat4 aiToGlmMat(const aiMatrix4x4& from) {
@@ -26,17 +26,17 @@ glm::mat4 aiToGlmMat(const aiMatrix4x4& from) {
     return to;
 }
 
-void printSkeleton(const std::vector<Joint>& skeleton, size_t index = 0, int numParents = 0) {
+void printSkeleton(const Skeleton& skeleton, size_t index = 0, int numParents = 0) {
     std::string msg;
     for (int i = 0; i < numParents; i++) {
         msg += " ";
     }
-    msg += skeleton[index].name;
+    msg += skeleton.joints[index].name;
 
     printf("%s\n", msg.c_str());
 
-    for (int i = 0; i < skeleton.size(); i++) {
-        if (skeleton[i].parent == index) {
+    for (int i = 0; i < skeleton.joints.size(); i++) {
+        if (skeleton.joints[i].parent == index) {
             printSkeleton(skeleton, i, numParents + 1);
         }
     }
@@ -78,8 +78,9 @@ void Model::loadModel(string const &path)
 
     // retrieve the directory path of the filepath
     directory = path.substr(0, path.find_last_of('/'));
+
     skeleton = AssetImporter::loadSkeleton(scene);
-    processNode(scene->mRootNode, scene);
+    meshes = AssetImporter::loadMeshes(scene, skeleton, directory);
     animations = AssetImporter::loadAnimations(scene);
 }
 

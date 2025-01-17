@@ -66,7 +66,7 @@ void ResourceManager::loadTextures()
 
 void ResourceManager::loadModels()
 {
-    mModels.emplace("soldier", modelPath("Soldier/Soldier.dae"));
+    mModels.emplace("soldier", modelPath("Soldier/Soldier.fbx"));
     mModels.emplace("monster", modelPath("Monster/Monster.fbx"));
 }
 

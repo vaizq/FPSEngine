@@ -75,14 +75,6 @@ private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(string const &path);
 
-    void findNecessaryNodes(aiNode *node, const aiScene *scene);
-    
-    void collectBones(const aiScene *scene);
-
-    void processSkeleton(aiNode *node, const aiScene *scene, unsigned parentIndex);
-
-    void loadAnimations(const aiScene *scene);
-
     void processNode(aiNode *node, const aiScene *scene);
 
     Mesh processMesh(aiMesh *mesh, const aiScene *scene);

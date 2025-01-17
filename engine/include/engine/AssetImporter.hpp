@@ -11,7 +11,7 @@
 namespace AssetImporter {
     std::vector<Animation> loadAnimations(const aiScene* scene);
     Skeleton loadSkeleton(const aiScene* scene);
-//    std::vector<Mesh> loadMeshes(const aiScene* scene, const Skeleton& skeleton);
+    std::vector<Mesh> loadMeshes(const aiScene* scene, const Skeleton& skeleton, const std::string& directory);
 }
 
 
