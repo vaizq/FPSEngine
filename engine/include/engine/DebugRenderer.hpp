@@ -15,13 +15,11 @@ public:
     using Color = glm::vec3;
 
     void startup() {
-        largeSphere = std::make_unique<Mesh>(Geometry::makeSphere(100));
-        smallSphere = std::make_unique<Mesh>(Geometry::makeSphere(20));
+        sphere = std::make_unique<Mesh>(Geometry::makeSphere(1));
     }
 
     void shutdown() {
-        smallSphere = nullptr;
-        largeSphere = nullptr;
+        sphere = nullptr;
     }
 
     void addSphere(const glm::vec3& pos, float r, const Color& color, Duration lifetime = Duration::max()) {
@@ -47,9 +45,8 @@ public:
     }
 
     void render() {
-        auto& shader = gResources.getShader("color");
+        auto& shader = gRenderer.pushShader(Renderer::ShaderID::Color);
 
-        shader.use();
         shader.setMat4("projection", gRenderer.getProjection());
         shader.setMat4("view", gRenderer.getView());
 
@@ -59,12 +56,9 @@ public:
             shader.setMat4("model", modelMatrix);
             shader.setMat4("normalMatrix", normalMatrix);
             shader.setVec3("color", shape.color);
-            if (shape.transform.scale.x > 0.5f) {
-                largeSphere->draw(shader, GL_LINES);
-            } else {
-                smallSphere->draw(shader, GL_LINES);
-            }
         }
+
+        gRenderer.popShader();
     }
 
 private:
@@ -75,8 +69,7 @@ private:
     };
 
     std::vector<Sphere> shapes;
-    std::unique_ptr<Mesh> largeSphere;
-    std::unique_ptr<Mesh> smallSphere;
+    std::unique_ptr<Mesh> sphere;
 };
 
 static DebugRenderer& gDebugRenderer = DebugRenderer::instance();

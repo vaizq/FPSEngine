@@ -12,7 +12,6 @@
 #endif
 
 static const std::string assetsDir = SRC_DIR "/assets";
-static const std::string shadersDir = SRC_DIR "/shaders";
 static const std::string animationDir = SRC_DIR "/assets/animations";
 
 
@@ -26,16 +25,10 @@ std::string modelPath(const std::string& modelName)
     return assetsDir + "/models/" + modelName;
 }
 
-std::string shaderPath(const std::string& shaderName)
-{
-    return shadersDir + '/' + shaderName;
-}
-
 void ResourceManager::loadAll()
 {
     loadTextures();
     loadModels();
-    loadShaders();
     loadAnimations();
 }
 
@@ -55,11 +48,6 @@ std::unique_ptr<SkinnedModel> ResourceManager::getSkinnedModel(const string &nam
     return std::make_unique<SkinnedModel>(model.skeleton, model);
 }
 
-Shader &ResourceManager::getShader(const string &name)
-{
-    return mShaders.at(name);
-}
-
 void ResourceManager::loadTextures()
 {
     mTextures["bathroom-tiling"] = Texture::loadFromFile(texturePath("bathroom-tiling.jpg"));
@@ -71,12 +59,6 @@ void ResourceManager::loadModels()
 {
     mModels.emplace("soldier", modelPath("Soldier/Soldier.fbx"));
     mModels.emplace("nurse", modelPath("Nurse/Nurse.fbx"));
-}
-
-void ResourceManager::loadShaders()
-{
-    mShaders.insert({"model", Shader{shaderPath("model.vert").c_str(), shaderPath("model.frag").c_str()}});
-    mShaders.insert({"color", Shader{shaderPath("color.vert").c_str(), shaderPath("color.frag").c_str()}});
 }
 
 std::vector<Animation> loadAnimationsFrom(const std::string& path) {
@@ -113,12 +95,5 @@ void ResourceManager::loadAnimations()
                 mAnimations.push_back(animations.front());
             }
         }
-    }
-}
-
-void ResourceManager::reloadShaders()
-{
-    for (auto& [name, shader] : mShaders) {
-        shader.reload();
     }
 }

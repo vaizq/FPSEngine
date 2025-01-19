@@ -24,14 +24,11 @@ public:
     void shutdown() {
         mTextures.clear();
         mModels.clear();
-        mShaders.clear();
     }
 
     Texture& getTexture(const std::string& name);
     Model& getModel(const std::string& name);
     std::unique_ptr<SkinnedModel> getSkinnedModel(const std::string& name);
-
-    Shader& getShader(const std::string& name);
 
     const std::vector<Animation>& getAnimations() const {
         return mAnimations;
@@ -47,18 +44,14 @@ public:
         return nullptr;
     }
 
-    void reloadShaders();
-
 private:
     void loadAll();
     void loadTextures();
     void loadModels();
-    void loadShaders();
     void loadAnimations();
 
     std::unordered_map<std::string, Texture> mTextures;
     std::unordered_map<std::string, Model> mModels;
-    std::unordered_map<std::string, Shader> mShaders;
     std::vector<Animation> mAnimations;
 };
 

@@ -21,6 +21,7 @@
 #include "engine/Random.hpp"
 #include <glm/mat4x4.hpp>
 #include "Player.hpp"
+#include "engine/Renderer.hpp"
 
 
 using namespace std::chrono_literals;
@@ -30,8 +31,6 @@ void FPSGame::startup() {
 }
 
 void FPSGame::shutdown() {
-    saveScene();
-    gRenderer.shutdown();
 }
 
 FPSGame::FPSGame() {
@@ -109,7 +108,7 @@ void FPSGame::update(Duration dt)
         }
 
         if (ImGui::Button("Reload shaders")) {
-            ResourceManager::instance().reloadShaders();
+            gRenderer.reloadShaders();
             printf("shaders reloaded\n");
         }
 
@@ -138,14 +137,13 @@ void FPSGame::update(Duration dt)
 
 void FPSGame::render()
 {
-    Shader& shader = ResourceManager::instance().getShader(mUseColorShader ? "color" : "model");
-    Shader& colorShader = ResourceManager::instance().getShader("color");
-
     gRenderer.setView(mCamera.getViewMatrix());
+
 
     // Draw different coordinate systems
     if (mDrawCoordinateSystems) {
-        colorShader.use();
+        Shader& colorShader = gRenderer.pushShader(Renderer::ShaderID::Color);
+
         colorShader.setMat4("view", gRenderer.getView());
         colorShader.setMat4("projection", gRenderer.getProjection());
 
@@ -181,18 +179,25 @@ void FPSGame::render()
                                 drawCoordinates();
                             }
                         });
+
+    gRenderer.popShader();
     }
+
 
     // Draw scene
     {
-        shader.use();
+        Shader& shader = gRenderer.pushShader(mUseColorShader ? Renderer::ShaderID::Color : Renderer::ShaderID::Model);
+
         shader.setMat4("view", gRenderer.getView());
         shader.setMat4("projection", gRenderer.getProjection());
         shader.setVec3("lightPosition", mScene->findChildren("light")->transform.position);
         shader.setVec3("cameraPosition", mCamera.getPosition());
 
         mScene->render(shader);
+
+        gRenderer.popShader();
     }
+
 }
 
 

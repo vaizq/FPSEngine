@@ -54,10 +54,10 @@ private:
     GLint getUniformLocation(const std::string& name);
 
     std::unordered_map<std::string, GLint> mUniformLocations;
-    unsigned int mID;
-    const std::string mVertexPath;
-    const std::string mFragmentPath;
-    const std::string mGeometryPath;
+    unsigned int mID{0};
+    std::string mVertexPath;
+    std::string mFragmentPath;
+    std::string mGeometryPath;
 };
 
 #endif //FPSFROMSCRATCH_SHADER_H

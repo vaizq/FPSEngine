@@ -14,12 +14,16 @@ Light::Light()
 
 void Light::render(Shader& shader, const glm::mat4& parentTransform)
 {
-    auto& colorShader = ResourceManager::instance().getShader("color");
+    /*
+    auto& colorShader = gRenderer.pushShader(Renderer::ShaderID::Color);
+
     colorShader.use();
     colorShader.setMat4("view", gRenderer.getView());
     colorShader.setMat4("projection", gRenderer.getProjection());
     colorShader.setMat4("model", parentTransform * transform.modelMatrix());
     colorShader.setVec3("color", glm::vec3{1.0f, 1.0f, 1.0f});
     mMesh.draw(colorShader);
-    shader.use();
+
+    gRenderer.popShader();
+    */
 }

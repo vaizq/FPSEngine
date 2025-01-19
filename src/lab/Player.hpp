@@ -184,8 +184,6 @@ public:
                 }
             }
 
-            printf("%f\n", InputManager::instance().scrollOffset());
-
             if (glm::length(velo) > std::numeric_limits<float>::epsilon()) {
                 transform.position += dt.count() * velo;
             } else if (state == Movement::Running) {
