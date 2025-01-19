@@ -3,7 +3,8 @@
 //
 
 #include "ResourceManager.hpp"
-#include <stdexcept>
+#include "AssetImporter.hpp"
+#include <filesystem>
 
 
 #ifndef SRC_DIR
@@ -12,6 +13,7 @@
 
 static const std::string assetsDir = SRC_DIR "/assets";
 static const std::string shadersDir = SRC_DIR "/shaders";
+static const std::string animationDir = SRC_DIR "/assets/animations";
 
 
 std::string texturePath(const std::string& textureName)
@@ -34,6 +36,7 @@ void ResourceManager::loadAll()
     loadTextures();
     loadModels();
     loadShaders();
+    loadAnimations();
 }
 
 Texture &ResourceManager::getTexture(const string &name)
@@ -49,7 +52,7 @@ Model &ResourceManager::getModel(const string &name)
 std::unique_ptr<SkinnedModel> ResourceManager::getSkinnedModel(const string &name)
 {
     Model& model = mModels.at(name);
-    return std::make_unique<SkinnedModel>(0.0, model.skeleton, model);
+    return std::make_unique<SkinnedModel>(model.skeleton, model);
 }
 
 Shader &ResourceManager::getShader(const string &name)
@@ -67,13 +70,50 @@ void ResourceManager::loadTextures()
 void ResourceManager::loadModels()
 {
     mModels.emplace("soldier", modelPath("Soldier/Soldier.fbx"));
-    mModels.emplace("monster", modelPath("Monster/Monster.fbx"));
+    mModels.emplace("nurse", modelPath("Nurse/Nurse.fbx"));
 }
 
 void ResourceManager::loadShaders()
 {
     mShaders.insert({"model", Shader{shaderPath("model.vert").c_str(), shaderPath("model.frag").c_str()}});
     mShaders.insert({"color", Shader{shaderPath("color.vert").c_str(), shaderPath("color.frag").c_str()}});
+}
+
+std::vector<Animation> loadAnimationsFrom(const std::string& path) {
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(path,
+                                             aiProcess_LimitBoneWeights |
+                                             aiProcess_Triangulate | 
+                                             aiProcess_GenSmoothNormals | 
+                                             aiProcess_FlipUVs |
+                                             aiProcess_JoinIdenticalVertices |
+                                             aiProcess_CalcTangentSpace |
+                                             aiProcess_PopulateArmatureData |
+                                             aiProcess_ValidateDataStructure |
+                                             aiProcess_FindInvalidData);
+
+    // check for errors
+    if(!scene) // if is Not Zero
+    {
+        cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
+        return {};
+    }
+
+    return AssetImporter::loadAnimations(scene);
+}
+
+void ResourceManager::loadAnimations()
+{
+    for (const auto& dirEntry : std::filesystem::recursive_directory_iterator{animationDir}) {
+        if (dirEntry.path().extension() == ".fbx") {
+            const auto& path = dirEntry.path();
+            auto animations = loadAnimationsFrom(path.c_str());
+            if (!animations.empty()) {
+                animations.front().name = path.filename().c_str();
+                mAnimations.push_back(animations.front());
+            }
+        }
+    }
 }
 
 void ResourceManager::reloadShaders()

@@ -16,6 +16,13 @@ public:
         prevMousePos = InputManager::instance().mousePos();
     }
 
+    void onGUI() override {
+        GameObject::onGUI();
+        if (ImGui::Button(inputEnabled ? "Disable input" : "Enable input")) {
+            inputEnabled = !inputEnabled;
+        }
+    }
+
     void update(Duration dt) override {
         velo = {0, 0, 0}; 
 
@@ -53,9 +60,9 @@ public:
 
             auto pitch = glm::angleAxis(-sensitivity * delta.y, transform.right());
             transform.rotation = pitch * transform.rotation;
-        }
 
-        camera.getTransform() = transform;
+            camera.getTransform() = transform;
+        }
     }
 
     void enableInput() {

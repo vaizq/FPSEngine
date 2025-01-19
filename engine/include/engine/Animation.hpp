@@ -33,8 +33,8 @@ struct Animation {
     double duration;
     std::map<std::string, AnimationChannel> channels;
 
-    double update(double time, double dt);
-    void update(double time, Skeleton& skeleton);
+    double update(double time, double dt) const;
+    void update(double time, Skeleton& skeleton) const;
 };
 
 #endif //FPSFROMSCRATCH_ANIMATION_H

@@ -13,6 +13,7 @@
 #include "BoundingVolume.hpp"
 #include "MyGui.hpp"
 #include "SkinnedModel.hpp"
+#include "ResourceManager.hpp"
 
 enum class AnimationState {
     BindPose,
@@ -32,8 +33,10 @@ struct GameObject
     Transform transform;
     BoundingVolume bounds;
     std::vector<std::unique_ptr<GameObject>> children;
+    bool renderModel{true};
     AnimationState animState{AnimationState::Animate};
-    bool renderModel{false};
+    double animTime{0};
+    const Animation* animation{};
 
     virtual ~GameObject() = default;
 
@@ -51,7 +54,11 @@ struct GameObject
     }
 
     // ready is called just before the first frame when all game objects have been initialized
-    virtual void ready() {}
+    virtual void ready() {
+        if (skinnedModel && !skinnedModel->model.animations.empty()) {
+            animation = &skinnedModel->model.animations[0];
+        }
+    }
 
     // Shutdown is called after the last frame before any of the game objects have been deleted
     virtual void shutdown() {}
@@ -73,10 +80,23 @@ struct GameObject
             renderModel = !renderModel;
         }
 
-        if (skinnedModel && !skinnedModel->model.animations.empty()) {
-            float t = skinnedModel->animTime;
-            ImGui::SliderFloat("animation (t)", &t, 0, skinnedModel->model.animations[0].duration + 0.1);
-            skinnedModel->animTime = t;
+        if (animation) {
+            float t = animTime;
+            ImGui::SliderFloat("animation (t)", &t, 0, animation->duration);
+            animTime = t;
+
+            if (ImGui::BeginListBox("animations")) {
+                if (ImGui::Selectable("default")) {
+                        this->animation = &skinnedModel->model.animations[0];
+                }
+
+                for (const auto& animation : gResources.getAnimations()) {
+                    if (ImGui::Selectable(animation.name.c_str())) {
+                        this->animation = &animation;
+                    }
+                }
+                ImGui::EndListBox();
+            }
         }
 
         std::visit([this](auto&& shape) {
@@ -84,17 +104,16 @@ struct GameObject
             if constexpr (std::is_same_v<T, Sphere>) {
                 ImGui::DragFloat("radius", &shape.radius);
             }
-
         }, bounds.shape);
     }
 
     virtual void update(std::chrono::duration<float> dt) {
-        if (animState == AnimationState::Animate && skinnedModel != nullptr && !skinnedModel->model.animations.empty()) {
-            skinnedModel->animTime = skinnedModel->model.animations[0].update(skinnedModel->animTime, dt.count());
+        if (animState == AnimationState::Animate && animation) {
+            animTime = animation->update(animTime, dt.count());
         }
 
-        if (skinnedModel && !skinnedModel->model.animations.empty()) {
-            skinnedModel->updateSkeleton();
+        if (animation) {
+            animation->update(animTime, skinnedModel->skeleton);
         }
     }
 
@@ -103,7 +122,7 @@ struct GameObject
         auto modelMatrix = parentTransform * transform.modelMatrix();
         const auto normalMatrix = glm::transpose(glm::inverse(modelMatrix));
 
-         shader.setMat4("model", modelMatrix);
+        shader.setMat4("model", modelMatrix);
         shader.setMat3("normalMatrix", normalMatrix);
 
         if (renderModel) {

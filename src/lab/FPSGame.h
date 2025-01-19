@@ -23,6 +23,7 @@
 #include "engine/Light.hpp"
 #include "Drone.hpp"
 #include "engine/Singleton.hpp"
+#include "Player.hpp"
 
 
 class FPSGame

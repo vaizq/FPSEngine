@@ -20,6 +20,7 @@
 #include "engine/Renderer.hpp"
 #include "engine/Random.hpp"
 #include <glm/mat4x4.hpp>
+#include "Player.hpp"
 
 
 using namespace std::chrono_literals;
@@ -40,7 +41,6 @@ FPSGame::FPSGame() {
         int curMode = glfwGetInputMode(window, GLFW_CURSOR);
         if (curMode == GLFW_CURSOR_NORMAL) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            player->enableInput();
         }
         else {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -84,7 +84,7 @@ void FPSGame::update(Duration dt)
         if (ImGui::Button("Order")) {
             mScene->forEach([](GameObject& entity) {
                 if (entity.skinnedModel) {
-                    entity.skinnedModel->animTime = 0;
+                    entity.animTime = 0;
                 }
             });
         }
@@ -92,7 +92,7 @@ void FPSGame::update(Duration dt)
         if (ImGui::Button("Disorder")) {
             mScene->forEach([](GameObject& entity) {
                 if (entity.skinnedModel) {
-                    entity.skinnedModel->animTime = randomFloat() * entity.skinnedModel->model.animations[0].duration;
+                    entity.animTime = randomFloat() * entity.animation->duration;
                 }
             });
         }
@@ -246,44 +246,36 @@ void FPSGame::buildScene()
     mScene = std::make_unique<GameObject>();
     mScene->name = "World";
 
+    auto plr = std::make_unique<Player>(mCamera);
+    plr->name = "player";
+    plr->skinnedModel = ResourceManager::instance().getSkinnedModel("soldier");
+    plr->parent = mScene.get();
+
     auto drone = std::make_unique<Drone>(mCamera);
     drone->name = "drone";
+    drone->skinnedModel = ResourceManager::instance().getSkinnedModel("soldier");
     drone->parent = mScene.get();
     player = drone.get();
 
-    auto monster = std::make_unique<GameObject>();
-    monster->name = "monster";
-    monster->skinnedModel = ResourceManager::instance().getSkinnedModel("monster");
-    monster->parent = mScene.get();
+    auto nurse = std::make_unique<GameObject>();
+    nurse->name = "nurse";
+    nurse->skinnedModel = ResourceManager::instance().getSkinnedModel("nurse");
+    nurse->parent = mScene.get();
 
     auto soldier = std::make_unique<GameObject>();
     soldier->name = "soldier";
     soldier->skinnedModel = ResourceManager::instance().getSkinnedModel("soldier");
     soldier->parent = mScene.get();
 
-    /*
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 10; j++) {
-            auto m = std::make_unique<GameObject>();
-            m->name = std::format("monster[{}][{}]", i, j);
-            m->skinnedModel = ResourceManager::instance().getSkinnedModel("monster");
-            m->skinnedModel->animTime = randomFloat() * m->skinnedModel->model.animations[0].duration;
-            m->parent = mScene.get();
-            m->transform.position.x = i * 2;
-            m->transform.position.z = j * 2;
-            mScene->children.push_back(std::move(m));
-        }
-    }
-    */
-
     auto light = std::make_unique<Light>();
     light->name = "light";
     light->parent = mScene.get();
 
-    mScene->children.push_back(std::move(drone));
-    mScene->children.push_back(std::move(monster));
+    mScene->children.push_back(std::move(plr));
+    mScene->children.push_back(std::move(nurse));
     mScene->children.push_back(std::move(soldier));
     mScene->children.push_back(std::move(light));
+    mScene->children.push_back(std::move(drone));
 }
 
 

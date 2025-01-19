@@ -32,6 +32,21 @@ public:
     std::unique_ptr<SkinnedModel> getSkinnedModel(const std::string& name);
 
     Shader& getShader(const std::string& name);
+
+    const std::vector<Animation>& getAnimations() const {
+        return mAnimations;
+    }
+
+    const Animation* getAnimation(const std::string& name) const {
+        for (const auto& animation : mAnimations) {
+            if (animation.name == name) {
+                return &animation;
+            }
+        }
+        printf("ERROR: unable to find animation %s\n", name.c_str());
+        return nullptr;
+    }
+
     void reloadShaders();
 
 private:
@@ -39,10 +54,12 @@ private:
     void loadTextures();
     void loadModels();
     void loadShaders();
+    void loadAnimations();
 
     std::unordered_map<std::string, Texture> mTextures;
     std::unordered_map<std::string, Model> mModels;
     std::unordered_map<std::string, Shader> mShaders;
+    std::vector<Animation> mAnimations;
 };
 
 static ResourceManager& gResources = ResourceManager::instance();

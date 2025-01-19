@@ -9,13 +9,8 @@ struct SkinnedMesh {
 };
 
 struct SkinnedModel {
-    double animTime{0.0};
     Skeleton skeleton;
     Model& model;
-
-    void updateSkeleton() {
-        model.animations[0].update(animTime, skeleton);
-    }
 
     void draw(Shader& shader) {
         glm::mat4 boneMatrices[200];
