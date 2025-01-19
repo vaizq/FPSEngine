@@ -39,7 +39,7 @@ namespace Util
         return to;
     }
 
-    
+    constexpr glm::vec3 gravity{0.0f, -9.0f, 0.0f};
 
     nlohmann::json serialize(const glm::vec3& v);
     namespace glm::vec3
