@@ -25,62 +25,58 @@ std::string modelPath(const std::string& modelName)
     return assetsDir + "/models/" + modelName;
 }
 
+void ResourceManager::prepareAll() 
+{
+    prepareTextures();
+    prepareModels();
+    loadAnimations();
+}
+
 void ResourceManager::loadAll()
 {
-    loadTextures();
-    loadModels();
-    loadAnimations();
+    for (auto& [_, texture] : mTextures) {
+        texture.load();
+    }
+
+    for (auto& [_, model] : mModels) {
+        model.load();
+    }
 }
 
 Texture &ResourceManager::getTexture(const string &name)
 {
-    if (!ready) {
-        throw std::runtime_error("getTexture called when not ready!\n");
-    }
     return mTextures.at(name);
 }
 
 Model &ResourceManager::getModel(const string &name)
 {
-    if (!ready) {
-        throw std::runtime_error("getModel called when not ready!");
-    } 
     return mModels.at(name);
 }
 
 std::unique_ptr<SkinnedModel> ResourceManager::getSkinnedModel(const string &name)
 {
-    if (!ready) {
-        throw std::runtime_error("getSkinnedModel called when not ready!");
-    }
     Model& model = mModels.at(name);
     return std::make_unique<SkinnedModel>(model.skeleton, model);
 }
 
 const std::map<std::string, std::unique_ptr<Animation>>& ResourceManager::getAnimations() const {
-    if (!ready) {
-        throw std::runtime_error("getAnimations called when not ready!");
-    }
     return mAnimations;
 }
 
 const std::unique_ptr<Animation>& ResourceManager::getAnimation(const std::string& name) const {
-    if (!ready) {
-        throw std::runtime_error("getAnimation called when not ready!");
-    }
     return mAnimations.at(name);
 }
 
 
-void ResourceManager::loadTextures()
+void ResourceManager::prepareTextures()
 {
-    mTextures["bathroom-tiling"].prepare(texturePath("bathroom-tiling.jpg")).load();
-    mTextures["dirt"].prepare(texturePath("dirt.jpg")).load();
-    mTextures["loadingScreen"].prepare(texturePath("halloween.jpg")).load();
-    mTextures["ely"].prepare(texturePath("ely.jpg")).load();
+    mTextures["bathroom-tiling"].prepare(texturePath("bathroom-tiling.jpg"));
+    mTextures["dirt"].prepare(texturePath("dirt.jpg"));
+    mTextures["loadingScreen"].prepare(texturePath("halloween.jpg"));
+    mTextures["ely"].prepare(texturePath("ely.jpg"));
 }
 
-void ResourceManager::loadModels()
+void ResourceManager::prepareModels()
 {
     mModels.emplace("soldier", modelPath("Soldier/Soldier.fbx"));
     mModels.emplace("nurse", modelPath("Nurse/Nurse.fbx"));

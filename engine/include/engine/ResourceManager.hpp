@@ -19,16 +19,12 @@ class ResourceManager : public Singleton<ResourceManager>
 {
 public:
     void startup() {
-        /*
         std::thread t{[this]() {
             std::lock_guard g{mtx};
-            loadAll();
-            ready = true;
+            prepareAll();
+            prepared = true;
         }};
-        t.join();
-        */
-        loadAll();
-        ready = true;
+        t.detach();
     }
 
     void shutdown() {
@@ -36,8 +32,10 @@ public:
         mModels.clear();
     }
 
-    bool isReady() {
-        return ready;
+    void loadAll();
+
+    bool isPrepared() {
+        return prepared;
     }
 
     Texture& getTexture(const std::string& name);
@@ -47,9 +45,9 @@ public:
     const std::unique_ptr<Animation>& getAnimation(const std::string& name) const;
 
 private:
-    void loadAll();
-    void loadTextures();
-    void loadModels();
+    void prepareAll();
+    void prepareModels();
+    void prepareTextures();
     void loadAnimations();
 
     std::unordered_map<std::string, Texture> mTextures;
@@ -57,7 +55,7 @@ private:
     std::map<std::string, std::unique_ptr<Animation>> mAnimations;
 
     std::mutex mtx;
-    std::atomic<bool> ready{false};
+    std::atomic<bool> prepared{false};
 };
 
 static ResourceManager& gResources = ResourceManager::instance();

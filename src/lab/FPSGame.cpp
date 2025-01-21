@@ -200,7 +200,6 @@ void FPSGame::run()
 
     auto state = GameState::Loading;
 
-
     while (!glfwWindowShouldClose(gRenderer.getWindow()))
     {
         const auto dt = mTimer.tick();
@@ -212,8 +211,10 @@ void FPSGame::run()
 
         switch (state) {
             case GameState::Loading:
-                if (gResources.isReady()) {
-                    printf("Resources are ready!\n");
+                if (gResources.isPrepared()) {
+                    printf("Resources prepared, load them to GPU...\n");
+                    gResources.loadAll();
+                    printf("Resources are loaded to GPU!\nStart the game!\n");
                     loadScene();
 
                     mScene->forEach([](GameObject& obj) {

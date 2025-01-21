@@ -15,6 +15,7 @@ Terrain::Terrain()
     model->meshes.push_back(Geometry::makeGrid(
             100, 100,
             {ResourceManager::instance().getTexture("dirt")}));
+    model->load();
 }
 
 Terrain::~Terrain()

@@ -12,18 +12,60 @@
 
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
-: mNumIndices{indices.size()}, mTextures{std::move(textures)}
+:   mVertices{std::move(vertices)}, 
+    mIndices{std::move(indices)}, 
+    mTextures{std::move(textures)}, 
+    mNumIndices{mIndices.size()}
+{}
+
+Mesh::~Mesh()
 {
+    glDeleteBuffers(1, &mEBO);
+    glDeleteBuffers(1, &mVBO);
+    glDeleteVertexArrays(1, &mVAO);
+}
+
+Mesh::Mesh(Mesh &&other) noexcept
+: mNumIndices{other.mNumIndices}
+{
+    *this = std::move(other);
+}
+
+Mesh& Mesh::operator=(Mesh &&other) noexcept
+{
+    if (this != &other) {
+        mVertices = std::move(other.mVertices);
+        mIndices = std::move(other.mIndices);
+        mTextures = std::move(other.mTextures);
+        mNumIndices = other.mNumIndices;
+
+        mVAO = other.mVAO;
+        mVBO = other.mVBO;
+        mEBO = other.mEBO;
+
+        other.mVAO = 0;
+        other.mVBO = 0;
+        other.mEBO = 0;
+    }
+
+    return *this;
+}
+
+void Mesh::load() {
+    for (auto& texture : mTextures) {
+        texture.load();
+    }
+
     glGenVertexArrays(1, &mVAO);
     glGenBuffers(1, &mVBO);
     glGenBuffers(1, &mEBO);
 
     glBindVertexArray(mVAO);
     glBindBuffer(GL_ARRAY_BUFFER, mVBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mVertices.size() * sizeof(Vertex), mVertices.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndices.size() * sizeof(unsigned int), mIndices.data(), GL_STATIC_DRAW);
 
     // position
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
@@ -52,39 +94,11 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
     // boneweights
     glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, boneWeights));
     glEnableVertexAttribArray(6);
+
+    // Save some ram
+    mVertices.clear();
+    mIndices.clear();
 }
-
-Mesh::~Mesh()
-{
-    glDeleteBuffers(1, &mEBO);
-    glDeleteBuffers(1, &mVBO);
-    glDeleteVertexArrays(1, &mVAO);
-}
-
-Mesh::Mesh(Mesh &&other) noexcept
-: mNumIndices{other.mNumIndices}
-{
-    *this = std::move(other);
-}
-
-Mesh &Mesh::operator=(Mesh &&other) noexcept
-{
-    if (this != &other) {
-        mTextures = std::move(other.mTextures);
-        mNumIndices = other.mNumIndices;
-
-        mVAO = other.mVAO;
-        mVBO = other.mVBO;
-        mEBO = other.mEBO;
-
-        other.mVAO = 0;
-        other.mVBO = 0;
-        other.mEBO = 0;
-    }
-
-    return *this;
-}
-
 
 void Mesh::draw(Shader &shader, GLenum mode)
 {

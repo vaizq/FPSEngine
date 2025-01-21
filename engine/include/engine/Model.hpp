@@ -38,14 +38,19 @@ public:
 
     Model() = default;
 
-    // constructor, expects a filepath to a 3D model.
+    // Constructor prepares model to be loaded to GPU
     explicit Model(string const &path, bool gamma = false, bool flipVertically = false)
     {
         stbi_set_flip_vertically_on_load(flipVertically);
         loadModel(path);
     }
 
-    // draws the model, and thus all its meshes
+    void load() {
+        for (auto& mesh : meshes) {
+            mesh.load();
+        }
+    }
+
     void draw(Shader &shader)
     {
         glm::mat4 boneMatrices[200];
@@ -68,11 +73,8 @@ public:
 
 private:
     string directory;
-    vector<Texture> textures_loaded;
 
     glm::mat4 jointTransform(unsigned index);
-
-    // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(string const &path);
 };
 

@@ -6,8 +6,6 @@
 #include "glad/glad.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#include <stdexcept>
-#include <format>
 
 
 Texture& Texture::prepare(std::string filepath) {
@@ -19,7 +17,8 @@ Texture& Texture::prepare(std::string filepath) {
 
 Texture& Texture::load() {
     if (!data) {
-        throw std::runtime_error(std::format("texture {} not prepared or already loaded", path));
+        printf("WARNING: Texture %s not prepared or already load\n", path.c_str());
+        return *this;
     }
 
     GLenum format = [this](){
@@ -46,6 +45,7 @@ Texture& Texture::load() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     stbi_image_free(data);
+    data = nullptr;
 
     return *this;
 }

@@ -211,7 +211,7 @@ public:
 
 
 private:
-    glm::vec3 velo;
+    glm::vec3 velo{0};
     glm::vec3 veloAtJump;
     glm::vec2 prevMousePos;
     float speed{5.0f};
