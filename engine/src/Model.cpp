@@ -79,9 +79,14 @@ void Model::loadModel(string const &path)
     // retrieve the directory path of the filepath
     directory = path.substr(0, path.find_last_of('/'));
 
-    skeleton = AssetImporter::loadSkeleton(scene);
+    try {
+        skeleton = AssetImporter::loadSkeleton(scene);
+        animations = AssetImporter::loadAnimations(scene);
+    } catch (const std::exception& e) {
+        printf("%s\n", e.what());
+    }
+
     meshes = AssetImporter::loadMeshes(scene, skeleton, directory);
-    animations = AssetImporter::loadAnimations(scene);
 }
 
 // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).

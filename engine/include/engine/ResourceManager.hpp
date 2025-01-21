@@ -30,18 +30,12 @@ public:
     Model& getModel(const std::string& name);
     std::unique_ptr<SkinnedModel> getSkinnedModel(const std::string& name);
 
-    const std::vector<Animation>& getAnimations() const {
+    const std::map<std::string, std::unique_ptr<Animation>>& getAnimations() const {
         return mAnimations;
     }
 
-    const Animation* getAnimation(const std::string& name) const {
-        for (const auto& animation : mAnimations) {
-            if (animation.name == name) {
-                return &animation;
-            }
-        }
-        printf("ERROR: unable to find animation %s\n", name.c_str());
-        return nullptr;
+    const std::unique_ptr<Animation>& getAnimation(const std::string& name) const {
+        return mAnimations.at(name);
     }
 
 private:
@@ -52,10 +46,9 @@ private:
 
     std::unordered_map<std::string, Texture> mTextures;
     std::unordered_map<std::string, Model> mModels;
-    std::vector<Animation> mAnimations;
+    std::map<std::string, std::unique_ptr<Animation>> mAnimations;
 };
 
 static ResourceManager& gResources = ResourceManager::instance();
-
 
 #endif //FPSFROMSCRATCH_RESOURCEMANAGER_H

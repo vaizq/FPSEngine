@@ -36,7 +36,7 @@ struct GameObject
     bool renderModel{true};
     AnimationState animState{AnimationState::Animate};
     double animTime{0};
-    const Animation* animation{};
+    const Animation* animation;
 
     virtual ~GameObject() = default;
 
@@ -90,9 +90,9 @@ struct GameObject
                         this->animation = &skinnedModel->model.animations[0];
                 }
 
-                for (const auto& animation : gResources.getAnimations()) {
-                    if (ImGui::Selectable(animation.name.c_str())) {
-                        this->animation = &animation;
+                for (const auto& [name, animation] : gResources.getAnimations()) {
+                    if (ImGui::Selectable(name.c_str())) {
+                        this->animation = animation.get();
                     }
                 }
                 ImGui::EndListBox();
@@ -112,7 +112,7 @@ struct GameObject
             animTime = animation->update(animTime, dt.count());
         }
 
-        if (animation) {
+        if (animation && skinnedModel) {
             animation->update(animTime, skinnedModel->skeleton);
         }
     }
@@ -139,7 +139,7 @@ struct GameObject
     }
 
     // Apply functor to this and all the children recursively
-    void forEach(std::function<void(GameObject&)>&& callable)
+    void forEach(auto callable)
     {
         callable(*this);
         for (auto& child : children) {
@@ -148,7 +148,7 @@ struct GameObject
     }
 
     // Apply functor that takes GameObject and it's parent transform to this and to every children recursively
-    void forEach(std::function<void(GameObject& entity, const glm::mat4& parentTransform)>&& callable, const glm::mat4& parentTransform = glm::mat4{1.0f})
+    void forEach(auto callable, const glm::mat4& parentTransform)
     {
         callable(*this, parentTransform);
         const auto totalTransform = parentTransform * transform.modelMatrix();

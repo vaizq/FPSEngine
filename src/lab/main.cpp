@@ -5,6 +5,7 @@
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "engine/DebugRenderer.hpp"
+#include "engine/InputManager.hpp"
 
 
 int main()

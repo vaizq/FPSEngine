@@ -11,18 +11,22 @@
 #include <glm/mat4x4.hpp>
 
 
-
+class ShaderHandle;
 
 class Renderer : public Singleton<Renderer> 
 {
+    friend ShaderHandle;
 public:
     enum class ShaderID {
+        Basic,
         Model,
         Color
     };
 
     static std::string to_string(ShaderID id) {
         switch (id) {
+            case ShaderID::Basic:
+                return "Basic";
             case ShaderID::Model:
                 return "Model";
             case ShaderID::Color:
@@ -44,6 +48,7 @@ public:
         }
     }
 
+private:
     Shader& pushShader(ShaderID id) {
         shaderStack.push_back(id);
         Shader& shader = shaders.at(id);
@@ -58,7 +63,6 @@ public:
         }
     }
 
-private:
     static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
     GLFWwindow* window;
@@ -70,6 +74,26 @@ private:
 
 
 static Renderer& gRenderer = Renderer::instance();
+
+
+class ShaderHandle {
+public:
+    ShaderHandle(Renderer::ShaderID id)
+    : mId{id}, mShader{gRenderer.pushShader(mId)}
+    {}
+
+    ~ShaderHandle() {
+        gRenderer.popShader();
+    }
+
+    Shader& shader() {
+        return mShader;
+    }
+
+private:
+    Renderer::ShaderID mId;
+    Shader& mShader;
+};
 
 
 #endif

@@ -6,7 +6,7 @@
 #define FPSFROMSCRATCH_TERRAIN_H
 
 #include "GameObject.hpp"
-#include "Perlin.hpp"
+#include "Renderer.hpp"
 
 
 class Terrain : public GameObject
@@ -14,15 +14,23 @@ class Terrain : public GameObject
 public:
     Terrain();
     ~Terrain() override;
-    void onGUI() override;
-    std::optional<float> height(const glm::vec3& pos);
-    [[nodiscard]] float width() const;
-    [[nodiscard]] float depth() const;
-    void render(Shader& shader, const glm::mat4& parentTransform) override;
-private:
-    void loadTerrain(glm::vec3 scale);
-    Perlin2D mPerlin;
-    glm::vec3 mTerrainScale{1.0f};
+
+    void render(Shader& _, const glm::mat4& parentTransform = glm::mat4{1.0f}) override {
+        ShaderHandle handle(Renderer::ShaderID::Basic);
+
+        auto modelMatrix = parentTransform * transform.modelMatrix();
+        const auto normalMatrix = glm::transpose(glm::inverse(modelMatrix));
+
+        handle.shader().setMat4("projection", gRenderer.getProjection());
+        handle.shader().setMat4("view", gRenderer.getView());
+
+        handle.shader().setMat4("model", modelMatrix);
+        handle.shader().setMat3("normalMatrix", normalMatrix);
+
+        for (auto& mesh : model->meshes) {
+            mesh.draw(handle.shader());
+        }
+    }
 };
 
 

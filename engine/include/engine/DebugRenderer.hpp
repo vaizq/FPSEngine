@@ -3,6 +3,7 @@
 
 #include "Clock.hpp"
 #include <glm/glm.hpp>
+#include <memory>
 #include "ResourceManager.hpp"
 #include "Singleton.hpp"
 #include "Geometry.hpp"
@@ -15,61 +16,64 @@ public:
     using Color = glm::vec3;
 
     void startup() {
-        sphere = std::make_unique<Mesh>(Geometry::makeSphere(1));
+        sphere = std::make_shared<Mesh>(Geometry::makeSphere(1000));
+        coordinatesystem = std::make_shared<Mesh>(Geometry::makeCoordinateMesh());
     }
 
     void shutdown() {
         sphere = nullptr;
+        coordinatesystem = nullptr;
     }
 
-    void addSphere(const glm::vec3& pos, float r, const Color& color, Duration lifetime = Duration::max()) {
+    void addSphere(const glm::vec3& pos, float r, const Color& color, Duration lifetime = Duration{0}) {
         Transform t;
         t.position = pos;
         t.scale *= r;
-        shapes.emplace_back(t, color, lifetime);
+        shapes.emplace_back(t, sphere, color, lifetime);
     }
 
-    void addSphere(Transform transform, float r, const Color& color, Duration lifetime = Duration::max()) {
+    void addSphere(Transform transform, float r, const Color& color, Duration lifetime = Duration{0}) {
         transform.scale = r * glm::vec3{1.0f, 1.0f, 1.0f};
-        shapes.emplace_back(transform, color, lifetime);
+        shapes.emplace_back(transform, sphere, color, lifetime);
     }
 
     void update(Duration dt) {
+        shapes.erase(std::remove_if(shapes.begin(), shapes.end(), [](const auto& shape) {
+            return shape.lifetime < Duration{0};
+        }), shapes.end());
+
         for (auto& shape : shapes) {
             shape.lifetime -= dt;
         }
-
-        shapes.erase(std::remove_if(shapes.begin(), shapes.end(), [](const auto& shape) {
-            return shape.lifetime <= Duration{0};
-        }), shapes.end());
     }
 
     void render() {
-        auto& shader = gRenderer.pushShader(Renderer::ShaderID::Color);
+        ShaderHandle handle(Renderer::ShaderID::Color);
 
-        shader.setMat4("projection", gRenderer.getProjection());
-        shader.setMat4("view", gRenderer.getView());
+        handle.shader().setMat4("projection", gRenderer.getProjection());
+        handle.shader().setMat4("view", gRenderer.getView());
 
         for (const auto& shape : shapes) {
             const auto modelMatrix = shape.transform.modelMatrix();
             const auto normalMatrix = glm::transpose(glm::inverse(modelMatrix));
-            shader.setMat4("model", modelMatrix);
-            shader.setMat4("normalMatrix", normalMatrix);
-            shader.setVec3("color", shape.color);
+            handle.shader().setMat4("model", modelMatrix);
+            handle.shader().setMat4("normalMatrix", normalMatrix);
+            handle.shader().setVec3("color", shape.color);
+            shape.mesh->draw(handle.shader(), GL_LINES);
         }
-
-        gRenderer.popShader();
     }
 
 private:
-    struct Sphere {
+    struct Shape {
         Transform transform;
+        std::shared_ptr<Mesh> mesh;
         Color color;
         Duration lifetime;
     };
 
-    std::vector<Sphere> shapes;
-    std::unique_ptr<Mesh> sphere;
+    std::vector<Shape> shapes;
+    std::shared_ptr<Mesh> sphere;
+    std::shared_ptr<Mesh> coordinatesystem;
 };
 
 static DebugRenderer& gDebugRenderer = DebugRenderer::instance();

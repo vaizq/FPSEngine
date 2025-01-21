@@ -53,6 +53,7 @@ void ResourceManager::loadTextures()
     mTextures["bathroom-tiling"] = Texture::loadFromFile(texturePath("bathroom-tiling.jpg"));
     mTextures["dirt"] = Texture::loadFromFile(texturePath("dirt.jpg"));
     mTextures["loadingScreen"] = Texture::loadFromFile(texturePath("halloween.jpg"));
+    mTextures["ely"] = Texture::loadFromFile(texturePath("ely.jpg"));
 }
 
 void ResourceManager::loadModels()
@@ -92,7 +93,7 @@ void ResourceManager::loadAnimations()
             auto animations = loadAnimationsFrom(path.c_str());
             if (!animations.empty()) {
                 animations.front().name = path.filename().c_str();
-                mAnimations.push_back(animations.front());
+                mAnimations.emplace(animations.front().name, std::make_unique<Animation>(animations.front()));
             }
         }
     }

@@ -41,10 +41,4 @@ private:
     unsigned mEBO{};
 };
 
-static void test() {
-    Mesh m{{},{},{}};
-}
-
 #endif //FPSFROMSCRATCH_MESH_H
-
-

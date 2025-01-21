@@ -15,6 +15,7 @@ namespace Geometry
     Mesh makeBox(const glm::vec3 &size = glm::vec3{1.0f, 1.0f, 1.0f});
     Mesh makeBoxWireframe(const glm::vec3 &size = glm::vec3{1.0f, 1.0f, 1.0f});
     Mesh makePlane(float width, float height, std::vector<Texture> textures = {});
+    Mesh makeGrid(int width, int depth, std::vector<Texture> textures = {});
     Mesh makeCoordinateMesh();
     Mesh makeXAxis();
     Mesh makeYAxis();

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <glm/ext/quaternion_geometric.hpp>
 #include <limits>
+#include "engine/ResourceManager.hpp"
 
 
 enum class Movement {
@@ -58,13 +59,13 @@ public:
 
     void ready() override {
         GameObject::ready();
-        idle = &skinnedModel->model.animations[0];
-        runForward = gResources.getAnimation("run_forward.fbx");
-        runBackwards = gResources.getAnimation("run_backwards.fbx");
-        strafeRight = gResources.getAnimation("strafe_right.fbx");
-        strafeLeft = gResources.getAnimation("strafe_left.fbx");
-        jumpUp = gResources.getAnimation("jump_up.fbx");
-        jumpDown = gResources.getAnimation("jump_down.fbx");
+        idle = gResources.getAnimation("aim_idle.fbx").get();
+        runForward = gResources.getAnimation("run_forward.fbx").get();
+        runBackwards = gResources.getAnimation("run_backwards.fbx").get();
+        strafeRight = gResources.getAnimation("strafe_right.fbx").get();
+        strafeLeft = gResources.getAnimation("strafe_left.fbx").get();
+        jumpUp = gResources.getAnimation("jump_up.fbx").get();
+        jumpDown = gResources.getAnimation("jump_down.fbx").get();
 
         resetCamera();
     }

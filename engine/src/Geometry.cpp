@@ -287,6 +287,39 @@ Mesh Geometry::makePlane(float width, float height, std::vector<Texture> texture
     return Mesh{std::move(vertices), std::move(indices), std::move(textures)};
 }
 
+Mesh Geometry::makeGrid(int width, int depth, std::vector<Texture> textures) {
+    std::vector<Vertex> vertices;
+    std::vector<unsigned> indices;
+
+    constexpr glm::vec3 up{0.0f, 1.0f, 0.0f};
+
+    for (int z = 0; z <= depth; ++z) {
+        for (int x = 0; x <= width; ++x) {
+            vertices.emplace_back(glm::vec3{x, 0.0f, z},
+                                  up,
+                                  glm::vec2{x, z});
+
+            if (z != depth && x != width) {
+                const unsigned tl = x + z * (width + 1);
+                const unsigned tr = tl + 1;
+                const unsigned bl = tl + (width + 1);
+                const unsigned br = bl + 1;
+
+                indices.push_back(tl);
+                indices.push_back(bl);
+                indices.push_back(br);
+
+                indices.push_back(tl);
+                indices.push_back(br);
+                indices.push_back(tr);
+            }
+        }
+    }
+
+    return Mesh{std::move(vertices), std::move(indices), std::move(textures)};
+}
+
+
 Mesh Geometry::makeCoordinateMesh()
 {
     std::vector<Vertex> vertices;
@@ -316,6 +349,7 @@ Mesh Geometry::makeXAxis()
 
     vertices.emplace_back(glm::vec3{-1.f, 0.f, 0.f}, glm::vec3{}, glm::vec2{});
     vertices.emplace_back(glm::vec3{1.f, 0.f, 0.f}, glm::vec3{}, glm::vec2{});
+
 
     indices.push_back(0);
     indices.push_back(1);

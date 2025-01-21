@@ -9,12 +9,9 @@
 #include <imgui.h>
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_glfw.h"
-#include <algorithm>
 #include <memory>
-#include <numeric>
 #include <thread>
 #include <nlohmann/json.hpp>
-#include "engine/RayCast.hpp"
 #include "engine/DebugRenderer.hpp"
 #include "engine/ResourceManager.hpp"
 #include "engine/Renderer.hpp"
@@ -22,6 +19,10 @@
 #include <glm/mat4x4.hpp>
 #include "Player.hpp"
 #include "engine/Renderer.hpp"
+#include "Drone.hpp"
+#include "Player.hpp"
+#include "engine/Terrain.hpp"
+#include "engine/Light.hpp"
 
 
 using namespace std::chrono_literals;
@@ -43,7 +44,6 @@ FPSGame::FPSGame() {
         }
         else {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            player->disableInput();
         }
     };
 }
@@ -69,6 +69,19 @@ static void displayFPS(FPSGame::Duration dt)
     ImGui::End();
 }
 
+void sceneGUI(std::unique_ptr<GameObject>& node) {
+    if (ImGui::TreeNode(node->name.c_str())) {
+        if (ImGui::CollapsingHeader("Settings")) {
+            node->onGUI();
+        }
+
+        for (auto& child : node->children) {
+            sceneGUI(child);
+        }
+        ImGui::TreePop();
+    }
+}
+
 void FPSGame::update(Duration dt)
 {
     mScene->forEach([dt](GameObject& obj) {
@@ -77,9 +90,9 @@ void FPSGame::update(Duration dt)
 
     displayFPS(dt);
 
-    static bool useTracking{false};
-    ImGui::Begin("Settings");
-    {
+    ImGui::Begin("Editor");
+
+    if (ImGui::CollapsingHeader("Settings")) {
         if (ImGui::Button("Order")) {
             mScene->forEach([](GameObject& entity) {
                 if (entity.skinnedModel) {
@@ -100,9 +113,7 @@ void FPSGame::update(Duration dt)
         if (ImGui::Button(mUseColorShader ? "Use Texture shader" : "Use Color shader")) {
             mUseColorShader = !mUseColorShader;
         }
-        if (ImGui::Button(useTracking ? "Disable tracking" : "Enable tracking")) {
-            useTracking = !useTracking;
-        }
+
         if (ImGui::Button(mDrawCoordinateSystems ? "Hide coordinate systems" : "Draw coordinate systems")) {
             mDrawCoordinateSystems = !mDrawCoordinateSystems;
         }
@@ -111,28 +122,13 @@ void FPSGame::update(Duration dt)
             gRenderer.reloadShaders();
             printf("shaders reloaded\n");
         }
-
-        static int width{100};
-        static int height{100};
-        static int gridSize{10};
-        static glm::vec3 scale{1.0f};
-
-        ImGui::DragInt("GroundWidth", &width);
-        ImGui::DragInt("GroundHeight", &height);
-        ImGui::DragInt("GroundGridSize", &gridSize);
-        ImGui::DragFloat3("GroundScale", &scale[0], 0.05f);
     }
-    ImGui::End();
 
-    ImGui::Begin("Entities");
-    mScene->forEach([](GameObject& entity) {
-        ImGui::PushID(&entity);
-        ImGui::SeparatorText(entity.name.c_str());
-        entity.onGUI();
-        ImGui::PopID();
-    });
-    ImGui::End();
+    if (ImGui::CollapsingHeader("Entities")) {
+        sceneGUI(mScene);
+    }
 
+    ImGui::End();
 }
 
 void FPSGame::render()
@@ -142,32 +138,32 @@ void FPSGame::render()
 
     // Draw different coordinate systems
     if (mDrawCoordinateSystems) {
-        Shader& colorShader = gRenderer.pushShader(Renderer::ShaderID::Color);
+        ShaderHandle handle(Renderer::ShaderID::Color);
 
-        colorShader.setMat4("view", gRenderer.getView());
-        colorShader.setMat4("projection", gRenderer.getProjection());
+        handle.shader().setMat4("view", gRenderer.getView());
+        handle.shader().setMat4("projection", gRenderer.getProjection());
 
-        mScene->forEach([this, &colorShader](GameObject &entity, const glm::mat4 &parentTransform)
+        mScene->forEach([this, &handle](GameObject &entity, const glm::mat4 &parentTransform)
                         {
-                            auto drawCoordinates = [this, &colorShader]()
+                            auto drawCoordinates = [this, &handle]()
                             {
                                 static Mesh xAxis = Geometry::makeXAxis();
                                 static Mesh yAxis = Geometry::makeYAxis();
                                 static Mesh zAxis = Geometry::makeZAxis();
 
-                                colorShader.setVec3("color", Util::red);
-                                xAxis.draw(colorShader, GL_LINES);
+                                handle.shader().setVec3("color", Util::red);
+                                xAxis.draw(handle.shader(), GL_LINES);
 
-                                colorShader.setVec3("color", Util::green);
-                                yAxis.draw(colorShader, GL_LINES);
+                                handle.shader().setVec3("color", Util::green);
+                                yAxis.draw(handle.shader(), GL_LINES);
 
-                                colorShader.setVec3("color", Util::blue);
-                                zAxis.draw(colorShader, GL_LINES);
+                                handle.shader().setVec3("color", Util::blue);
+                                zAxis.draw(handle.shader(), GL_LINES);
                             };
 
                             const auto modelBase = parentTransform * entity.transform.modelMatrix();
 
-                            colorShader.setMat4("model", modelBase);
+                            handle.shader().setMat4("model", modelBase);
 
                             drawCoordinates();
 
@@ -175,27 +171,23 @@ void FPSGame::render()
                                 Transform t{modelBase * 
                                             entity.skinnedModel->skeleton.joints[1].finalTransform};
                                 t.scale = glm::vec3{1.0f};
-                                colorShader.setMat4("model", t.modelMatrix());
+                                handle.shader().setMat4("model", t.modelMatrix());
                                 drawCoordinates();
                             }
-                        });
-
-    gRenderer.popShader();
+                        }, glm::mat4{1.0f});
     }
 
 
     // Draw scene
     {
-        Shader& shader = gRenderer.pushShader(mUseColorShader ? Renderer::ShaderID::Color : Renderer::ShaderID::Model);
+        ShaderHandle handle(mUseColorShader ? Renderer::ShaderID::Color : Renderer::ShaderID::Model);
 
-        shader.setMat4("view", gRenderer.getView());
-        shader.setMat4("projection", gRenderer.getProjection());
-        shader.setVec3("lightPosition", mScene->findChildren("light")->transform.position);
-        shader.setVec3("cameraPosition", mCamera.getPosition());
+        handle.shader().setMat4("view", gRenderer.getView());
+        handle.shader().setMat4("projection", gRenderer.getProjection());
+        handle.shader().setVec3("lightPosition", mScene->findChildren("light")->transform.position);
+        handle.shader().setVec3("cameraPosition", mCamera.getPosition());
 
-        mScene->render(shader);
-
-        gRenderer.popShader();
+        mScene->render(handle.shader());
     }
 
 }
@@ -208,7 +200,7 @@ void FPSGame::run()
     });
 
     for (int i = 0; i < 10; i++) {
-        gDebugRenderer.addSphere(glm::vec3{i, 0, 0}, 1, Util::red, (1 + i) * 1s);
+        gDebugRenderer.addSphere(glm::vec3{2*i, 0, 0}, 1, Util::red, (1 + i) * 2s);
     }
 
     float targetFps = 144;
@@ -260,7 +252,6 @@ void FPSGame::buildScene()
     drone->name = "drone";
     drone->skinnedModel = ResourceManager::instance().getSkinnedModel("soldier");
     drone->parent = mScene.get();
-    player = drone.get();
 
     auto nurse = std::make_unique<GameObject>();
     nurse->name = "nurse";
@@ -276,13 +267,17 @@ void FPSGame::buildScene()
     light->name = "light";
     light->parent = mScene.get();
 
+    auto terrain = std::make_unique<Terrain>();
+    terrain->name = "terrain";
+    terrain->parent = mScene.get();
+
     mScene->children.push_back(std::move(plr));
     mScene->children.push_back(std::move(nurse));
     mScene->children.push_back(std::move(soldier));
     mScene->children.push_back(std::move(light));
     mScene->children.push_back(std::move(drone));
+    mScene->children.push_back(std::move(terrain));
 }
-
 
 static constexpr auto sceneFile{"scene.json"};
 

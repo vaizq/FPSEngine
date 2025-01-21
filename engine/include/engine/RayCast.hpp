@@ -18,7 +18,6 @@ struct RayCast
 };
 
 std::optional<glm::vec3> intersects(const RayCast& ray, const BoundingVolume& boundingVolume);
-std::optional<glm::vec3> intersects(const RayCast& ray, Terrain& terrain);
 
 
 #endif //FPSFROMSCRATCH_RAYCAST_H

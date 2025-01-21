@@ -37,6 +37,7 @@ void Renderer::startup(const char* windowName) {
     glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
+    shaders.insert({ShaderID::Basic, Shader{shaderPath("basic.vert").c_str(), shaderPath("model.frag").c_str()}});
     shaders.insert({ShaderID::Model, Shader{shaderPath("model.vert").c_str(), shaderPath("model.frag").c_str()}});
     shaders.insert({ShaderID::Color, Shader{shaderPath("color.vert").c_str(), shaderPath("color.frag").c_str()}});
 }
