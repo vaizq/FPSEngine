@@ -13,10 +13,8 @@ Terrain::Terrain()
 {
     model = new Model();
     model->meshes.push_back(Geometry::makeGrid(
-            100,
-            100,
-            {ResourceManager::instance().getTexture("dirt")})
-            );
+            100, 100,
+            {ResourceManager::instance().getTexture("dirt")}));
 }
 
 Terrain::~Terrain()

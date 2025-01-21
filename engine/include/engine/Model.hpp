@@ -74,14 +74,6 @@ private:
 
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(string const &path);
-
-    void processNode(aiNode *node, const aiScene *scene);
-
-    Mesh processMesh(aiMesh *mesh, const aiScene *scene);
-
-    // checks all material textures of a given type and loads the textures if they're not loaded yet.
-    // the required info is returned as a Texture struct.
-    vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName);
 };
 
 

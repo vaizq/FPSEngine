@@ -333,7 +333,8 @@ std::vector<Texture> loadMaterialTextures(MeshLoaderParams& params, aiMaterial *
         }
         if(!skip)
         {   // if texture hasn't been loaded already, load it
-            Texture texture{Texture::loadFromFile(params.directory + '/' + path.C_Str())};
+            Texture texture;
+            texture.prepare(params.directory + '/' + path.C_Str()).load();
             texture.type = typeName;
             texture.path = path.C_Str();
             textures.push_back(texture);

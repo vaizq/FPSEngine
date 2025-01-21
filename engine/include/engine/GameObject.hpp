@@ -28,15 +28,15 @@ struct GameObject
 
     std::string name{};
     GameObject* parent;
-    Model* model{};
-    std::unique_ptr<SkinnedModel> skinnedModel{};
+    Model* model{nullptr};
+    std::unique_ptr<SkinnedModel> skinnedModel{nullptr};
     Transform transform;
     BoundingVolume bounds;
     std::vector<std::unique_ptr<GameObject>> children;
     bool renderModel{true};
     AnimationState animState{AnimationState::Animate};
     double animTime{0};
-    const Animation* animation;
+    const Animation* animation{nullptr};
 
     virtual ~GameObject() = default;
 
@@ -55,7 +55,7 @@ struct GameObject
 
     // ready is called just before the first frame when all game objects have been initialized
     virtual void ready() {
-        if (skinnedModel && !skinnedModel->model.animations.empty()) {
+        if (skinnedModel != nullptr && !skinnedModel->model.animations.empty()) {
             animation = &skinnedModel->model.animations[0];
         }
     }
@@ -80,7 +80,7 @@ struct GameObject
             renderModel = !renderModel;
         }
 
-        if (animation) {
+        if (animation != nullptr) {
             float t = animTime;
             ImGui::SliderFloat("animation (t)", &t, 0, animation->duration);
             animTime = t;
@@ -108,7 +108,7 @@ struct GameObject
     }
 
     virtual void update(std::chrono::duration<float> dt) {
-        if (animState == AnimationState::Animate && animation) {
+        if (animState == AnimationState::Animate && animation != nullptr) {
             animTime = animation->update(animTime, dt.count());
         }
 

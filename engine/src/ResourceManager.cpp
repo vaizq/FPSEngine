@@ -34,26 +34,50 @@ void ResourceManager::loadAll()
 
 Texture &ResourceManager::getTexture(const string &name)
 {
+    if (!ready) {
+        throw std::runtime_error("getTexture called when not ready!\n");
+    }
     return mTextures.at(name);
 }
 
 Model &ResourceManager::getModel(const string &name)
 {
+    if (!ready) {
+        throw std::runtime_error("getModel called when not ready!");
+    } 
     return mModels.at(name);
 }
 
 std::unique_ptr<SkinnedModel> ResourceManager::getSkinnedModel(const string &name)
 {
+    if (!ready) {
+        throw std::runtime_error("getSkinnedModel called when not ready!");
+    }
     Model& model = mModels.at(name);
     return std::make_unique<SkinnedModel>(model.skeleton, model);
 }
 
+const std::map<std::string, std::unique_ptr<Animation>>& ResourceManager::getAnimations() const {
+    if (!ready) {
+        throw std::runtime_error("getAnimations called when not ready!");
+    }
+    return mAnimations;
+}
+
+const std::unique_ptr<Animation>& ResourceManager::getAnimation(const std::string& name) const {
+    if (!ready) {
+        throw std::runtime_error("getAnimation called when not ready!");
+    }
+    return mAnimations.at(name);
+}
+
+
 void ResourceManager::loadTextures()
 {
-    mTextures["bathroom-tiling"] = Texture::loadFromFile(texturePath("bathroom-tiling.jpg"));
-    mTextures["dirt"] = Texture::loadFromFile(texturePath("dirt.jpg"));
-    mTextures["loadingScreen"] = Texture::loadFromFile(texturePath("halloween.jpg"));
-    mTextures["ely"] = Texture::loadFromFile(texturePath("ely.jpg"));
+    mTextures["bathroom-tiling"].prepare(texturePath("bathroom-tiling.jpg")).load();
+    mTextures["dirt"].prepare(texturePath("dirt.jpg")).load();
+    mTextures["loadingScreen"].prepare(texturePath("halloween.jpg")).load();
+    mTextures["ely"].prepare(texturePath("ely.jpg")).load();
 }
 
 void ResourceManager::loadModels()

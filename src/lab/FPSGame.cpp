@@ -35,7 +35,6 @@ void FPSGame::shutdown() {
 }
 
 FPSGame::FPSGame() {
-    loadScene();
     InputManager::instance().keyPressHandlers[GLFW_KEY_ESCAPE] = [this]() {
         auto window = gRenderer.getWindow();
         int curMode = glfwGetInputMode(window, GLFW_CURSOR);
@@ -192,19 +191,16 @@ void FPSGame::render()
 
 }
 
-
 void FPSGame::run()
 {
-    mScene->forEach([](GameObject& obj) {
-        obj.ready();
-    });
+    enum class GameState {
+        Loading,
+        Running
+    };
 
-    for (int i = 0; i < 10; i++) {
-        gDebugRenderer.addSphere(glm::vec3{2*i, 0, 0}, 1, Util::red, (1 + i) * 2s);
-    }
+    auto state = GameState::Loading;
 
-    float targetFps = 144;
-    Duration targetDeltaTime = Duration{1s} / targetFps;
+
     while (!glfwWindowShouldClose(gRenderer.getWindow()))
     {
         const auto dt = mTimer.tick();
@@ -214,28 +210,59 @@ void FPSGame::run()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        update(dt);
-        gDebugRenderer.update(dt);
+        switch (state) {
+            case GameState::Loading:
+                if (gResources.isReady()) {
+                    printf("Resources are ready!\n");
+                    loadScene();
+
+                    mScene->forEach([](GameObject& obj) {
+                        obj.ready();
+                    });
+
+                    for (int i = 0; i < 10; i++) {
+                        gDebugRenderer.addSphere(glm::vec3{2*i, 0, 0}, 1, Util::red, (1 + i) * 1s);
+                    }
+
+                    state = GameState::Running;
+                } else {
+                    break;
+                }
+            case GameState::Running:
+                if (dt > Duration{0}) {
+                    update(dt);
+                    gDebugRenderer.update(dt);
+                }
+                break;
+        }
+
 
         ImGui::Render();
         glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        render();
 
-        gDebugRenderer.render();
+        switch (state) {
+            case GameState::Loading:
+                // Render loading screen
+                break;
+            case GameState::Running:
+                render();
+                gDebugRenderer.render();
+                break;
+        }
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(gRenderer.getWindow());
-
-        if (targetDeltaTime > dt) {
-            std::this_thread::sleep_for(targetDeltaTime - dt);
-        }
     }
 
-    mScene->forEach([](GameObject& obj) {
-        obj.shutdown();
-    });
+    if (state == GameState::Running) {
+        mScene->forEach([](GameObject& obj) {
+            obj.shutdown();
+        });
+
+        saveScene();
+    }
 }
 
 void FPSGame::buildScene()

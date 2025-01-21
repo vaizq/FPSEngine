@@ -6,6 +6,7 @@
 #define FPSFROMSCRATCH_RESOURCEMANAGER_H
 
 #include <memory>
+#include <thread>
 #include "Texture.hpp"
 #include "Model.hpp"
 #include <string>
@@ -18,7 +19,16 @@ class ResourceManager : public Singleton<ResourceManager>
 {
 public:
     void startup() {
+        /*
+        std::thread t{[this]() {
+            std::lock_guard g{mtx};
+            loadAll();
+            ready = true;
+        }};
+        t.join();
+        */
         loadAll();
+        ready = true;
     }
 
     void shutdown() {
@@ -26,17 +36,15 @@ public:
         mModels.clear();
     }
 
+    bool isReady() {
+        return ready;
+    }
+
     Texture& getTexture(const std::string& name);
     Model& getModel(const std::string& name);
     std::unique_ptr<SkinnedModel> getSkinnedModel(const std::string& name);
-
-    const std::map<std::string, std::unique_ptr<Animation>>& getAnimations() const {
-        return mAnimations;
-    }
-
-    const std::unique_ptr<Animation>& getAnimation(const std::string& name) const {
-        return mAnimations.at(name);
-    }
+    const std::map<std::string, std::unique_ptr<Animation>>& getAnimations() const;
+    const std::unique_ptr<Animation>& getAnimation(const std::string& name) const;
 
 private:
     void loadAll();
@@ -47,6 +55,9 @@ private:
     std::unordered_map<std::string, Texture> mTextures;
     std::unordered_map<std::string, Model> mModels;
     std::map<std::string, std::unique_ptr<Animation>> mAnimations;
+
+    std::mutex mtx;
+    std::atomic<bool> ready{false};
 };
 
 static ResourceManager& gResources = ResourceManager::instance();

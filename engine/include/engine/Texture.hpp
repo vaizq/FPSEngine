@@ -6,15 +6,19 @@
 #define FPSFROMSCRATCH_TEXTURE_H
 
 #include <string>
-#include <memory>
 
-struct Texture
+class Texture
 {
-    static Texture loadFromFile(std::string path, bool gamma = false);
+public:
+    Texture& prepare(std::string path);
+    Texture& load();
 
     unsigned id{};
     std::string type{"texture_diffuse"};
     std::string path;
+private:
+    int width, height, numComponents;
+    unsigned char* data;
 };
 
 #endif //FPSFROMSCRATCH_TEXTURE_H

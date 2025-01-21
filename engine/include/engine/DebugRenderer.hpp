@@ -21,6 +21,7 @@ public:
     }
 
     void shutdown() {
+        shapes.clear();
         sphere = nullptr;
         coordinatesystem = nullptr;
     }
