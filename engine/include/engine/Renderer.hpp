@@ -9,6 +9,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/vec2.hpp>
 #include <glm/mat4x4.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
 
 
 class ShaderHandle;
@@ -48,6 +49,15 @@ public:
         }
     }
 
+    float getFov() const {
+        return fov;
+    }
+
+    void setFov(float fov) {
+        this->fov = fov;
+        projection = glm::perspective(glm::radians(fov), (float)windowSize.x / (float)windowSize.y, 0.1f, 400.0f);
+    }
+
 private:
     Shader& pushShader(ShaderID id) {
         shaderStack.push_back(id);
@@ -70,6 +80,8 @@ private:
     glm::mat4 view;
     std::map<ShaderID, Shader> shaders; 
     std::deque<ShaderID> shaderStack;
+    float fov{45.0f};
+    glm::mat4 projection;
 };
 
 

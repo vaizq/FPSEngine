@@ -51,7 +51,7 @@ Mesh& Mesh::operator=(Mesh &&other) noexcept
     return *this;
 }
 
-void Mesh::load() {
+Mesh& Mesh::load() {
     for (auto& texture : mTextures) {
         texture.load();
     }
@@ -98,6 +98,8 @@ void Mesh::load() {
     // Save some ram
     mVertices.clear();
     mIndices.clear();
+
+    return *this;
 }
 
 void Mesh::draw(Shader &shader, GLenum mode)

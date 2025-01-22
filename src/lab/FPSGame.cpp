@@ -43,6 +43,8 @@ FPSGame::FPSGame() {
         }
         else {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            player->inputEnabled = false;
+            drone->disableInput();
         }
     };
 }
@@ -89,26 +91,11 @@ void FPSGame::update(Duration dt)
 
     displayFPS(dt);
 
+    gDebugRenderer.addSphere(glm::vec3{}, 1);
+
     ImGui::Begin("Editor");
 
     if (ImGui::CollapsingHeader("Settings")) {
-        if (ImGui::Button("Order")) {
-            mScene->forEach([](GameObject& entity) {
-                if (entity.skinnedModel) {
-                    entity.animTime = 0;
-                }
-            });
-        }
-
-        if (ImGui::Button("Disorder")) {
-            mScene->forEach([](GameObject& entity) {
-                if (entity.skinnedModel) {
-                    entity.animTime = randomFloat() * entity.animation->duration;
-                }
-            });
-        }
-
-
         if (ImGui::Button(mUseColorShader ? "Use Texture shader" : "Use Color shader")) {
             mUseColorShader = !mUseColorShader;
         }
@@ -120,6 +107,25 @@ void FPSGame::update(Duration dt)
         if (ImGui::Button("Reload shaders")) {
             gRenderer.reloadShaders();
             printf("shaders reloaded\n");
+        }
+
+        if (ImGui::BeginListBox("control")) {
+            if (ImGui::Selectable("player")) {
+                player->inputEnabled = true;
+                player->resetCamera();
+                drone->disableInput();
+            }
+
+            if (ImGui::Selectable("drone")) {
+                drone->enableInput();
+                player->inputEnabled = false;
+            }
+            ImGui::EndListBox();
+        }
+
+        static float fov = gRenderer.getFov();
+        if (ImGui::SliderFloat("field of view", &fov, 0.0f, 90.0f)) {
+            gRenderer.setFov(fov);
         }
     }
 
@@ -146,9 +152,9 @@ void FPSGame::render()
                         {
                             auto drawCoordinates = [this, &handle]()
                             {
-                                static Mesh xAxis = Geometry::makeXAxis();
-                                static Mesh yAxis = Geometry::makeYAxis();
-                                static Mesh zAxis = Geometry::makeZAxis();
+                                static Mesh xAxis = std::move(Geometry::makeXAxis().load());
+                                static Mesh yAxis = std::move(Geometry::makeYAxis().load());
+                                static Mesh zAxis = std::move(Geometry::makeZAxis().load());
 
                                 handle.shader().setVec3("color", Util::red);
                                 xAxis.draw(handle.shader(), GL_LINES);
@@ -212,9 +218,7 @@ void FPSGame::run()
         switch (state) {
             case GameState::Loading:
                 if (gResources.isPrepared()) {
-                    printf("Resources prepared, load them to GPU...\n");
                     gResources.loadAll();
-                    printf("Resources are loaded to GPU!\nStart the game!\n");
                     loadScene();
 
                     mScene->forEach([](GameObject& obj) {
@@ -230,10 +234,8 @@ void FPSGame::run()
                     break;
                 }
             case GameState::Running:
-                if (dt > Duration{0}) {
                     update(dt);
                     gDebugRenderer.update(dt);
-                }
                 break;
         }
 
@@ -253,7 +255,6 @@ void FPSGame::run()
         }
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
         glfwSwapBuffers(gRenderer.getWindow());
     }
 
@@ -274,11 +275,13 @@ void FPSGame::buildScene()
     auto plr = std::make_unique<Player>(mCamera);
     plr->name = "player";
     plr->skinnedModel = ResourceManager::instance().getSkinnedModel("soldier");
+    player = plr.get();
     plr->parent = mScene.get();
 
     auto drone = std::make_unique<Drone>(mCamera);
     drone->name = "drone";
     drone->skinnedModel = ResourceManager::instance().getSkinnedModel("soldier");
+    this->drone = drone.get();
     drone->parent = mScene.get();
 
     auto nurse = std::make_unique<GameObject>();

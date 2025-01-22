@@ -342,6 +342,20 @@ Mesh Geometry::makeCoordinateMesh()
     return Mesh{std::move(vertices), std::move(indices), {}};
 }
 
+Mesh Geometry::makeLine(glm::vec3 from, glm::vec3 to) {
+    std::vector<Vertex> vertices;
+    std::vector<unsigned> indices;
+
+    vertices.emplace_back(from, glm::vec3{}, glm::vec2{});
+    vertices.emplace_back(to, glm::vec3{}, glm::vec2{});
+
+    indices.push_back(0);
+    indices.push_back(1);
+
+    return Mesh{std::move(vertices), std::move(indices), {}};
+}
+
+
 Mesh Geometry::makeXAxis()
 {
     std::vector<Vertex> vertices;

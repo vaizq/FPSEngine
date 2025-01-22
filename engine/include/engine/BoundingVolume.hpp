@@ -29,7 +29,6 @@ struct BoundingVolume
     Transform transform;
     BoundingShape shape;
 
-
     static nlohmann::json serialize(const BoundingVolume& bounds);
     static BoundingVolume deserialize(const nlohmann::json& j);
 };

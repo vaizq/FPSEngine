@@ -17,6 +17,7 @@ namespace Geometry
     Mesh makePlane(float width, float height, std::vector<Texture> textures = {});
     Mesh makeGrid(int width, int depth, std::vector<Texture> textures = {});
     Mesh makeCoordinateMesh();
+    Mesh makeLine(glm::vec3 from, glm::vec3 to);
     Mesh makeXAxis();
     Mesh makeYAxis();
     Mesh makeZAxis();

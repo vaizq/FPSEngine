@@ -9,6 +9,7 @@
 #include <glm/ext/quaternion_geometric.hpp>
 #include <limits>
 #include "engine/ResourceManager.hpp"
+#include "Weapon.hpp"
 
 
 enum class Movement {
@@ -40,7 +41,13 @@ class Player : public GameObject {
 public:
     Player(Camera& camera)
     : mCamera{camera}
-    {}
+    {
+        auto w = std::make_unique<Weapon>();
+        w->name = "weapon";
+        w->parent = this;
+        weapon = w.get();
+        children.push_back(std::move(w));
+    }
 
     void onGUI() override {
         GameObject::onGUI();
@@ -72,7 +79,10 @@ public:
 
     void resetCamera() {
         mCamera.getTransform() = transform;
-        mCamera.getTransform().position -= -5.0f * transform.front() + transform.up();
+        mCamera.getTransform().position -= -5.0f * transform.front() + transform.up() + transform.right();
+        auto& wt = weapon->transform;
+        wt.position = glm::vec3{0, 1.5, 0};
+        wt.rotation = glm::angleAxis(glm::radians(10.0f), wt.right());
     }
 
     void update(const Duration dt) override {
@@ -203,12 +213,17 @@ public:
 
             Transform t = mCamera.getTransform();
             t.rotation = pitch * yaw * t.rotation;
-            t.position = transform.position - (5.0f + zoom) * t.front() + t.up();
-
+            t.position = transform.position - (5.0f + zoom) * t.front() + t.up() + t.right() / 2.0f;
             mCamera.getTransform() = t;
+
+            Transform wt = weapon->transform;
+            wt.rotation = glm::angleAxis(-sensitivity * delta.y, wt.right()) * 
+                weapon->transform.rotation;
+            weapon->transform = wt;
         }
     }
 
+    bool inputEnabled{false};
 
 private:
     glm::vec3 velo{0};
@@ -216,7 +231,6 @@ private:
     glm::vec2 prevMousePos;
     float speed{5.0f};
     float sensitivity{0.001f};
-    bool inputEnabled{false};
     Camera& mCamera;
     const Animation* idle;
     const Animation* runForward;
@@ -227,6 +241,7 @@ private:
     const Animation* jumpDown;
     Movement state{Movement::Idle};
     float zoom = 0.0f;
+    Weapon* weapon;
 };
 
 

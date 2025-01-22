@@ -32,7 +32,7 @@ public:
     Mesh(const Mesh&) = delete;
     Mesh& operator=(const Mesh&) = delete;
 
-    void load();
+    Mesh& load();
 
     void draw(Shader& shader, GLenum mode = GL_TRIANGLES);
 

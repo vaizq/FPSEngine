@@ -14,6 +14,8 @@
 #include <chrono>
 #include "engine/DeltaTimer.hpp"
 #include "engine/GameObject.hpp"
+#include "Player.hpp"
+#include "Drone.hpp"
 
 
 class FPSGame
@@ -41,6 +43,8 @@ private:
     bool mUseColorShader{false};
     bool mDrawCoordinateSystems{false};
     std::unique_ptr<GameObject> mScene;
+    Player* player;
+    Drone* drone;
 };
 
 
