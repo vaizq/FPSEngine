@@ -9,7 +9,9 @@
 #include <glm/ext/quaternion_geometric.hpp>
 #include <limits>
 #include "engine/ResourceManager.hpp"
+#include "engine/InputManager.hpp"
 #include "Weapon.hpp"
+#include "engine/SmoothTransform.hpp"
 
 
 enum class Movement {
@@ -40,7 +42,7 @@ static std::string to_string(Movement movement) {
 class Player : public GameObject {
 public:
     Player(Camera& camera)
-    : mCamera{camera}
+    : mCamera{camera} 
     {
         auto w = std::make_unique<Weapon>();
         w->name = "weapon";
@@ -59,8 +61,6 @@ public:
             resetCamera();
         }
 
-        ImGui::DragFloat3("velocity (m/s)", &velo[0], 0.1f);
-
         ImGui::Text("state: %s", to_string(state).c_str());
     }
 
@@ -73,20 +73,33 @@ public:
         strafeLeft = gResources.getAnimation("strafe_left.fbx").get();
         jumpUp = gResources.getAnimation("jump_up.fbx").get();
         jumpDown = gResources.getAnimation("jump_down.fbx").get();
-
         resetCamera();
     }
 
     void resetCamera() {
         mCamera.getTransform() = transform;
-        mCamera.getTransform().position -= -5.0f * transform.front() + transform.up() + transform.right();
+
+        mCamera.getTransform().position += cameraDelta(transform);
+
         auto& wt = weapon->transform;
-        wt.position = glm::vec3{0, 1.5, 0};
-        wt.rotation = glm::angleAxis(glm::radians(10.0f), wt.right());
+        wt.position = glm::vec3{0.12, 1.5, 0};
+        wt.rotation = glm::angleAxis(glm::radians(0.0f), wt.right());
     }
 
     void update(const Duration dt) override {
         GameObject::update(dt);
+
+        if (aiming) {
+            aimTransform.update(dt.count());
+        } else {
+            aimTransform.update(-dt.count());
+        }
+
+        if (InputManager::instance().mouseButton(GLFW_MOUSE_BUTTON_RIGHT) == InputManager::KeyState::Pressed) {
+            aiming = true;
+        } else {
+            aiming = false;
+        }
 
         if (inputEnabled) {
             zoom = std::max(InputManager::instance().scrollOffset(), 0.0f);
@@ -213,7 +226,7 @@ public:
 
             Transform t = mCamera.getTransform();
             t.rotation = pitch * yaw * t.rotation;
-            t.position = transform.position - (5.0f + zoom) * t.front() + t.up() + t.right() / 2.0f;
+            t.position = transform.position + cameraDelta(t);
             mCamera.getTransform() = t;
 
             Transform wt = weapon->transform;
@@ -226,6 +239,13 @@ public:
     bool inputEnabled{false};
 
 private:
+    glm::vec3 cameraDelta(const Transform& t) {
+        auto at = aimTransform.current();
+        return at.position.z * t.front() + 
+            at.position.y * t.up() + 
+            at.position.x * t.right();
+    }
+
     glm::vec3 velo{0};
     glm::vec3 veloAtJump;
     glm::vec2 prevMousePos;
@@ -242,6 +262,12 @@ private:
     Movement state{Movement::Idle};
     float zoom = 0.0f;
     Weapon* weapon;
+    bool aiming{false};
+
+    glm::vec4 idleCameraTransform{0.8f, 2.5f, -8.0f, 10.0f};
+    glm::vec4 aimCameraTransform{0.5f, 1.6f, -1.7f, 0.3f};
+
+    SmoothTransform aimTransform{Transform{idleCameraTransform}, Transform{aimCameraTransform}, 0.25};
 };
 
 

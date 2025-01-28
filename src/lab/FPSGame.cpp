@@ -91,8 +91,6 @@ void FPSGame::update(Duration dt)
 
     displayFPS(dt);
 
-    gDebugRenderer.addSphere(glm::vec3{}, 1);
-
     ImGui::Begin("Editor");
 
     if (ImGui::CollapsingHeader("Settings")) {
@@ -121,6 +119,18 @@ void FPSGame::update(Duration dt)
                 player->inputEnabled = false;
             }
             ImGui::EndListBox();
+        }
+
+        if (ImGui::Button("Use perspective")) {
+            gRenderer.usePerspective();
+        }
+
+        static glm::vec4 orthoParams{0, 1, 0, 1};
+
+        ImGui::SliderFloat4("ortho left right bottom top", &orthoParams[0], -400.f, 400.f);
+
+        if (ImGui::Button("Use orthogonal")) {
+            gRenderer.useOrthogonal(orthoParams);
         }
 
         static float fov = gRenderer.getFov();

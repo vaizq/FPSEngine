@@ -58,6 +58,14 @@ public:
         projection = glm::perspective(glm::radians(fov), (float)windowSize.x / (float)windowSize.y, 0.1f, 400.0f);
     }
 
+    void usePerspective() {
+        projection = glm::perspective(glm::radians(fov), (float)windowSize.x / (float)windowSize.y, 0.1f, 400.0f);
+    }
+
+    void useOrthogonal(glm::vec4 params) {
+        projection = glm::ortho(0.0f, 400.0f, 0.0f, 400.0f, -1.0f, 400.0f);
+    }
+
 private:
     Shader& pushShader(ShaderID id) {
         shaderStack.push_back(id);
