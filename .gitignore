@@ -1,9 +1,9 @@
 cmake-build*
 vcpkg
 vcpkg_installed
-*cache*
+.cache*
 imgui.ini
-build
+build*
 assets
 scene.json
 engine/extern/assimp
