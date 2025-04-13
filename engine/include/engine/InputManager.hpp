@@ -37,6 +37,7 @@ public:
         glfwSetKeyCallback(window, InputManager::keyboardKeyCallback);
         glfwSetCursorPosCallback(window, InputManager::mouseMoveCallback);
         glfwSetMouseButtonCallback(window, InputManager::mouseButtonCallback);
+        glfwSetScrollCallback(window, InputManager::scrollCallback);
     }
 
     [[nodiscard]] KeyState keyboardKey(KeyCode key) const
@@ -57,6 +58,11 @@ public:
     [[nodiscard]] glm::vec2 mousePos() const
     {
         return mMousePos;
+    }
+
+    [[nodiscard]] float scrollOffset() const
+    {
+        return mScrollOffset;
     }
 
     [[nodiscard]] KeyState mouseButton(Button button) const
@@ -110,6 +116,13 @@ private:
         self.mMousePos.y = static_cast<float>(yPos);
     }
 
+    static void scrollCallback(GLFWwindow* window, double xOffset, double yOffset)
+    {
+        auto& self = InputManager::instance();
+        self.mScrollOffset += yOffset;
+    }
+
+
     static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     {
         auto& self = InputManager::instance();
@@ -133,6 +146,7 @@ private:
     std::map<KeyCode, KeyState> mKeyboard;
     std::map<KeyCode, KeyState> mMouseButtons;
     glm::vec2 mMousePos{};
+    float mScrollOffset{};
 };
 
 

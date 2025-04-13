@@ -10,6 +10,7 @@ Shader::Shader(const char* vertexFilePath, const char* fragmentFilePath, const c
 {
     mID = loadShader(vertexFilePath, fragmentFilePath, geometryFilePath);
 }
+
 // activate the shader
 // ------------------------------------------------------------------------
 void Shader::use()

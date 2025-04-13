@@ -3,294 +3,334 @@
 //
 
 #include "FPSGame.h"
-#include <iostream>
-#include <glm/gtc/matrix_transform.hpp>
-#include "engine/Geometry.hpp"
-#include <imgui.h>
-#include "imgui/imgui_impl_opengl3.h"
-#include "imgui/imgui_impl_glfw.h"
-#include <algorithm>
-#include <memory>
-#include <numeric>
-#include <thread>
-#include <nlohmann/json.hpp>
-#include "engine/RayCast.hpp"
+#include "Drone.hpp"
+#include "Player.hpp"
 #include "engine/DebugRenderer.hpp"
-#include "engine/ResourceManager.hpp"
+#include "engine/Geometry.hpp"
+#include "engine/Light.hpp"
+#include "engine/Random.hpp"
 #include "engine/Renderer.hpp"
-
+#include "engine/ResourceManager.hpp"
+#include "engine/Terrain.hpp"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/mat4x4.hpp>
+#include <imgui.h>
+#include <iostream>
+#include <memory>
+#include <nlohmann/json.hpp>
+#include <thread>
 
 using namespace std::chrono_literals;
 
+void FPSGame::startup() {}
 
-void FPSGame::startup() {
-}
-
-void FPSGame::shutdown() {
-    saveScene();
-    gRenderer.shutdown();
-}
+void FPSGame::shutdown() {}
 
 FPSGame::FPSGame() {
-    loadScene();
-    InputManager::instance().keyPressHandlers[GLFW_KEY_ESCAPE] = [this]() {
-        auto window = gRenderer.getWindow();
-        int curMode = glfwGetInputMode(window, GLFW_CURSOR);
-        if (curMode == GLFW_CURSOR_NORMAL) {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            player->enableInput();
-        }
-        else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            player->disableInput();
-        }
-    };
-}
-
-FPSGame::~FPSGame() {
-    saveScene();
-}
-
-static void displayFPS(FPSGame::Duration dt)
-{
-    if (dt.count() <= (1.0f / 1000)) {
-        ImGui::Begin("Status");
-        ImGui::Text("FPS +1000");
-        ImGui::End();
-        return;
+  InputManager::instance().keyPressHandlers[GLFW_KEY_ESCAPE] = [this]() {
+    auto window = gRenderer.getWindow();
+    int curMode = glfwGetInputMode(window, GLFW_CURSOR);
+    if (curMode == GLFW_CURSOR_NORMAL) {
+      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    } else {
+      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+      player->inputEnabled = false;
+      drone->disableInput();
     }
+  };
+}
 
-    static double fps{144};
-    fps = 0.1 * (1.0f / dt.count()) + 0.9 * fps;
+FPSGame::~FPSGame() { saveScene(); }
 
+static void displayFPS(FPSGame::Duration dt) {
+  if (dt.count() <= (1.0f / 1000)) {
     ImGui::Begin("Status");
-    ImGui::Text("FPS %f", fps);
+    ImGui::Text("FPS +1000");
     ImGui::End();
+    return;
+  }
+
+  static double fps{144};
+  fps = 0.1 * (1.0f / dt.count()) + 0.9 * fps;
+
+  ImGui::Begin("Status");
+  ImGui::Text("FPS %f", fps);
+  ImGui::End();
 }
 
-void FPSGame::update(Duration dt)
-{
-    mScene->forEach([dt](GameObject& obj) {
-        obj.update(dt);
-    });
-
-    displayFPS(dt);
-
-    static bool useTracking{false};
-    ImGui::Begin("Settings");
-    {
-        if (ImGui::Button(mUseColorShader ? "Use Texture shader" : "Use Color shader")) {
-            mUseColorShader = !mUseColorShader;
-        }
-        if (ImGui::Button(useTracking ? "Disable tracking" : "Enable tracking")) {
-            useTracking = !useTracking;
-        }
-        if (ImGui::Button(mDrawCoordinateSystems ? "Hide coordinate systems" : "Draw coordinate systems")) {
-            mDrawCoordinateSystems = !mDrawCoordinateSystems;
-        }
-
-        if (ImGui::Button("Reload shaders")) {
-            ResourceManager::instance().reloadShaders();
-            printf("shaders reloaded\n");
-        }
-
-        static int width{100};
-        static int height{100};
-        static int gridSize{10};
-        static glm::vec3 scale{1.0f};
-
-        ImGui::DragInt("GroundWidth", &width);
-        ImGui::DragInt("GroundHeight", &height);
-        ImGui::DragInt("GroundGridSize", &gridSize);
-        ImGui::DragFloat3("GroundScale", &scale[0], 0.05f);
+void sceneGUI(std::unique_ptr<GameObject> &node) {
+  if (ImGui::TreeNode(node->name.c_str())) {
+    if (ImGui::CollapsingHeader("Settings")) {
+      node->onGUI();
     }
-    ImGui::End();
 
-    ImGui::Begin("Entities");
-    mScene->forEach([](GameObject& entity) {
-        ImGui::PushID(&entity);
-        ImGui::SeparatorText(entity.name.c_str());
-        entity.onGUI();
-        ImGui::PopID();
-    });
-    ImGui::End();
-
+    for (auto &child : node->children) {
+      sceneGUI(child);
+    }
+    ImGui::TreePop();
+  }
 }
 
-void FPSGame::render()
-{
-    Shader& shader = ResourceManager::instance().getShader(mUseColorShader ? "color" : "model");
-    Shader& colorShader = ResourceManager::instance().getShader("color");
+void FPSGame::update(Duration dt) {
+  mScene->forEach([dt](GameObject &obj) { obj.update(dt); });
 
-    gRenderer.setView(mCamera.getViewMatrix());
+  displayFPS(dt);
 
-    // Draw different coordinate systems
-    if (mDrawCoordinateSystems) {
-        colorShader.use();
-        colorShader.setMat4("view", gRenderer.getView());
-        colorShader.setMat4("projection", gRenderer.getProjection());
+  ImGui::Begin("Editor");
 
-        mScene->forEach([this, &colorShader](GameObject &entity, const glm::mat4 &parentTransform)
-                        {
-                            auto drawCoordinates = [this, &colorShader]()
-                            {
-                                static Mesh xAxis = Geometry::makeXAxis();
-                                static Mesh yAxis = Geometry::makeYAxis();
-                                static Mesh zAxis = Geometry::makeZAxis();
-
-                                colorShader.setVec3("color", Util::red);
-                                xAxis.draw(colorShader, GL_LINES);
-
-                                colorShader.setVec3("color", Util::green);
-                                yAxis.draw(colorShader, GL_LINES);
-
-                                colorShader.setVec3("color", Util::blue);
-                                zAxis.draw(colorShader, GL_LINES);
-                            };
-
-                            colorShader.setMat4("model", parentTransform * entity.transform.modelMatrix());
-                            drawCoordinates();
-                        });
+  if (ImGui::CollapsingHeader("Settings")) {
+    if (ImGui::Button(mUseColorShader ? "Use Texture shader"
+                                      : "Use Color shader")) {
+      mUseColorShader = !mUseColorShader;
     }
 
-    // Draw scene
-    {
-        shader.use();
-        shader.setMat4("view", gRenderer.getView());
-        shader.setMat4("projection", gRenderer.getProjection());
-        shader.setVec3("lightPosition", mScene->findChildren("light")->transform.position);
-        shader.setVec3("cameraPosition", mCamera.getPosition());
-
-        mScene->render(shader);
+    if (ImGui::Button(mDrawCoordinateSystems ? "Hide coordinate systems"
+                                             : "Draw coordinate systems")) {
+      mDrawCoordinateSystems = !mDrawCoordinateSystems;
     }
+
+    if (ImGui::Button("Reload shaders")) {
+      gRenderer.reloadShaders();
+      printf("shaders reloaded\n");
+    }
+
+    if (ImGui::BeginListBox("control")) {
+      if (ImGui::Selectable("player")) {
+        player->inputEnabled = true;
+        player->resetCamera();
+        drone->disableInput();
+      }
+
+      if (ImGui::Selectable("drone")) {
+        drone->enableInput();
+        player->inputEnabled = false;
+      }
+      ImGui::EndListBox();
+    }
+
+    if (ImGui::Button("Use perspective")) {
+      gRenderer.usePerspective();
+    }
+
+    static glm::vec4 orthoParams{0, 1, 0, 1};
+
+    ImGui::SliderFloat4("ortho left right bottom top", &orthoParams[0], -400.f,
+                        400.f);
+
+    if (ImGui::Button("Use orthogonal")) {
+      gRenderer.useOrthogonal(orthoParams);
+    }
+
+    static float fov = gRenderer.getFov();
+    if (ImGui::SliderFloat("field of view", &fov, 0.0f, 90.0f)) {
+      gRenderer.setFov(fov);
+    }
+  }
+
+  if (ImGui::CollapsingHeader("Entities")) {
+    sceneGUI(mScene);
+  }
+
+  ImGui::End();
 }
 
+void FPSGame::render() {
+  gRenderer.setView(mCamera.getViewMatrix());
 
-void FPSGame::run()
-{
-    mScene->forEach([](GameObject& obj) {
-        obj.ready();
-    });
+  // Draw different coordinate systems
+  if (mDrawCoordinateSystems) {
+    ShaderHandle handle(Renderer::ShaderID::Color);
 
-    for (int i = 0; i < 10; i++) {
-        gDebugRenderer.addSphere(glm::vec3{i, 0, 0}, 1, Util::red, (1 + i) * 1s);
-    }
+    handle.shader().setMat4("view", gRenderer.getView());
+    handle.shader().setMat4("projection", gRenderer.getProjection());
 
-    float targetFps = 144;
-    Duration targetDeltaTime = Duration{1s} / targetFps;
-    while (!glfwWindowShouldClose(gRenderer.getWindow()))
-    {
-        const auto dt = mTimer.tick();
+    mScene->forEach(
+        [this, &handle](GameObject &entity, const glm::mat4 &parentTransform) {
+          auto drawCoordinates = [this, &handle]() {
+            static Mesh xAxis = std::move(Geometry::makeXAxis().load());
+            static Mesh yAxis = std::move(Geometry::makeYAxis().load());
+            static Mesh zAxis = std::move(Geometry::makeZAxis().load());
 
-        glfwPollEvents();
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+            handle.shader().setVec3("color", Util::red);
+            xAxis.draw(handle.shader(), GL_LINES);
 
-        update(dt);
-        gDebugRenderer.update(dt);
+            handle.shader().setVec3("color", Util::green);
+            yAxis.draw(handle.shader(), GL_LINES);
 
-        ImGui::Render();
-        glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        render();
+            handle.shader().setVec3("color", Util::blue);
+            zAxis.draw(handle.shader(), GL_LINES);
+          };
 
-        gDebugRenderer.render();
+          const auto modelBase =
+              parentTransform * entity.transform.modelMatrix();
 
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+          handle.shader().setMat4("model", modelBase);
 
-        glfwSwapBuffers(gRenderer.getWindow());
+          drawCoordinates();
 
-        if (targetDeltaTime > dt) {
-            std::this_thread::sleep_for(targetDeltaTime - dt);
+          if (entity.skinnedModel) {
+            Transform t{modelBase *
+                        entity.skinnedModel->skeleton.joints[1].finalTransform};
+            t.scale = glm::vec3{1.0f};
+            handle.shader().setMat4("model", t.modelMatrix());
+            drawCoordinates();
+          }
+        },
+        glm::mat4{1.0f});
+  }
+
+  // Draw scene
+  {
+    ShaderHandle handle(mUseColorShader ? Renderer::ShaderID::Color
+                                        : Renderer::ShaderID::Model);
+
+    handle.shader().setMat4("view", gRenderer.getView());
+    handle.shader().setMat4("projection", gRenderer.getProjection());
+    handle.shader().setVec3("lightPosition",
+                            mScene->findChildren("light")->transform.position);
+    handle.shader().setVec3("cameraPosition", mCamera.getPosition());
+
+    mScene->render(handle.shader());
+  }
+}
+
+void FPSGame::run() {
+  enum class GameState { Loading, Running };
+
+  auto state = GameState::Loading;
+
+  while (!glfwWindowShouldClose(gRenderer.getWindow())) {
+    const auto dt = mTimer.tick();
+
+    glfwPollEvents();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    switch (state) {
+    case GameState::Loading:
+      if (gResources.isPrepared()) {
+        gResources.loadAll();
+        loadScene();
+
+        mScene->forEach([](GameObject &obj) { obj.ready(); });
+
+        for (int i = 0; i < 10; i++) {
+          gDebugRenderer.addSphere(glm::vec3{2 * i, 0, 0}, 1, Util::red,
+                                   (1 + i) * 1s);
         }
+
+        state = GameState::Running;
+      } else {
+        break;
+      }
+    case GameState::Running:
+      update(dt);
+      gDebugRenderer.update(dt);
+      break;
     }
 
-    mScene->forEach([](GameObject& obj) {
-        obj.shutdown();
-    });
-}
+    ImGui::Render();
+    glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-void FPSGame::buildScene()
-{
-    mScene = std::make_unique<GameObject>();
-    mScene->name = "World";
-
-    auto drone = std::make_unique<Drone>(mCamera);
-    drone->name = "drone";
-    drone->parent = mScene.get();
-    player = drone.get();
-
-    /*
-    auto monster = std::make_unique<GameObject>();
-    monster->name = "monster";
-    monster->model = &ResourceManager::instance().getModel("monster");
-    monster->parent = mScene.get();
-
-    auto soldier = std::make_unique<GameObject>();
-    soldier->name = "soldier";
-    soldier->model = &ResourceManager::instance().getModel("soldier");
-    soldier->parent = mScene.get();
-    */
-
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 10; j++) {
-            auto m = std::make_unique<GameObject>();
-            m->name = std::format("monster[{}][{}]", i, j);
-            m->skinnedModel = ResourceManager::instance().getSkinnedModel("monster");
-            m->parent = mScene.get();
-            m->transform.position.x = i * 2;
-            m->transform.position.z = j * 2;
-            mScene->children.push_back(std::move(m));
-        }
+    switch (state) {
+    case GameState::Loading:
+      // Render loading screen
+      break;
+    case GameState::Running:
+      render();
+      gDebugRenderer.render();
+      break;
     }
 
-    auto light = std::make_unique<Light>();
-    light->name = "light";
-    light->parent = mScene.get();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    glfwSwapBuffers(gRenderer.getWindow());
+  }
 
-    mScene->children.push_back(std::move(drone));
-//    mScene->children.push_back(std::move(monster));
-//    mScene->children.push_back(std::move(soldier));
-    mScene->children.push_back(std::move(light));
+  if (state == GameState::Running) {
+    mScene->forEach([](GameObject &obj) { obj.shutdown(); });
+
+    saveScene();
+  }
 }
 
+void FPSGame::buildScene() {
+  mScene = std::make_unique<GameObject>();
+  mScene->name = "World";
+
+  auto plr = std::make_unique<Player>(mCamera);
+  plr->name = "player";
+  plr->skinnedModel = ResourceManager::instance().getSkinnedModel("soldier");
+  player = plr.get();
+  plr->parent = mScene.get();
+
+  auto drone = std::make_unique<Drone>(mCamera);
+  drone->name = "drone";
+  drone->skinnedModel = ResourceManager::instance().getSkinnedModel("soldier");
+  this->drone = drone.get();
+  drone->parent = mScene.get();
+
+  auto nurse = std::make_unique<GameObject>();
+  nurse->name = "nurse";
+  nurse->skinnedModel = ResourceManager::instance().getSkinnedModel("nurse");
+  nurse->parent = mScene.get();
+
+  auto soldier = std::make_unique<GameObject>();
+  soldier->name = "soldier";
+  soldier->skinnedModel =
+      ResourceManager::instance().getSkinnedModel("soldier");
+  soldier->parent = mScene.get();
+
+  auto light = std::make_unique<Light>();
+  light->name = "light";
+  light->parent = mScene.get();
+
+  auto terrain = std::make_unique<Terrain>();
+  terrain->name = "terrain";
+  terrain->parent = mScene.get();
+
+  mScene->children.push_back(std::move(plr));
+  mScene->children.push_back(std::move(nurse));
+  mScene->children.push_back(std::move(soldier));
+  mScene->children.push_back(std::move(light));
+  mScene->children.push_back(std::move(drone));
+  mScene->children.push_back(std::move(terrain));
+}
 
 static constexpr auto sceneFile{"scene.json"};
 
-void FPSGame::loadScene()
-{
-    buildScene();
+void FPSGame::loadScene() {
+  buildScene();
 
-    // Load transformations from a file
-    try {
-        std::ifstream ifs(sceneFile);
-        const auto json = nlohmann::json::parse(ifs);
-        mScene->forEach([&json](GameObject& entity) {
-            const auto& name = entity.name;
-            if (json.contains(name)) {
-                GameObject::deserialize(json[name], entity);
-            }
-        });
-    }
-    catch(const std::exception& e) {
-        std::cerr << "Unable to load scene: " << e.what() << std::endl;
-    }
+  // Load transformations from a file
+  try {
+    std::ifstream ifs(sceneFile);
+    const auto json = nlohmann::json::parse(ifs);
+    mScene->forEach([&json](GameObject &entity) {
+      const auto &name = entity.name;
+      if (json.contains(name)) {
+        GameObject::deserialize(json[name], entity);
+      }
+    });
+  } catch (const std::exception &e) {
+    std::cerr << "Unable to load scene: " << e.what() << std::endl;
+  }
 }
 
-void FPSGame::saveScene()
-{
-    nlohmann::json json;
-    mScene->forEach([&json](GameObject& entity) {
-        const auto& name = entity.name;
-        json[name] = GameObject::serialize(entity);
-    });
+void FPSGame::saveScene() {
+  nlohmann::json json;
+  mScene->forEach([&json](GameObject &entity) {
+    const auto &name = entity.name;
+    json[name] = GameObject::serialize(entity);
+  });
 
-    try {
-        std::ofstream ofs{sceneFile};
-        ofs << json.dump();
-    }
-    catch (const std::exception& e) {
-        std::cerr << "Failed to save scene: " << e.what() << std::endl;
-    }
+  try {
+    std::ofstream ofs{sceneFile};
+    ofs << json.dump();
+  } catch (const std::exception &e) {
+    std::cerr << "Failed to save scene: " << e.what() << std::endl;
+  }
 }

@@ -7,23 +7,9 @@
 
 #include "Clock.hpp"
 #include <map>
-#include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <string>
+#include "Skeleton.hpp"
 
-struct Joint {
-    std::string name; // node name?
-    unsigned parent;
-    glm::mat4 transformation;
-    glm::mat4 finalTransform;
-};
-
-using Skeleton = std::vector<Joint>;
-
-struct BoneInfo {
-    std::string name;
-    glm::mat4 offsetMatrix;
-};
 
 template<typename T>
 struct KeyFrame {
@@ -43,12 +29,12 @@ struct Animation {
     using Duration = std::chrono::duration<double>;
     using Time = Clock::time_point;
 
-    double update(double time, double dt);
-
-    void update(double time, Skeleton& skeleton);
-
+    std::string name;
     double duration;
     std::map<std::string, AnimationChannel> channels;
+
+    double update(double time, double dt) const;
+    void update(double time, Skeleton& skeleton) const;
 };
 
 #endif //FPSFROMSCRATCH_ANIMATION_H

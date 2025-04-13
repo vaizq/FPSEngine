@@ -16,8 +16,8 @@ out vec3 normal;
 void main()
 {
     vec4 worldPos = model * vec4(inPosition, 1.0);
-
     gl_Position = projection * view * worldPos;
+
     texCoord = inTexCoord;
     fragPosition = worldPos.xyz;
     normal = normalize(normalMatrix * inNormal);

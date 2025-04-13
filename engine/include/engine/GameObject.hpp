@@ -13,6 +13,7 @@
 #include "BoundingVolume.hpp"
 #include "MyGui.hpp"
 #include "SkinnedModel.hpp"
+#include "ResourceManager.hpp"
 
 enum class AnimationState {
     BindPose,
@@ -27,12 +28,15 @@ struct GameObject
 
     std::string name{};
     GameObject* parent;
-    Model* model{};
-    std::unique_ptr<SkinnedModel> skinnedModel{};
+    Model* model{nullptr};
+    std::unique_ptr<SkinnedModel> skinnedModel{nullptr};
     Transform transform;
     BoundingVolume bounds;
     std::vector<std::unique_ptr<GameObject>> children;
+    bool renderModel{true};
     AnimationState animState{AnimationState::Animate};
+    double animTime{0};
+    const Animation* animation{nullptr};
 
     virtual ~GameObject() = default;
 
@@ -50,7 +54,11 @@ struct GameObject
     }
 
     // ready is called just before the first frame when all game objects have been initialized
-    virtual void ready() {}
+    virtual void ready() {
+        if (skinnedModel != nullptr && !skinnedModel->model.animations.empty()) {
+            animation = &skinnedModel->model.animations[0];
+        }
+    }
 
     // Shutdown is called after the last frame before any of the game objects have been deleted
     virtual void shutdown() {}
@@ -63,14 +71,32 @@ struct GameObject
         if (ImGui::Button("toggleAnimation")) {
             animState = (animState == AnimationState::Animate) ? AnimationState::Manual : AnimationState::Animate;
         }
+
         if (ImGui::Button("toBindPose")) {
             animState = AnimationState::BindPose;
         }
 
-        if (skinnedModel && !skinnedModel->model.animations.empty()) {
-            float t = skinnedModel->animTime;
-            ImGui::SliderFloat("animation (t)", &t, 0, skinnedModel->model.animations[0].duration + 0.1);
-            skinnedModel->animTime = t;
+        if (ImGui::Button(renderModel ? "Dont render" : "Render")) {
+            renderModel = !renderModel;
+        }
+
+        if (animation != nullptr) {
+            float t = animTime;
+            ImGui::SliderFloat("animation (t)", &t, 0, animation->duration);
+            animTime = t;
+
+            if (ImGui::BeginListBox("animations")) {
+                if (ImGui::Selectable("default")) {
+                        this->animation = &skinnedModel->model.animations[0];
+                }
+
+                for (const auto& [name, animation] : gResources.getAnimations()) {
+                    if (ImGui::Selectable(name.c_str())) {
+                        this->animation = animation.get();
+                    }
+                }
+                ImGui::EndListBox();
+            }
         }
 
         std::visit([this](auto&& shape) {
@@ -78,37 +104,33 @@ struct GameObject
             if constexpr (std::is_same_v<T, Sphere>) {
                 ImGui::DragFloat("radius", &shape.radius);
             }
-
         }, bounds.shape);
     }
 
     virtual void update(std::chrono::duration<float> dt) {
-        if (animState == AnimationState::Animate && skinnedModel != nullptr && !skinnedModel->model.animations.empty()) {
-            skinnedModel->animTime = skinnedModel->model.animations[0].update(skinnedModel->animTime, dt.count());
+        if (animState == AnimationState::Animate && animation != nullptr) {
+            animTime = animation->update(animTime, dt.count());
+        }
+
+        if (animation && skinnedModel) {
+            animation->update(animTime, skinnedModel->skeleton);
         }
     }
 
     virtual void render(Shader& shader, const glm::mat4& parentTransform = glm::mat4{1.0f})
     {
-        const auto modelMatrix = parentTransform * transform.modelMatrix();
+        auto modelMatrix = parentTransform * transform.modelMatrix();
         const auto normalMatrix = glm::transpose(glm::inverse(modelMatrix));
 
-        if (model != nullptr) {
-            shader.setMat4("model", modelMatrix * model->rootTransform);
-        } else if (skinnedModel != nullptr) {
-            shader.setMat4("model", modelMatrix * skinnedModel->model.rootTransform);
-        } else {
-            shader.setMat4("model", modelMatrix);
-        }
-
+        shader.setMat4("model", modelMatrix);
         shader.setMat3("normalMatrix", normalMatrix);
 
-        if (model != nullptr) {
-            model->draw(shader);
-        }
-
-        if (skinnedModel != nullptr) {
-            skinnedModel->draw(shader);
+        if (renderModel) {
+            if (model != nullptr) {
+                model->draw(shader);
+            } else if (skinnedModel != nullptr) {
+                skinnedModel->draw(shader);
+            }
         }
 
         for (auto& child : children) {
@@ -117,7 +139,7 @@ struct GameObject
     }
 
     // Apply functor to this and all the children recursively
-    void forEach(std::function<void(GameObject&)>&& callable)
+    void forEach(auto callable)
     {
         callable(*this);
         for (auto& child : children) {
@@ -126,7 +148,7 @@ struct GameObject
     }
 
     // Apply functor that takes GameObject and it's parent transform to this and to every children recursively
-    void forEach(std::function<void(GameObject& entity, const glm::mat4& parentTransform)>&& callable, const glm::mat4& parentTransform = glm::mat4{1.0f})
+    void forEach(auto callable, const glm::mat4& parentTransform)
     {
         callable(*this, parentTransform);
         const auto totalTransform = parentTransform * transform.modelMatrix();

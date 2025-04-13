@@ -26,7 +26,7 @@ struct Transform
 
     Transform() = default;
 
-    Transform(const glm::vec3& position, const glm::vec3& rotation, const glm::vec3& scale)
+    Transform(const glm::vec3& position, const glm::vec3& rotation = glm::vec3{0.0f}, const glm::vec3& scale = glm::vec3{1.0f})
     : position{position}, rotation{rotation}, scale{scale}
     {}
 
@@ -44,9 +44,7 @@ struct Transform
 
     [[nodiscard]] glm::mat4 modelMatrix() const
     {
-        auto m = glm::translate(glm::mat4{1.0f}, position);
-        m *= glm::mat4_cast(rotation);
-        return glm::scale(m, glm::vec3{scale});
+        return glm::translate(position) * glm::mat4(rotation) * glm::scale(scale);
     }
 
     [[nodiscard]] glm::vec3 front() const

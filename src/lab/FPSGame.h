@@ -9,20 +9,13 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 #include <glm/vec3.hpp>
-#include "engine/Shader.hpp"
-#include "engine/Mesh.hpp"
 #include <memory>
-#include <functional>
-#include <map>
 #include "engine/Camera.hpp"
 #include <chrono>
 #include "engine/DeltaTimer.hpp"
-#include "engine/Util.hpp"
-#include "engine/Model.hpp"
 #include "engine/GameObject.hpp"
-#include "engine/Light.hpp"
+#include "Player.hpp"
 #include "Drone.hpp"
-#include "engine/Singleton.hpp"
 
 
 class FPSGame
@@ -50,7 +43,8 @@ private:
     bool mUseColorShader{false};
     bool mDrawCoordinateSystems{false};
     std::unique_ptr<GameObject> mScene;
-    Drone* player;
+    Player* player;
+    Drone* drone;
 };
 
 

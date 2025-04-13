@@ -48,6 +48,7 @@ set(ENGINE_SRC
     src/Random.cpp
     src/Renderer.cpp
     src/Animation.cpp
+    src/AssetImporter.cpp
 )
 
 add_subdirectory(extern/assimp)

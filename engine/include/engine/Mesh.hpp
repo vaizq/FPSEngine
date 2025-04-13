@@ -9,7 +9,6 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <vector>
-#include <map>
 #include "Texture.hpp"
 
 struct Vertex {
@@ -27,15 +26,21 @@ class Mesh
 public:
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned> indices, std::vector<Texture> textures);
     ~Mesh();
+
     Mesh(Mesh&& other) noexcept;
     Mesh& operator=(Mesh&& other) noexcept;
     Mesh(const Mesh&) = delete;
     Mesh& operator=(const Mesh&) = delete;
 
+    Mesh& load();
+
     void draw(Shader& shader, GLenum mode = GL_TRIANGLES);
 
 private:
+    std::vector<Vertex> mVertices;
+    std::vector<unsigned> mIndices;
     std::vector<Texture> mTextures;
+
     size_t mNumIndices;
     unsigned mVAO{};
     unsigned mVBO{};
@@ -43,5 +48,3 @@ private:
 };
 
 #endif //FPSFROMSCRATCH_MESH_H
-
-

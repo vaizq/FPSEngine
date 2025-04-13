@@ -38,7 +38,6 @@ void main()
         }
     }
 
-
     vec4 worldPos = model * totalPos;
     gl_Position = projection * view * worldPos;
 
