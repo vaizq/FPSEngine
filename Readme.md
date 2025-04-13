@@ -1,23 +1,24 @@
-# 🔫 3D Game"engine" Prototype (C++ / OpenGL)
+# 🔫 3D "Game engine" Prototype (C++ / OpenGL)
 
 This is a early stage 3D "engine" prototype built using **C++** and **OpenGL**.  
-The goal was to experiment with building a 3D game with plain old C++ and learn about tech in 3D games.
+I just wanted to better understand the tech used in 3D games/engines so I tried to build my own.
+Techniques have been learned from [learnopengl.com](https://learnopengl.com/) tutorials and [Game Engine Architecture](https://www.gameenginebook.com/) book. Also [tokyospliff](https://www.youtube.com/@tokyospliff) has been a great inspiration.
 
-> ⚠️ Note: This is a work-in-progress / prototype and probably will stay as such.
+> ⚠️ Note: This is a work-in-progress / prototype and will probably stay as such.
 
 ---
 
 ## 🎥 Demo
 
 ![Demo](./demo.gif)
+It does actually look better than this gif :D
 
 ---
 
 ## 🛠️ Features
 
-- Basic 3D environment rendering
+- Most basic 3D rendering with lightning
 - Third-person camera + movement
-- 3D model loading (Assimp)
 - Skeletal animations
 - Raw OpenGL (no engine)
 
